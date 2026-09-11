@@ -198,6 +198,8 @@ export default function CrearUsuarios({
                                             autoComplete="new-password"
                                             placeholder="Contraseña"
                                             passwordrules={passwordRules}
+                                            generate
+                                            confirmationId="password_confirmation"
                                         />
                                         <InputError
                                             message={errors.password}

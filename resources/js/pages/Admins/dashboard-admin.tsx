@@ -88,8 +88,7 @@ export default function DashboardAdmin({
 }: PageProps) {
     const { auth } = usePage().props;
     const admin = auth.admin as AdminUser | null | undefined;
-    const { resolvedAppearance, updateAppearance } = useAppearance();
-    const isDark = resolvedAppearance === 'dark';
+    const { updateAppearance } = useAppearance();
     const maxCotizaciones = Math.max(
         ...(resumenMensual?.dias.map((dia) => dia.total) ?? [0]),
         1,
@@ -109,16 +108,26 @@ export default function DashboardAdmin({
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                onClick={() =>
-                                    updateAppearance(isDark ? 'light' : 'dark')
-                                }
+                                aria-label="Cambiar tema"
+                                onClick={() => {
+                                    const isDark =
+                                        document.documentElement.classList.contains(
+                                            'dark',
+                                        );
+
+                                    updateAppearance(
+                                        isDark ? 'light' : 'dark',
+                                    );
+                                }}
                             >
-                                {isDark ? (
-                                    <Sun className="size-4" />
-                                ) : (
-                                    <Moon className="size-4" />
-                                )}
-                                Modo {isDark ? 'claro' : 'oscuro'}
+                                <Sun className="hidden size-4 dark:block" />
+                                <Moon className="size-4 dark:hidden" />
+                                <span className="hidden dark:inline">
+                                    Modo claro
+                                </span>
+                                <span className="dark:hidden">
+                                    Modo oscuro
+                                </span>
                             </Button>
                         </div>
 

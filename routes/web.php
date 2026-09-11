@@ -7,13 +7,16 @@ use App\Http\Controllers\Admin\EquipoModuloController as AdminEquipoModuloContro
 use App\Http\Controllers\Admin\FabricanteController as AdminFabricanteController;
 use App\Http\Controllers\Admin\Imagen360Controller as AdminImagen360Controller;
 use App\Http\Controllers\Admin\ModuloController as AdminModuloController;
+use App\Http\Controllers\Admin\MonitoreoController as AdminMonitoreoController;
 use App\Http\Controllers\Admin\ServicioController as AdminServicioController;
 use App\Http\Controllers\Admin\UsuarioController as AdminUsuarioController;
 use App\Http\Controllers\Auth\AdminAuthenticatedSessionController;
-use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ClienteCotisacionController;
 use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\ModuloController;
+use App\Http\Controllers\RobotsController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +24,8 @@ Route::inertia('/', 'welcome')->name('home');
 Route::inertia('mantenimiento', 'Mantenimiento/Mantenimiento')->name('mantenimiento');
 Route::inertia('sobre-nosotros', 'Empresa/Sobrenosotros')->name('sobre-nosotros');
 Route::get('contacto', [ContactoController::class, 'show'])->name('contacto');
+Route::get('sitemap.xml', SitemapController::class)->name('sitemap');
+Route::get('robots.txt', RobotsController::class)->name('robots');
 
 Route::get('cotizacion/cliente', [ClienteCotisacionController::class, 'create'])
     ->name('cliente-cotisacion.create');
@@ -138,6 +143,10 @@ Route::middleware(EnsureUserIsAdmin::class)->prefix('admin')->name('admin.')->gr
             ->name('usuarios.update');
         Route::delete('usuarios/{userAdmin}', [AdminUsuarioController::class, 'destroy'])
             ->name('usuarios.destroy');
+    });
+
+    Route::middleware('admin.area:configuracion')->group(function () {
+        Route::get('monitoreo', AdminMonitoreoController::class)->name('monitoreo');
     });
 });
 

@@ -462,6 +462,8 @@ export default function EditarUsuarios({
                                                 autoComplete="new-password"
                                                 placeholder="Dejar vacío para no cambiar"
                                                 passwordrules={passwordRules}
+                                                generate
+                                                confirmationId="edit-password_confirmation"
                                             />
                                             <InputError
                                                 message={errors.password}

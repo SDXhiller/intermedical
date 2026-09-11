@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
 export type ResolvedAppearance = 'light' | 'dark';
 export type Appearance = ResolvedAppearance | 'system';
@@ -10,11 +10,12 @@ export type UseAppearanceReturn = {
 };
 
 const listeners = new Set<() => void>();
-let currentAppearance: Appearance = 'system';
+const defaultAppearance: Appearance = 'dark';
+let currentAppearance: Appearance = defaultAppearance;
 
 const prefersDark = (): boolean => {
     if (typeof window === 'undefined') {
-        return false;
+        return true;
     }
 
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -31,10 +32,12 @@ const setCookie = (name: string, value: string, days = 365): void => {
 
 const getStoredAppearance = (): Appearance => {
     if (typeof window === 'undefined') {
-        return 'system';
+        return defaultAppearance;
     }
 
-    return (localStorage.getItem('appearance') as Appearance) || 'system';
+    return (
+        (localStorage.getItem('appearance') as Appearance) || defaultAppearance
+    );
 };
 
 const isDarkMode = (appearance: Appearance): boolean => {
@@ -76,14 +79,12 @@ export function initializeTheme(): void {
     }
 
     if (!localStorage.getItem('appearance')) {
-        localStorage.setItem('appearance', 'dark');
-        setCookie('appearance', 'dark');
+        localStorage.setItem('appearance', defaultAppearance);
+        setCookie('appearance', defaultAppearance);
     }
 
-    currentAppearance = getStoredAppearance();
-    applyTheme(currentAppearance);
+    applyTheme(getStoredAppearance());
 
-    // Set up system theme change listener
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);
 }
 
@@ -91,8 +92,20 @@ export function useAppearance(): UseAppearanceReturn {
     const appearance: Appearance = useSyncExternalStore(
         subscribe,
         () => currentAppearance,
-        () => 'system',
+        () => defaultAppearance,
     );
+
+    useEffect(() => {
+        const stored = getStoredAppearance();
+
+        if (currentAppearance === stored) {
+            return;
+        }
+
+        currentAppearance = stored;
+        applyTheme(stored);
+        notify();
+    }, []);
 
     const resolvedAppearance: ResolvedAppearance = isDarkMode(appearance)
         ? 'dark'

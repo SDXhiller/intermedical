@@ -1,5 +1,6 @@
 import { Form, Link, usePage } from '@inertiajs/react';
 import {
+    Activity,
     Box,
     Contact,
     Factory,
@@ -30,6 +31,7 @@ import {
     dashboard as adminDashboard,
     logout as adminLogout,
     modelosEquipos as adminModelosEquipos,
+    monitoreo as adminMonitoreo,
 } from '@/routes/admin';
 import { index as adminDatosContacto } from '@/routes/admin/datos-contacto';
 import { create as adminEquipos } from '@/routes/admin/equipos';
@@ -109,6 +111,12 @@ const supportItems: NavItem[] = [
         title: 'Configuración',
         href: adminDashboard(),
         icon: Settings,
+        area: 'configuracion',
+    },
+    {
+        title: 'Monitoreo',
+        href: adminMonitoreo(),
+        icon: Activity,
         area: 'configuracion',
     },
 ];
