@@ -3,26 +3,21 @@ import {
     ArrowRight,
     BookOpen,
     ChevronDown,
-    CircleCheck,
     Cog,
     Compass,
     Drill,
     Eye,
-    Facebook,
-    FileText,
     Gem,
-    GraduationCap,
-    Headphones,
     Import,
-    Linkedin,
-    Mail,
-    Phone,
+    MonitorSmartphone,
+    PackageMinus,
+    ScanSearch,
     Search,
+    Settings2,
     ShieldCheck,
     Target,
     Wrench,
     X,
-    Youtube,
     type LucideIcon,
 } from 'lucide-react';
 import {
@@ -35,14 +30,16 @@ import {
 import { GlobalSearchBar } from '@/components/global-search-bar';
 import {
     BRAND_COLOR,
-    BRAND_ICON,
     CONTENT_WIDTH,
     type EquipmentItem,
 } from '@/data/equipment';
-import { home, contacto, mantenimiento, sobreNosotros } from '@/routes';
+import { getMaintenanceServiceBySlug } from '@/data/maintenance-services';
+import { contacto, home, sobreNosotros } from '@/routes';
 import { index as equiposIndex } from '@/routes/equipos';
 
-const navItems = ['Productos', 'Servicios', 'Empresa', 'Contacto'];
+const MIG_HORIZONTAL_WHITE = '/Imagen/Logos/MIG-horizontal-blanco.png';
+
+const navItems = ['Empresa', 'Servicios', 'Productos', 'Contacto'];
 
 const empresaSubtitles: {
     title: string;
@@ -117,136 +114,64 @@ function CorrectiveMaintenanceIcon({
 type ServiceFeature = {
     title: string;
     description: string;
-    href?: string;
+    href: string;
     icon?: LucideIcon;
     customIcon?: ReactNode;
 };
 
 type ServiceCategory = {
     title: string;
-    linkLabel?: string;
-    href?: string;
-    footerLinks?: { label: string; href: string }[];
     items: ServiceFeature[];
 };
+
+function specializedServiceItem(
+    slug: string,
+    extras: Pick<ServiceFeature, 'icon' | 'customIcon'>,
+): ServiceFeature {
+    const service = getMaintenanceServiceBySlug(slug);
+
+    if (!service) {
+        throw new Error(`Servicio de mantenimiento no encontrado: ${slug}`);
+    }
+
+    return {
+        title: service.title,
+        description: service.description,
+        href: contacto.url({ query: { tipo: service.slug } }),
+        ...extras,
+    };
+}
 
 const specializedServiceCategories: ServiceCategory[] = [
     {
         title: 'MANTENIMIENTO',
-        footerLinks: [
-            {
-                label: 'Aplicar mantenimiento preventivo',
-                href: contacto.url({
-                    query: { tipo: 'mantenimiento-preventivo' },
-                }),
-            },
-            {
-                label: 'Aplicar mantenimiento correctivo',
-                href: contacto.url({
-                    query: { tipo: 'mantenimiento-correctivo' },
-                }),
-            },
-        ],
         items: [
-            {
-                title: 'Mantenimiento preventivo',
-                description:
-                    'Programas personalizados para asegurar el funcionamiento óptimo de sus equipos.',
-                href: contacto.url({
-                    query: { tipo: 'mantenimiento-preventivo' },
-                }),
-                icon: Cog,
-            },
-            {
-                title: 'Mantenimiento correctivo',
-                description:
-                    'Diagnóstico y reparación con respuesta inmediata ante fallas inesperadas.',
-                href: contacto.url({
-                    query: { tipo: 'mantenimiento-correctivo' },
-                }),
+            specializedServiceItem('mantenimiento-preventivo', { icon: Cog }),
+            specializedServiceItem('mantenimiento-correctivo', {
                 customIcon: (
                     <CorrectiveMaintenanceIcon
                         className="size-5"
                         style={{ color: BRAND_COLOR }}
                     />
                 ),
-            },
-            {
-                title: 'Contratos de servicio',
-                description:
-                    'Planes a la medida que garantizan continuidad operativa y soporte técnico permanente.',
-                href: mantenimiento.url(),
-                icon: FileText,
-            },
+            }),
+            specializedServiceItem('diagnostico', { icon: ScanSearch }),
         ],
     },
     {
         title: 'INSTALACIÓN Y PUESTA EN MARCHA',
-        linkLabel: 'Ver todos los servicios de instalación',
-        href: contacto.url({
-            query: { tipo: 'instalacion-y-puesta-en-marcha' },
-        }),
         items: [
-            {
-                title: 'Instalación y configuración',
-                description:
-                    'Montaje, conexión y configuración del equipo conforme a especificaciones.',
-                href: contacto.url({
-                    query: { tipo: 'instalacion-y-puesta-en-marcha' },
-                }),
-                icon: Cog,
-            },
-            {
-                title: 'Pruebas de funcionamiento',
-                description:
-                    'Verificación de componentes, seguridad y desempeño operativo.',
-                href: contacto.url({
-                    query: { tipo: 'instalacion-y-puesta-en-marcha' },
-                }),
-                customIcon: (
-                    <CorrectiveMaintenanceIcon
-                        className="size-5"
-                        style={{ color: BRAND_COLOR }}
-                    />
-                ),
-            },
-            {
-                title: 'Puesta en operación',
-                description:
-                    'Validación final del equipo para su uso seguro y certificado.',
-                href: contacto.url({
-                    query: { tipo: 'instalacion-y-puesta-en-marcha' },
-                }),
-                icon: CircleCheck,
-            },
+            specializedServiceItem('instalacion', { icon: Settings2 }),
+            specializedServiceItem('desinstalacion', { icon: PackageMinus }),
+            specializedServiceItem('puesta-en-marcha', { icon: ShieldCheck }),
         ],
     },
     {
-        title: 'CAPACITACIÓN',
-        linkLabel: 'Ver todos los servicios de capacitación',
-        href: contacto.url({ query: { tipo: 'capacitacion-tecnica' } }),
+        title: 'RENTA',
         items: [
-            {
-                title: 'Capacitación en operación',
-                description:
-                    'Entrenamiento para el personal en el uso seguro y eficiente del equipo.',
-                href: contacto.url({ query: { tipo: 'capacitacion-tecnica' } }),
-                icon: GraduationCap,
-            },
-            {
-                title: 'Capacitación técnica',
-                description:
-                    'Formación especializada para personal de mantenimiento e ingeniería biomédica.',
-                href: contacto.url({ query: { tipo: 'capacitacion-tecnica' } }),
-                icon: BookOpen,
-            },
-            {
-                title: 'Seguridad y buenas prácticas',
-                description:
-                    'Protocolos y normas para un entorno de trabajo seguro y regulado.',
-                href: contacto.url({ query: { tipo: 'capacitacion-tecnica' } }),
-                icon: ShieldCheck,
-            },
+            specializedServiceItem('renta-de-equipos-medicos', {
+                icon: MonitorSmartphone,
+            }),
         ],
     },
 ];
@@ -308,9 +233,13 @@ function ServiceFeatureCard({
     customIcon,
     onNavigate,
 }: ServiceFeature & { onNavigate?: () => void }) {
-    const content = (
-        <>
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#0a7c4a]/10 dark:bg-[#0a7c4a]/20">
+    return (
+        <Link
+            href={href}
+            onClick={onNavigate}
+            className="group flex gap-3 rounded-lg p-1 -m-1 transition hover:bg-[#0a7c4a]/5"
+        >
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#0a7c4a]/25 bg-[#0a7c4a]/10 dark:bg-[#0a7c4a]/20">
                 {customIcon ??
                     (Icon && (
                         <Icon
@@ -328,34 +257,15 @@ function ServiceFeatureCard({
                     {description}
                 </p>
             </div>
-        </>
+        </Link>
     );
-
-    if (href) {
-        return (
-            <Link href={href} onClick={onNavigate} className="group flex gap-3">
-                {content}
-            </Link>
-        );
-    }
-
-    return <div className="flex gap-3">{content}</div>;
 }
 
 function ServiceCategoryColumn({
     title,
-    linkLabel,
-    href = '#',
-    footerLinks,
     items,
     onNavigate,
 }: ServiceCategory & { onNavigate?: () => void }) {
-    const links =
-        footerLinks ??
-        (linkLabel
-            ? [{ label: linkLabel, href: href ?? '#' }]
-            : []);
-
     return (
         <div className="flex flex-col">
             <h3 className="text-xs font-bold tracking-wider text-gray-900 dark:text-white">
@@ -374,31 +284,6 @@ function ServiceCategoryColumn({
                     />
                 ))}
             </div>
-            {links.length > 0 && (
-                <div
-                    className={`mt-6 gap-2 ${
-                        links.length === 2
-                            ? 'grid grid-cols-2'
-                            : 'flex flex-col'
-                    }`}
-                >
-                    {links.map((link) => (
-                        <Link
-                            key={link.label}
-                            href={link.href}
-                            onClick={onNavigate}
-                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg border-2 px-2 py-2 text-center text-[11px] leading-snug font-semibold transition hover:bg-[#0a7c4a]/10 hover:shadow-sm active:scale-[0.98] sm:gap-1.5 sm:px-3 sm:text-xs"
-                            style={{
-                                borderColor: BRAND_COLOR,
-                                color: BRAND_COLOR,
-                            }}
-                        >
-                            {link.label}
-                            <ArrowRight className="size-3 shrink-0 sm:size-3.5" />
-                        </Link>
-                    ))}
-                </div>
-            )}
         </div>
     );
 }
@@ -406,8 +291,11 @@ function ServiceCategoryColumn({
 function EmpresaMegaMenu({ onNavigate }: { onNavigate?: () => void }) {
     return (
         <div>
-            <p className="text-xs font-bold tracking-wider text-[#0a7c4a]">
+            <p className="text-xs font-bold tracking-wider text-gray-900 dark:text-white">
                 EMPRESA
+            </p>
+            <p className="mt-3 text-sm leading-relaxed whitespace-nowrap text-muted-foreground">
+                Somos un grupo de ingenieros con amplia experiencia en el entorno de la Imagenología Clínica. Trabajamos para mantener la tecnología médica disponible, segura y confiable.
             </p>
             <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {empresaSubtitles.map(
@@ -552,59 +440,6 @@ export default function SiteHeader() {
 
     return (
         <div className="sticky top-0 z-[100] isolate overflow-visible">
-            <div className="relative z-[100] border-b border-border bg-muted">
-                <div
-                    className={`mx-auto flex ${CONTENT_WIDTH} flex-wrap items-center justify-between gap-3 py-2 text-xs text-muted-foreground`}
-                >
-                    <a
-                        href="#"
-                        className="inline-flex items-center gap-1.5 hover:text-[#0a7c4a]"
-                    >
-                        <Headphones className="size-3.5" />
-                        Soporte 24/7
-                    </a>
-                    <a
-                        href="#"
-                        className="inline-flex items-center gap-1.5 hover:text-[#0a7c4a]"
-                    >
-                        <Mail className="size-3.5" />
-                        ventas@medicalimaginggroup.com
-                    </a>
-                    <div className="flex items-center gap-4">
-                        <a
-                            href="#"
-                            className="inline-flex items-center gap-1.5 hover:text-[#0a7c4a]"
-                        >
-                            <Phone className="size-3.5" />
-                            +52 55 1234 5678
-                        </a>
-                        <div className="flex items-center gap-2">
-                            <a
-                                href="#"
-                                className="text-muted-foreground hover:text-[#0a7c4a]"
-                                aria-label="LinkedIn"
-                            >
-                                <Linkedin className="size-3.5" />
-                            </a>
-                            <a
-                                href="#"
-                                className="text-muted-foreground hover:text-[#0a7c4a]"
-                                aria-label="YouTube"
-                            >
-                                <Youtube className="size-3.5" />
-                            </a>
-                            <a
-                                href="#"
-                                className="text-muted-foreground hover:text-[#0a7c4a]"
-                                aria-label="Facebook"
-                            >
-                                <Facebook className="size-3.5" />
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <header
                 className="relative overflow-visible border-b border-border bg-background"
                 onMouseLeave={() => setActiveMegaMenu(null)}
@@ -612,23 +447,16 @@ export default function SiteHeader() {
                 <div
                     className={`mx-auto flex ${CONTENT_WIDTH} items-center justify-between gap-4 overflow-visible py-4`}
                 >
-                    <Link href={home()} className="flex items-center gap-3">
+                    <Link
+                        href={home()}
+                        className="flex shrink-0 items-center"
+                        aria-label="Medical Imaging Group"
+                    >
                         <img
-                            src={BRAND_ICON}
+                            src={MIG_HORIZONTAL_WHITE}
                             alt="Medical Imaging Group"
-                            className="size-10 shrink-0 rounded-full object-contain"
+                            className="h-10 w-auto max-w-[220px] object-contain object-left sm:h-11"
                         />
-                        <div className="leading-tight">
-                            <p
-                                className="text-sm font-bold tracking-wide"
-                                style={{ color: BRAND_COLOR }}
-                            >
-                                MEDICAL IMAGING
-                            </p>
-                            <p className="text-[10px] font-semibold tracking-[0.2em] text-muted-foreground">
-                                GROUP
-                            </p>
-                        </div>
                     </Link>
 
                     <nav className="hidden items-center gap-6 lg:flex">

@@ -82,7 +82,7 @@ test('admins can store a servicio with whatsapp icon', function () {
         ->icono->toBe(ServicioIcono::Whatsapp);
 });
 
-test('tipo_servicio_mantenimiento seeds the four support types', function () {
+test('tipo_servicio_mantenimiento seeds the seven specialized service types', function () {
     $nombres = TipoServicioMantenimiento::query()
         ->orderBy('id')
         ->pluck('nombre')
@@ -91,7 +91,10 @@ test('tipo_servicio_mantenimiento seeds the four support types', function () {
     expect($nombres)->toBe([
         'Mantenimiento preventivo',
         'Mantenimiento correctivo',
-        'Instalación y puesta en marcha',
-        'Capacitación técnica',
+        'Diagnóstico',
+        'Renta de equipos médicos',
+        'Instalación',
+        'Desinstalación',
+        'Puesta en marcha',
     ]);
 });

@@ -254,7 +254,7 @@ function PillarSection({
         return (
             <section
                 id={id}
-                className="relative z-10 w-full scroll-mt-28"
+                className="relative z-10 w-full scroll-mt-40"
             >
                 <div className="relative isolate min-h-[280px] w-full overflow-hidden sm:min-h-[340px] lg:min-h-[420px]">
                     <BlendedPillarImage
@@ -282,7 +282,7 @@ function PillarSection({
     const media = <ImagePlaceholder label={imageLabel} />;
 
     return (
-        <section id={id} className="scroll-mt-28">
+        <section id={id} className="scroll-mt-40">
             <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-10">
                 {imageLeft ? (
                     <>
@@ -305,10 +305,10 @@ export default function Sobrenosotros() {
         <>
             <Head title="Sobre nosotros" />
 
-            <div className="relative isolate overflow-x-hidden bg-neutral-950 text-white">
+            <div className="relative isolate overflow-x-clip bg-neutral-950 text-white">
                 <DigitalLinesBackdrop className="z-0" />
 
-                <nav className="sticky top-0 z-20 border-b border-white/10 bg-neutral-950/95 backdrop-blur">
+                <nav className="sticky top-[4.5rem] z-40 border-b border-white/10 bg-neutral-950/95 backdrop-blur sm:top-[4.75rem]">
                     <div
                         className={`mx-auto flex ${CONTENT_WIDTH} flex-wrap items-center justify-center gap-x-6 gap-y-2 py-3 sm:justify-start sm:gap-x-8`}
                     >
@@ -531,7 +531,7 @@ export default function Sobrenosotros() {
                 <div
                     className={`relative z-10 mx-auto ${CONTENT_WIDTH} space-y-8 pb-12 pt-8 sm:space-y-10 sm:pb-14 sm:pt-10 lg:pb-16`}
                 >
-                    <section id="valores" className="scroll-mt-28">
+                    <section id="valores" className="scroll-mt-40">
                         <p
                             className="text-sm font-bold tracking-[0.12em]"
                             style={{ color: BRAND_COLOR }}

@@ -1,0 +1,17 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Prefer pointing the cPanel document root to /public instead.
+    # This file is a fallback when the domain must point at the project root.
+
+    # Block direct access to sensitive paths and files.
+    RewriteRule ^(\.env|\.git|artisan|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|vite\.config\..*|tsconfig\.json)(/|$) - [F,L]
+    RewriteRule ^(app|bootstrap|config|database|node_modules|resources|routes|storage|tests|vendor)(/|$) - [F,L]
+
+    # Send all traffic into the Laravel public directory.
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+<IfModule mod_negotiation.c>
+    Options -MultiViews -Indexes
+</IfModule>

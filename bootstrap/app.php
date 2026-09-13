@@ -19,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        // cPanel / shared hosting usually terminates SSL at the proxy.
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'admin.area' => EnsureAdminCanAccess::class,
         ]);

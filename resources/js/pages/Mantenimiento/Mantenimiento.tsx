@@ -7,167 +7,82 @@ import {
     Headphones,
 } from 'lucide-react';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
+import {
+    maintenanceServices,
+    type MaintenanceService,
+} from '@/data/maintenance-services';
 import { contacto } from '@/routes';
+
+const attendedModalities = [
+    'Ultrasonido',
+    'Rayos X',
+    'Mastografía',
+    'Angiografía',
+    'Arco en C',
+    'Resonancia Magnética',
+    'Tomografía',
+    'Medicina Nuclear e Imagen Molecular',
+] as const;
 
 function maintenanceImage(filename: string): string {
     return `/Imagen/Mantenimiento/${encodeURIComponent(filename)}`;
 }
 
-type ServiceBlock = {
-    title: string;
-    slug: string;
-    description: string;
-    image: string;
-    features: string[];
-    responseTime: string;
-    imageLeft: boolean;
-};
-
-const services: ServiceBlock[] = [
-    {
-        title: 'Mantenimiento preventivo',
-        slug: 'mantenimiento-preventivo',
-        description:
-            'Servicio especializado orientado a conservar los equipos médicos en condiciones óptimas de funcionamiento. Incluye revisiones periódicas, limpieza, calibración, ajustes y verificación de componentes, con el objetivo de prevenir fallas, mantener un desempeño confiable y prolongar la vida útil del equipo.',
-        image: maintenanceImage('Mantenimeinto preventivo.png'),
-        features: ['Revisión general', 'Calibración', 'Limpieza y ajustes'],
-        responseTime: '24 - 48 horas',
-        imageLeft: true,
-    },
-    {
-        title: 'Mantenimiento correctivo',
-        slug: 'mantenimiento-correctivo',
-        description:
-            'Servicio destinado al diagnóstico y solución de fallas que puedan afectar el funcionamiento de los equipos médicos. Nuestro personal técnico realiza una evaluación especializada para identificar el origen del problema, efectuar las reparaciones necesarias y restablecer la operación del equipo de manera segura y eficiente.',
-        image: maintenanceImage('mantenimiento correctivo.png'),
-        features: [
-            'Diagnóstico especializado',
-            'Reparación de fallas',
-            'Refacciones originales',
-        ],
-        responseTime: 'Según diagnóstico',
-        imageLeft: false,
-    },
-    {
-        title: 'Instalación y puesta en marcha',
-        slug: 'instalacion-y-puesta-en-marcha',
-        description:
-            'Servicio integral para la correcta instalación, configuración y puesta en operación de equipos médicos. Se realizan verificaciones técnicas, pruebas de funcionamiento y ajustes necesarios para garantizar que el sistema quede preparado para su uso conforme a sus características y requerimientos de operación.',
-        image: maintenanceImage('Instalacion y puesta en marca.png'),
-        features: [
-            'Instalación',
-            'Configuración completa',
-            'Pruebas de funcionamiento',
-            'Capacitación básica',
-        ],
-        responseTime: 'Programado',
-        imageLeft: true,
-    },
-    {
-        title: 'Capacitación técnica',
-        slug: 'capacitacion-tecnica',
-        description:
-            'Capacitación especializada dirigida al personal encargado de la operación y manejo de los equipos médicos. El objetivo es proporcionar los conocimientos necesarios para utilizar correctamente el sistema, conocer sus principales funciones y aplicar buenas prácticas que contribuyan a una operación segura, eficiente y adecuada del equipo.',
-        image: maintenanceImage('capacitacion tecnica.png'),
-        features: [
-            'Operación de equipos',
-            'Seguridad y buenas prácticas',
-            'Certificado de capacitación',
-        ],
-        responseTime: '1 - 2 días',
-        imageLeft: false,
-    },
-];
-
-function ServiceSection({ service }: { service: ServiceBlock }) {
-    const textOnLeft = service.imageLeft;
-
+function ServiceCard({ service }: { service: MaintenanceService }) {
     return (
-        <article className="relative overflow-hidden rounded-2xl border border-white/10 shadow-sm">
-            <div className="relative min-h-[22rem] sm:min-h-[24rem] lg:min-h-[26rem]">
-                <img
-                    src={service.image}
-                    alt={service.title}
-                    className="absolute inset-0 size-full object-cover object-center transition duration-700 ease-out hover:scale-[1.04]"
-                />
-                <div
-                    className={`absolute inset-0 ${
-                        textOnLeft
-                            ? 'bg-gradient-to-r from-black/82 via-black/62 to-black/12'
-                            : 'bg-gradient-to-l from-black/82 via-black/62 to-black/12'
-                    }`}
-                />
-                <div className="absolute inset-0 bg-black/20" />
+        <article className="flex h-full min-h-[280px] flex-col rounded-2xl border border-white/10 bg-neutral-950 p-5 shadow-sm dark:bg-black sm:min-h-[300px]">
+            <h2 className="text-lg font-bold tracking-tight text-white">
+                {service.title}
+            </h2>
 
-                <div
-                    className={`relative z-10 flex h-full min-h-[inherit] items-center ${
-                        textOnLeft ? 'justify-start' : 'justify-end'
-                    }`}
-                >
-                    <div className="w-full max-w-xl px-5 py-6 sm:px-7 sm:py-7 lg:px-8 lg:py-8">
-                        <h2 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
-                            {service.title}
-                        </h2>
+            <p className="mt-2 text-sm leading-relaxed text-white/75">
+                {service.description}
+            </p>
 
-                        <p className="mt-2 text-sm leading-relaxed text-white/80">
-                            {service.description}
-                        </p>
-
-                        <ul className="mt-3.5 space-y-1.5">
-                            {service.features.map((feature) => (
-                                <li
-                                    key={feature}
-                                    className="flex items-start gap-2 text-sm text-white"
-                                >
-                                    <span
-                                        className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full text-white"
-                                        style={{
-                                            backgroundColor: BRAND_COLOR,
-                                        }}
-                                    >
-                                        <Check
-                                            className="size-2.5"
-                                            strokeWidth={3}
-                                        />
-                                    </span>
-                                    {feature}
-                                </li>
-                            ))}
-                        </ul>
-
-                        <div className="mt-4 flex items-start gap-2">
-                            <Clock3
-                                className="mt-0.5 size-4 shrink-0"
-                                style={{ color: BRAND_COLOR }}
-                                strokeWidth={1.75}
-                            />
-                            <div>
-                                <p className="text-[11px] text-white/65">
-                                    Tiempo estimado de respuesta
-                                </p>
-                                <p className="mt-0.5 text-sm font-bold text-white">
-                                    {service.responseTime}
-                                </p>
-                            </div>
-                        </div>
-
-                        <Link
-                            href={contacto.url({
-                                query: { tipo: service.slug },
-                            })}
-                            className="mt-4 inline-flex w-fit items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+            <ul className="mt-3.5 space-y-1.5">
+                {service.features.map((feature) => (
+                    <li
+                        key={feature}
+                        className="flex items-start gap-2 text-sm text-white"
+                    >
+                        <span
+                            className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full text-white"
                             style={{ backgroundColor: BRAND_COLOR }}
                         >
-                            <CalendarDays
-                                className="size-3.5"
-                                strokeWidth={1.75}
-                            />
-                            Solicitar servicio
-                            <ArrowRight className="size-3.5" />
-                        </Link>
-                    </div>
+                            <Check className="size-2.5" strokeWidth={3} />
+                        </span>
+                        {feature}
+                    </li>
+                ))}
+            </ul>
+
+            <div className="mt-4 flex items-start gap-2">
+                <Clock3
+                    className="mt-0.5 size-4 shrink-0"
+                    style={{ color: BRAND_COLOR }}
+                    strokeWidth={1.75}
+                />
+                <div>
+                    <p className="text-[11px] text-white/65">
+                        Tiempo estimado de respuesta
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold text-white">
+                        {service.responseTime}
+                    </p>
                 </div>
             </div>
+
+            <Link
+                href={contacto.url({
+                    query: { tipo: service.slug },
+                })}
+                className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                style={{ backgroundColor: BRAND_COLOR }}
+            >
+                <CalendarDays className="size-3.5" strokeWidth={1.75} />
+                Solicitar servicio
+                <ArrowRight className="size-3.5" />
+            </Link>
         </article>
     );
 }
@@ -198,16 +113,18 @@ export default function Mantenimiento() {
                             Nuestros servicios más solicitados
                         </p>
                         <h1 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
-                            Productos y soluciones diseñados para usted
+                            Soporte técnico para equipos de diagnóstico por imagen
                         </h1>
+                        <h2>
+                        Contamos con ingenieros especializados y capacitados por marcas líderes a nivel mundial.
+                        </h2>
                         <div
                             className="mt-4 h-1 w-14 rounded-full"
                             style={{ backgroundColor: BRAND_COLOR }}
                         />
                         <p className="mt-5 text-sm leading-relaxed text-white/90 sm:text-base">
-                            Brindamos soporte técnico especializado para
-                            garantizar el máximo rendimiento y disponibilidad de
-                            sus equipos médicos.
+                        Brindamos diagnóstico, mantenimiento preventivo y correctivo, renta, instalación, desinstalación y puesta en marcha de equipos.
+                        Acompañamos a hospitales, clínicas y gabinetes de imagenología con atención especializada y soluciones acordes con sus necesidades.
                         </p>
 
                         <h2 className="mt-7 text-lg font-bold tracking-tight text-white sm:text-xl">
@@ -242,12 +159,48 @@ export default function Mantenimiento() {
                 </div>
             </section>
 
+            <section className="border-b border-white/10 bg-neutral-950 py-10 dark:bg-black sm:py-12">
+                <div className={`mx-auto ${CONTENT_WIDTH}`}>
+                    <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                        Modalidades que atendemos
+                    </h2>
+                    <div
+                        className="mt-3 h-1 w-14 rounded-full"
+                        style={{ backgroundColor: BRAND_COLOR }}
+                    />
+                    <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
+                        Brindamos soporte técnico especializado para equipos de:
+                    </p>
+                    <ul className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-3 text-sm text-white sm:text-[15px]">
+                        {attendedModalities.map((modality, index) => (
+                            <li
+                                key={modality}
+                                className="inline-flex items-center gap-2"
+                            >
+                                {index > 0 && (
+                                    <span
+                                        className="select-none"
+                                        style={{ color: BRAND_COLOR }}
+                                        aria-hidden="true"
+                                    >
+                                        ·
+                                    </span>
+                                )}
+                                <span className="font-medium">{modality}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </section>
+
             <section
-                className={`mx-auto ${CONTENT_WIDTH} max-w-6xl space-y-5 py-10 sm:space-y-6 sm:py-12 lg:py-14`}
+                className={`mx-auto ${CONTENT_WIDTH} py-10 sm:py-12 lg:py-14`}
             >
-                {services.map((service) => (
-                    <ServiceSection key={service.title} service={service} />
-                ))}
+                <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-2 lg:grid-cols-3">
+                    {maintenanceServices.map((service) => (
+                        <ServiceCard key={service.slug} service={service} />
+                    ))}
+                </div>
             </section>
 
             <section

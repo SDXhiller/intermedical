@@ -91,8 +91,8 @@ const popularServices: PopularService[] = [
         responseTimeBold: true,
     },
     {
-        title: 'Instalación y puesta en marcha',
-        slug: 'instalacion-y-puesta-en-marcha',
+        title: 'Instalación',
+        slug: 'instalacion',
         image: maintenanceImage('Instalacion y puesta en marca.png'),
         icon: Box,
         features: [
@@ -103,16 +103,16 @@ const popularServices: PopularService[] = [
         responseTime: 'Programado',
     },
     {
-        title: 'Capacitación técnica',
-        slug: 'capacitacion-tecnica',
+        title: 'Diagnóstico',
+        slug: 'diagnostico',
         image: maintenanceImage('capacitacion tecnica.png'),
         icon: GraduationCap,
         features: [
-            'Operación de equipos',
-            'Seguridad y buenas prácticas',
-            'Certificado de capacitación',
+            'Evaluación del equipo',
+            'Origen de la falla',
+            'Alternativas de solución',
         ],
-        responseTime: '1 - 2 días',
+        responseTime: '24 - 48 horas',
     },
 ];
 
@@ -435,14 +435,14 @@ export default function Welcome() {
                                 ¿Qué necesita hoy?
                             </h1>
                             <p className="mt-3 max-w-lg text-sm text-white drop-shadow-sm sm:text-base">
-                                Encuentre equipos, refacciones, servicios,
-                                manuales y soporte técnico.
+                            Encuentre soporte para su equipo de diagnóstico por imagen
+                            Consulte nuestros servicios de mantenimiento, equipos o refacciones
                             </p>
 
                             <GlobalSearchBar
                                 variant="hero"
                                 className="mt-7 w-full max-w-xl sm:mt-8 lg:max-w-2xl"
-                                placeholder="Buscar equipos, modelos, refacciones, manuales..."
+                                placeholder="Buscar servicios, equipos o refacciones"
                             />
 
                         </div>

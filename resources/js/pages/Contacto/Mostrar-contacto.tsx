@@ -11,6 +11,7 @@ import {
     type LucideIcon,
 } from 'lucide-react';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
+import { getMaintenanceServiceBySlug } from '@/data/maintenance-services';
 import { home, mantenimiento } from '@/routes';
 
 type ServicioIcono = 'telefono' | 'soporte' | 'correo' | 'whatsapp';
@@ -281,6 +282,12 @@ export default function MostrarContacto({
             ? `Solicitar ${tipoServicio.nombre.toLowerCase()}`
             : 'Solicitar un servicio';
 
+    const heroDescription =
+        tipoServicio !== null
+            ? (getMaintenanceServiceBySlug(tipoServicio.slug)?.description ??
+              'Consulte nuestros canales de atención y contáctenos directamente. Nuestro equipo le responderá a la brevedad.')
+            : 'Consulte nuestros canales de atención y contáctenos directamente. Nuestro equipo le responderá a la brevedad.';
+
     return (
         <>
             <Head title="Contacto" />
@@ -313,9 +320,7 @@ export default function MostrarContacto({
                             style={{ backgroundColor: BRAND_COLOR }}
                         />
                         <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/90 sm:text-base">
-                            Consulte nuestros canales de atención y contáctenos
-                            directamente. Nuestro equipo le responderá a la
-                            brevedad.
+                            {heroDescription}
                         </p>
                     </div>
                 </div>
@@ -330,16 +335,9 @@ export default function MostrarContacto({
                 >
                     <Link
                         href={home()}
-                        className="inline-flex items-center transition hover:text-[#0a7c4a]"
-                        aria-label="Inicio"
+                        className="inline-flex items-center gap-1.5 transition hover:text-[#0a7c4a]"
                     >
-                        <Home className="size-3.5" />
-                    </Link>
-                    <span aria-hidden="true">›</span>
-                    <Link
-                        href={home()}
-                        className="transition hover:text-[#0a7c4a]"
-                    >
+                        <Home className="size-3.5 shrink-0" />
                         Inicio
                     </Link>
                     <span aria-hidden="true">›</span>
@@ -350,27 +348,13 @@ export default function MostrarContacto({
                         Mantenimiento
                     </Link>
                     <span aria-hidden="true">›</span>
-                    {tipoServicio ? (
-                        <>
-                            <span>Contacto</span>
-                            <span aria-hidden="true">›</span>
-                            <span
-                                className="font-semibold"
-                                style={{ color: BRAND_COLOR }}
-                                aria-current="page"
-                            >
-                                {tipoServicio.nombre}
-                            </span>
-                        </>
-                    ) : (
-                        <span
-                            className="font-semibold"
-                            style={{ color: BRAND_COLOR }}
-                            aria-current="page"
-                        >
-                            Contacto
-                        </span>
-                    )}
+                    <span
+                        className="font-semibold"
+                        style={{ color: BRAND_COLOR }}
+                        aria-current="page"
+                    >
+                        {tipoServicio?.nombre ?? 'Contacto'}
+                    </span>
                 </div>
             </nav>
 

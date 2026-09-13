@@ -77,6 +77,22 @@
             "@types:check",
             "@php artisan test"
         ],
+        "cpanel:build": [
+            "Composer\\Config::disableProcessTimeout",
+            "npm ci",
+            "npm run build"
+        ],
+        "cpanel:optimize": [
+            "@php artisan optimize",
+            "@php artisan storage:link"
+        ],
+        "cpanel:deploy": [
+            "Composer\\Config::disableProcessTimeout",
+            "composer install --no-dev --optimize-autoloader --no-interaction",
+            "@cpanel:build",
+            "@php artisan migrate --force --no-interaction",
+            "@cpanel:optimize"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
