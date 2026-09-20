@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\EquipoModuloFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,7 +34,7 @@ use Illuminate\Support\Str;
  * @property-read Fabricante $fabricante
  * @property-read TipoEquipo $tipoEquipo
  * @property-read Disponibilidad|null $disponibilidad
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Imagen360> $imagenes360
+ * @property-read Collection<int, Imagen360> $imagenes360
  */
 #[Fillable([
     'modulo_id',
@@ -176,6 +177,33 @@ class EquipoModulo extends Model
         }
 
         return '/'.ltrim($this->imagen, '/');
+    }
+
+    /**
+     * Active models formatted for the public header menu.
+     *
+     * @return list<array{name: string, slug: string, image: string|null, hasListing: bool}>
+     */
+    public static function catalogItems(): array
+    {
+        return static::query()
+            ->where('activo', true)
+            ->whereHas(
+                'modulo',
+                fn ($query) => $query->activos(),
+            )
+            ->with(['modulo:id,modulo,slug'])
+            ->orderBy('modelo')
+            ->get(['id', 'modulo_id', 'modelo', 'slug', 'imagen'])
+            ->sortBy(fn (self $equipo): string => ($equipo->modulo?->modulo ?? '').'|'.$equipo->modelo)
+            ->values()
+            ->map(fn (self $equipo): array => [
+                'name' => ($equipo->modulo?->modulo ?? 'Equipo').'/'.$equipo->modelo,
+                'slug' => $equipo->publicSlug(),
+                'image' => $equipo->imageUrl(),
+                'hasListing' => true,
+            ])
+            ->all();
     }
 
     /**

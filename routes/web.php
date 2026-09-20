@@ -11,18 +11,24 @@ use App\Http\Controllers\Admin\MonitoreoController as AdminMonitoreoController;
 use App\Http\Controllers\Admin\ServicioController as AdminServicioController;
 use App\Http\Controllers\Admin\UsuarioController as AdminUsuarioController;
 use App\Http\Controllers\Auth\AdminAuthenticatedSessionController;
+use App\Http\Controllers\BibliotecaEquipoController;
 use App\Http\Controllers\ClienteCotisacionController;
 use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\ModuloController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\SoporteController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 Route::inertia('mantenimiento', 'Mantenimiento/Mantenimiento')->name('mantenimiento');
+Route::get('mantenimiento/soporte', [SoporteController::class, 'show'])
+    ->name('mantenimiento.soporte');
 Route::inertia('sobre-nosotros', 'Empresa/Sobrenosotros')->name('sobre-nosotros');
+Route::get('biblioteca/equipos', [BibliotecaEquipoController::class, 'index'])
+    ->name('biblioteca.equipos');
 Route::get('contacto', [ContactoController::class, 'show'])->name('contacto');
 Route::get('sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('robots.txt', RobotsController::class)->name('robots');

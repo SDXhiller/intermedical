@@ -17,6 +17,7 @@ createInertiaApp({
             case name === 'welcome':
             case name.startsWith('Mantenimiento/'):
             case name.startsWith('Empresa/'):
+            case name.startsWith('Biblioteca/'):
             case name === 'Contacto/Mostrar-contacto':
             case name === 'contacto-inter':
             case name === 'Cliente':

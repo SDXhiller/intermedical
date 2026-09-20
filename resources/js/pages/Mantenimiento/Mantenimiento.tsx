@@ -12,6 +12,7 @@ import {
     type MaintenanceService,
 } from '@/data/maintenance-services';
 import { contacto } from '@/routes';
+import { soporte } from '@/routes/mantenimiento';
 
 const attendedModalities = [
     'Ultrasonido',
@@ -73,8 +74,8 @@ function ServiceCard({ service }: { service: MaintenanceService }) {
             </div>
 
             <Link
-                href={contacto.url({
-                    query: { tipo: service.slug },
+                href={soporte.url({
+                    query: { servicio: service.slug },
                 })}
                 className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
                 style={{ backgroundColor: BRAND_COLOR }}

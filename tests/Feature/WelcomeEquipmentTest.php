@@ -1,12 +1,14 @@
 <?php
 
+use App\Models\EquipoModulo;
 use App\Models\Fabricante;
 use App\Models\Modulo;
 use App\Models\Status;
+use Database\Seeders\StatusSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\StatusSeeder::class);
+    $this->seed(StatusSeeder::class);
 });
 
 test('home shows only active modules from the database', function () {
@@ -35,6 +37,50 @@ test('home shows only active modules from the database', function () {
             ->where('equipmentItems.0.slug', 'ultrasonido')
             ->where('equipmentItems.0.image', '/Imagen/Maquinas/ultrasonido.webp')
             ->where('equipmentItems.0.hasListing', true)
+        );
+});
+
+test('home shares sub equipment items labeled with the modality and model', function () {
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    $inactivo = Status::query()->where('nombre', 'Inactivo')->firstOrFail();
+    $modulo = Modulo::factory()->create([
+        'modulo' => 'Ultrasonido',
+        'slug' => 'ultrasonido',
+        'estatus_id' => $activo->id,
+    ]);
+    $moduloOculto = Modulo::factory()->create([
+        'modulo' => 'Oculto',
+        'slug' => 'oculto',
+        'estatus_id' => $inactivo->id,
+    ]);
+
+    EquipoModulo::factory()->create([
+        'modulo_id' => $modulo->id,
+        'modelo' => 'LOGIQ E',
+        'slug' => 'logiq-e',
+        'imagen' => 'Imagen/Maquinas/logiq.webp',
+        'activo' => true,
+    ]);
+    EquipoModulo::factory()->create([
+        'modulo_id' => $modulo->id,
+        'modelo' => 'Inactivo',
+        'slug' => 'logiq-inactivo',
+        'activo' => false,
+    ]);
+    EquipoModulo::factory()->create([
+        'modulo_id' => $moduloOculto->id,
+        'modelo' => 'Modelo oculto',
+        'slug' => 'modelo-oculto',
+        'activo' => true,
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('subEquipmentItems', 1)
+            ->where('subEquipmentItems.0.name', 'Ultrasonido/LOGIQ E')
+            ->where('subEquipmentItems.0.slug', 'logiq-e')
+            ->where('subEquipmentItems.0.image', '/Imagen/Maquinas/logiq.webp')
         );
 });
 
@@ -123,6 +169,39 @@ test('inactive database modules are not publicly visible', function () {
 
     $this->get(route('modulos.show', $modulo->slug))
         ->assertNotFound();
+});
+
+test('the home hero places the main banner in the imaging solutions panel', function () {
+    $hero = file_get_contents(resource_path('js/pages/welcome.tsx'));
+
+    expect($hero)->not->toBeFalse();
+    expect($hero)
+        ->toContain('Tecnología que impulsa la salud')
+        ->toContain('Soluciones en Imagenología Médica')
+        ->toContain('banner principal.jpg')
+        ->toContain('Conocer nuestros servicios')
+        ->toContain('grid-cols-4')
+        ->toContain('blur-2xl')
+        ->not->toContain('blur-3xl')
+        ->not->toContain('¿Qué necesita hoy?');
+});
+
+test('the home page shows nosotros and mision spotlight cards below the hero', function () {
+    $hero = file_get_contents(resource_path('js/pages/welcome.tsx'));
+
+    expect($hero)
+        ->toContain('NOSOTROS')
+        ->toContain('NUESTRA MISIÓN')
+        ->toContain('/Imagen/Body/Body.png')
+        ->toContain('ChatGPT Image 20 sept 2026, 01_19_34 p.m..png')
+        ->not->toContain('/Imagen/empresa/mision.jpg')
+        ->toContain('Conocer más')
+        ->toContain('Conocer nuestra visión')
+        ->toContain('transparent_46%,black_74%')
+        ->toContain('from-neutral-900')
+        ->toContain('mt-[10px]')
+        ->not->toContain('-mt-4')
+        ->not->toContain('sm:-mt-6');
 });
 
 test('home shows only active manufacturers in the brands carousel', function () {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\EquipoModulo;
 use App\Models\Fabricante;
 use App\Models\Modulo;
 use App\Models\UserAdmin;
@@ -64,6 +65,7 @@ class HandleInertiaRequests extends Middleware
                 'nueva_imagen_360_id' => $request->session()->get('nueva_imagen_360_id'),
             ],
             'equipmentItems' => fn () => Modulo::catalogItems(),
+            'subEquipmentItems' => fn () => EquipoModulo::catalogItems(),
             'manufacturerItems' => fn () => Fabricante::catalogItems(),
         ];
     }

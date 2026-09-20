@@ -22,7 +22,8 @@ class ClienteCotisacionController extends Controller
             ? EquipoModulo::query()
                 ->where('activo', true)
                 ->where('slug', $equipoSlug)
-                ->first(['id', 'slug', 'modelo'])
+                ->with('modulo:id,modulo,slug')
+                ->first(['id', 'slug', 'modelo', 'imagen', 'modulo_id'])
             : null;
 
         return Inertia::render('Cliente', [
@@ -32,6 +33,9 @@ class ClienteCotisacionController extends Controller
                     'id' => $equipoModulo->id,
                     'slug' => $equipoModulo->slug,
                     'nombre' => $equipoModulo->modelo,
+                    'categoria' => $equipoModulo->modulo?->modulo,
+                    'categoria_slug' => $equipoModulo->modulo?->slug,
+                    'imagen' => $equipoModulo->imageUrl(),
                 ],
         ]);
     }

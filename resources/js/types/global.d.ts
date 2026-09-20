@@ -15,6 +15,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             equipmentItems: EquipmentItem[];
+            subEquipmentItems: EquipmentItem[];
             [key: string]: unknown;
         };
     }

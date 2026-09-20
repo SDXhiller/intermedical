@@ -2,31 +2,27 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
     BookOpen,
-    ChevronDown,
     Cog,
     Compass,
     Drill,
     Eye,
     Gem,
-    Import,
+    Home,
+    Layers,
+    Mail,
+    Monitor,
     MonitorSmartphone,
     PackageMinus,
     ScanSearch,
-    Search,
+    Settings,
     Settings2,
     ShieldCheck,
     Target,
+    Users,
     Wrench,
-    X,
     type LucideIcon,
 } from 'lucide-react';
-import {
-    useEffect,
-    useRef,
-    useState,
-    type CSSProperties,
-    type ReactNode,
-} from 'react';
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { GlobalSearchBar } from '@/components/global-search-bar';
 import {
     BRAND_COLOR,
@@ -34,12 +30,45 @@ import {
     type EquipmentItem,
 } from '@/data/equipment';
 import { getMaintenanceServiceBySlug } from '@/data/maintenance-services';
-import { contacto, home, sobreNosotros } from '@/routes';
+import { contacto, home, mantenimiento, sobreNosotros } from '@/routes';
+import { equipos as bibliotecaEquipos } from '@/routes/biblioteca';
 import { index as equiposIndex } from '@/routes/equipos';
+import { show as moduloShow } from '@/routes/modulos';
 
 const MIG_HORIZONTAL_WHITE = '/Imagen/Logos/MIG-horizontal-blanco.png';
 
-const navItems = ['Empresa', 'Servicios', 'Productos', 'Contacto'];
+type MegaMenuKey = 'productos' | 'modalidades' | 'servicios' | 'empresa';
+
+type NavItem = {
+    label: string;
+    href: string;
+    icon: LucideIcon;
+    megaMenu?: MegaMenuKey;
+};
+
+const navItems: NavItem[] = [
+    { label: 'Inicio', href: home.url(), icon: Home },
+    {
+        label: 'Servicios',
+        href: mantenimiento.url(),
+        icon: Settings,
+        megaMenu: 'servicios',
+    },
+    { label: 'Modalidades', href: bibliotecaEquipos.url(), icon: Layers, megaMenu: 'modalidades' },
+    {
+        label: 'Equipos disponibles',
+        href: '#',
+        icon: Monitor,
+        megaMenu: 'productos',
+    },
+    {
+        label: 'Nosotros',
+        href: sobreNosotros.url(),
+        icon: Users,
+        megaMenu: 'empresa',
+    },
+    { label: 'Contacto', href: contacto.url(), icon: Mail },
+];
 
 const empresaSubtitles: {
     title: string;
@@ -178,18 +207,23 @@ const specializedServiceCategories: ServiceCategory[] = [
 
 function MegaMenuEquipmentCard({
     name,
-    slug,
+    href,
     image,
+    cta,
+    onNavigate,
 }: {
     name: string;
-    slug: string;
+    href: string;
     image: string | null;
+    cta: string;
+    onNavigate?: () => void;
 }) {
-    const isLongName = name.length > 22;
+    const isLongName = name.length > 22 || name.includes('/');
 
     return (
         <Link
-            href={equiposIndex.url(slug)}
+            href={href}
+            onClick={onNavigate}
             className="group relative block h-28 overflow-hidden rounded-lg border border-border shadow-sm transition-shadow hover:shadow-md sm:h-32 lg:h-36"
         >
             {image ? (
@@ -208,7 +242,7 @@ function MegaMenuEquipmentCard({
                 style={{ backgroundColor: `${BRAND_COLOR}e6` }}
             >
                 <p
-                    className={`translate-y-3 font-bold leading-tight text-white transition-all duration-300 ease-out group-hover:translate-y-0 ${
+                    className={`translate-y-3 line-clamp-3 font-bold leading-tight text-white transition-all duration-300 ease-out group-hover:translate-y-0 ${
                         isLongName
                             ? 'text-xs sm:text-sm'
                             : 'text-sm sm:text-base lg:text-lg'
@@ -217,7 +251,7 @@ function MegaMenuEquipmentCard({
                     {name}
                 </p>
                 <span className="mt-2 inline-flex translate-y-3 items-center gap-1 text-xs font-medium text-white/95 opacity-0 transition-all delay-100 duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 sm:text-sm">
-                    Ver equipos
+                    {cta}
                     <ArrowRight className="size-3.5" />
                 </span>
             </div>
@@ -337,6 +371,68 @@ function EmpresaMegaMenu({ onNavigate }: { onNavigate?: () => void }) {
     );
 }
 
+function buildCarouselSequence(items: EquipmentItem[]): EquipmentItem[] {
+    if (items.length === 0) {
+        return [];
+    }
+
+    const copies = Math.max(2, Math.ceil(4 / items.length));
+
+    return Array.from({ length: copies }, () => items).flat();
+}
+
+function SubEquipmentCarousel({
+    items,
+    onNavigate,
+}: {
+    items: EquipmentItem[];
+    onNavigate?: () => void;
+}) {
+    const sequence = useMemo(() => buildCarouselSequence(items), [items]);
+    const loop = useMemo(() => [...sequence, ...sequence], [sequence]);
+    const durationSeconds = Math.max(28, sequence.length * 6);
+
+    if (items.length === 0) {
+        return (
+            <p className="text-sm text-muted-foreground">
+                Aún no hay sub equipos publicados.
+            </p>
+        );
+    }
+
+    return (
+        <div
+            className="@container group/carousel relative overflow-hidden"
+            style={
+                {
+                    '--equipment-marquee-duration': `${durationSeconds}s`,
+                } as CSSProperties
+            }
+        >
+            <div
+                className="flex w-max gap-4 motion-safe:animate-equipment-marquee group-hover/carousel:[animation-play-state:paused] md:gap-7"
+                aria-label="Carrusel de equipos disponibles"
+            >
+                {loop.map((item, index) => (
+                    <div
+                        key={`${item.slug}-${index}`}
+                        className="w-[calc((100cqw-1rem)/2)] shrink-0 sm:w-[calc((100cqw-2rem)/3)] md:w-[calc((100cqw-5.25rem)/4)]"
+                        aria-hidden={index >= sequence.length}
+                    >
+                        <MegaMenuEquipmentCard
+                            name={item.name}
+                            href={moduloShow.url(item.slug)}
+                            image={item.image}
+                            cta="Ver equipo"
+                            onNavigate={onNavigate}
+                        />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 function SpecializedServicesMegaMenu({
     onNavigate,
 }: {
@@ -381,67 +477,19 @@ function SpecializedServicesMegaMenu({
 }
 
 export default function SiteHeader() {
-    const { equipmentItems } = usePage<{
+    const { equipmentItems, subEquipmentItems } = usePage<{
         equipmentItems: EquipmentItem[];
+        subEquipmentItems: EquipmentItem[];
     }>().props;
-    const [activeMegaMenu, setActiveMegaMenu] = useState<
-        'productos' | 'servicios' | 'empresa' | null
-    >(null);
-    const [searchOpen, setSearchOpen] = useState(false);
-    const searchContainerRef = useRef<HTMLDivElement>(null);
-    const searchInputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        if (searchOpen) {
-            searchInputRef.current?.focus();
-        }
-    }, [searchOpen]);
-
-    useEffect(() => {
-        if (!searchOpen) {
-            return;
-        }
-
-        const onPointerDown = (event: MouseEvent) => {
-            const target = event.target;
-
-            if (!(target instanceof Node)) {
-                return;
-            }
-
-            if (searchContainerRef.current?.contains(target)) {
-                return;
-            }
-
-            if (
-                target instanceof Element &&
-                target.closest('[data-global-search-dropdown]')
-            ) {
-                return;
-            }
-
-            setSearchOpen(false);
-        };
-
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                setSearchOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', onPointerDown);
-        document.addEventListener('keydown', onKeyDown);
-
-        return () => {
-            document.removeEventListener('mousedown', onPointerDown);
-            document.removeEventListener('keydown', onKeyDown);
-        };
-    }, [searchOpen]);
+    const [activeMegaMenu, setActiveMegaMenu] = useState<MegaMenuKey | null>(
+        null,
+    );
+    const closeMegaMenu = () => setActiveMegaMenu(null);
 
     return (
         <div className="sticky top-0 z-[100] isolate overflow-visible">
             <header
-                className="relative overflow-visible border-b border-border bg-background"
+                className="relative overflow-visible border-b border-white/10 bg-neutral-950"
                 onMouseLeave={() => setActiveMegaMenu(null)}
             >
                 <div
@@ -459,106 +507,79 @@ export default function SiteHeader() {
                         />
                     </Link>
 
-                    <nav className="hidden items-center gap-6 lg:flex">
-                        {navItems.map((item) =>
-                            item === 'Contacto' ? (
+                    <nav className="hidden items-center gap-2.5 lg:flex xl:gap-4">
+                        {navItems.map((item) => {
+                            const Icon = item.icon;
+                            const className =
+                                'inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-white/80 transition hover:text-[#0a7c4a]';
+                            const onMouseEnter = () =>
+                                setActiveMegaMenu(item.megaMenu ?? null);
+                            const label = (
+                                <>
+                                    <Icon
+                                        className="size-4 shrink-0"
+                                        strokeWidth={1.75}
+                                    />
+                                    {item.label}
+                                </>
+                            );
+
+                            if (item.href === '#') {
+                                return (
+                                    <a
+                                        key={item.label}
+                                        href="#"
+                                        className={className}
+                                        onMouseEnter={onMouseEnter}
+                                    >
+                                        {label}
+                                    </a>
+                                );
+                            }
+
+                            return (
                                 <Link
-                                    key={item}
-                                    href={contacto()}
-                                    className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 transition hover:text-[#0a7c4a]"
-                                    onMouseEnter={() =>
-                                        setActiveMegaMenu(null)
-                                    }
+                                    key={item.label}
+                                    href={item.href}
+                                    className={className}
+                                    onMouseEnter={onMouseEnter}
                                 >
-                                    {item}
+                                    {label}
                                 </Link>
-                            ) : (
-                                <a
-                                    key={item}
-                                    href="#"
-                                    className="inline-flex items-center gap-1 text-sm font-medium text-foreground/80 transition hover:text-[#0a7c4a]"
-                                    onMouseEnter={() => {
-                                        if (item === 'Productos') {
-                                            setActiveMegaMenu('productos');
-                                        } else if (item === 'Servicios') {
-                                            setActiveMegaMenu('servicios');
-                                        } else if (item === 'Empresa') {
-                                            setActiveMegaMenu('empresa');
-                                        } else {
-                                            setActiveMegaMenu(null);
-                                        }
-                                    }}
-                                >
-                                    {item}
-                                    {(item === 'Productos' ||
-                                        item === 'Servicios' ||
-                                        item === 'Empresa') && (
-                                        <ChevronDown className="size-3.5" />
-                                    )}
-                                </a>
-                            ),
-                        )}
+                            );
+                        })}
                     </nav>
 
-                    <div className="flex items-center gap-3 overflow-visible">
-                        <div
-                            ref={searchContainerRef}
-                            className="relative flex items-center justify-end overflow-visible"
-                        >
-                            <GlobalSearchBar
-                                variant="compact"
-                                active={searchOpen}
-                                inputRef={searchInputRef}
-                                onAfterNavigate={() => setSearchOpen(false)}
-                                aria-hidden={!searchOpen}
-                                className={`transition-all duration-300 ease-out ${
-                                    searchOpen
-                                        ? 'mr-2 w-44 opacity-100 sm:w-56 md:w-72'
-                                        : 'pointer-events-none w-0 opacity-0'
-                                }`}
-                                placeholder="Buscar equipos, servicios, contactos..."
-                            />
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setSearchOpen((open) => !open)
-                                }
-                                className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-[#0a7c4a]/10 hover:text-[#0a7c4a]"
-                                aria-label={
-                                    searchOpen
-                                        ? 'Cerrar búsqueda'
-                                        : 'Abrir búsqueda'
-                                }
-                                aria-expanded={searchOpen}
-                            >
-                                {searchOpen ? (
-                                    <X className="size-5" />
-                                ) : (
-                                    <Search className="size-5" />
-                                )}
-                            </button>
-                        </div>
+                    <div className="flex min-w-0 items-center justify-end overflow-visible">
+                        <GlobalSearchBar
+                            variant="compact"
+                            className="w-48 sm:w-56 lg:w-64 xl:w-80"
+                            placeholder="Buscar equipo, refacción o servicio..."
+                        />
                     </div>
                 </div>
 
-                {activeMegaMenu === 'productos' && (
+                {activeMegaMenu === 'modalidades' && (
                     <div className="absolute inset-x-0 top-full border-b border-border bg-background shadow-lg">
                         <div className={`mx-auto ${CONTENT_WIDTH} py-8`}>
                             <div className="min-w-0">
                                 <h3 className="mb-4 text-xs font-bold tracking-wider text-muted-foreground">
-                                    EQUIPOS MÉDICOS
+                                    MODALIDADES
                                 </h3>
                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
                                     {equipmentItems.map((item) => (
                                         <MegaMenuEquipmentCard
                                             key={item.slug}
                                             name={item.name}
-                                            slug={item.slug}
+                                            href={equiposIndex.url(item.slug)}
                                             image={item.image}
+                                            cta="Ver equipos"
+                                            onNavigate={closeMegaMenu}
                                         />
                                     ))}
-                                    <a
-                                        href="#"
+                                    <Link
+                                        href={bibliotecaEquipos()}
+                                        onClick={closeMegaMenu}
                                         className="flex flex-col justify-center gap-2 rounded-lg border border-dashed border-[#0a7c4a]/25 bg-[#0a7c4a]/10 p-3 dark:bg-[#0a7c4a]/20"
                                     >
                                         <BookOpen
@@ -567,14 +588,30 @@ export default function SiteHeader() {
                                         />
                                         <div>
                                             <p className="text-sm font-semibold text-foreground">
-                                                Biblioteca
+                                                Ver todas
                                             </p>
                                             <p className="text-xs text-muted-foreground">
-                                                Manuales y documentación
+                                                Tipos de equipos
                                             </p>
                                         </div>
-                                    </a>
+                                    </Link>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeMegaMenu === 'productos' && (
+                    <div className="absolute inset-x-0 top-full border-b border-border bg-background shadow-lg">
+                        <div className={`mx-auto ${CONTENT_WIDTH} py-8`}>
+                            <div className="min-w-0">
+                                <h3 className="mb-4 text-xs font-bold tracking-wider text-muted-foreground">
+                                    EQUIPOS DISPONIBLES
+                                </h3>
+                                <SubEquipmentCarousel
+                                    items={subEquipmentItems}
+                                    onNavigate={closeMegaMenu}
+                                />
                             </div>
                         </div>
                     </div>
@@ -584,7 +621,7 @@ export default function SiteHeader() {
                     <div className="absolute inset-x-0 top-full border-b border-border bg-background shadow-lg">
                         <div className={`mx-auto ${CONTENT_WIDTH} py-8`}>
                             <SpecializedServicesMegaMenu
-                                onNavigate={() => setActiveMegaMenu(null)}
+                                onNavigate={closeMegaMenu}
                             />
                         </div>
                     </div>
@@ -594,7 +631,7 @@ export default function SiteHeader() {
                     <div className="absolute inset-x-0 top-full border-b border-border bg-background shadow-lg">
                         <div className={`mx-auto ${CONTENT_WIDTH} py-8`}>
                             <EmpresaMegaMenu
-                                onNavigate={() => setActiveMegaMenu(null)}
+                                onNavigate={closeMegaMenu}
                             />
                         </div>
                     </div>

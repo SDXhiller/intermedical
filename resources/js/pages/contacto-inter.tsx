@@ -1,16 +1,30 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
     Building2,
     Clock3,
     Headphones,
+    Home,
     Mail,
     MapPin,
     Phone,
+    ShieldCheck,
+    type LucideIcon,
 } from 'lucide-react';
 import ContactoOfficeMap from '@/components/contacto-office-map';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
+import { home } from '@/routes';
 
+const CONTACT_HERO_IMAGE = `/Imagen/empresa/${encodeURIComponent('ChatGPT Image 20 sept 2026, 01_19_34 p.m..png')}`;
 const contactAvatar = '/Imagen/logoicono/MIG.png';
+
+const heroHighlights: {
+    title: string;
+    icon: LucideIcon;
+}[] = [
+    { title: 'Atención especializada', icon: Headphones },
+    { title: 'Respuesta oportuna', icon: Clock3 },
+    { title: 'Acompañamiento en todo el proceso', icon: ShieldCheck },
+];
 
 const adminContacts = [
     {
@@ -49,46 +63,90 @@ const officeLng = -99.0865657;
 
 const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${officeLat},${officeLng}`;
 
-function maintenanceImage(filename: string): string {
-    return `/Imagen/Mantenimiento/${encodeURIComponent(filename)}`;
-}
-
 export default function ContactoInter() {
     return (
         <>
             <Head title="Contacto" />
 
-            <section className="relative min-h-[300px] overflow-hidden sm:min-h-[340px] lg:min-h-[380px]">
-                <img
-                    src={maintenanceImage('Mantenimeinto.png')}
-                    alt=""
-                    className="absolute inset-0 size-full object-cover object-center"
-                    aria-hidden="true"
-                />
-                <div className="absolute inset-0 bg-slate-950/78" />
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/65 to-slate-950/35" />
-
+            <section className="relative overflow-hidden bg-neutral-950">
                 <div
-                    className={`relative mx-auto flex min-h-[inherit] ${CONTENT_WIDTH} max-w-6xl items-center py-12 sm:py-14`}
+                    className={`relative mx-auto grid items-center gap-8 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10 lg:py-14 ${CONTENT_WIDTH}`}
                 >
-                    <div className="max-w-2xl">
-                        <p
-                            className="text-xs font-bold tracking-[0.14em] uppercase sm:text-sm"
-                            style={{ color: BRAND_COLOR }}
+                    <div className="relative z-10">
+                        <nav
+                            aria-label="Breadcrumb"
+                            className="flex flex-wrap items-center gap-1.5 text-xs text-white/70 sm:text-sm"
                         >
-                            Contacto general
-                        </p>
-                        <h1 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.6rem] lg:leading-tight">
-                            Hablemos, estamos para servirle
+                            <Link
+                                href={home()}
+                                className="inline-flex items-center gap-1.5 transition hover:text-white"
+                            >
+                                <Home className="size-3.5 shrink-0" />
+                                Inicio
+                            </Link>
+                            <span aria-hidden="true">›</span>
+                            <span
+                                className="font-semibold text-white"
+                                aria-current="page"
+                            >
+                                Contacto
+                            </span>
+                        </nav>
+
+                        <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.25rem] lg:leading-tight">
+                            Contacto
                         </h1>
+                        <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
+                            Estamos listos para atender tus necesidades en
+                            imagenología médica. Elige la forma de contacto que
+                            prefieras y cuéntanos cómo podemos ayudarte.
+                        </p>
+
+                        <ul className="mt-7 grid gap-3 sm:grid-cols-3 sm:gap-4">
+                            {heroHighlights.map(({ title, icon: Icon }) => (
+                                <li
+                                    key={title}
+                                    className="flex items-start gap-2.5"
+                                >
+                                    <span
+                                        className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full text-white"
+                                        style={{
+                                            backgroundColor: BRAND_COLOR,
+                                        }}
+                                    >
+                                        <Icon
+                                            className="size-4"
+                                            strokeWidth={1.75}
+                                        />
+                                    </span>
+                                    <span className="text-xs font-medium leading-snug text-white sm:text-[13px]">
+                                        {title}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div className="relative min-h-[220px] overflow-hidden sm:min-h-[260px] lg:min-h-[320px]">
                         <div
-                            className="mt-4 h-1 w-14 rounded-full"
-                            style={{ backgroundColor: BRAND_COLOR }}
-                        />
-                        <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/90 sm:text-base">
-                            Póngase en contacto con nuestros encargados
-                            administrativos o directivos para asuntos generales,
-                            información comercial, alianzas y procesos internos.
+                            className="pointer-events-none absolute inset-0"
+                            aria-hidden="true"
+                        >
+                            <img
+                                src={CONTACT_HERO_IMAGE}
+                                alt=""
+                                className="absolute inset-0 size-full scale-110 object-cover object-right opacity-50 blur-2xl [mask-image:linear-gradient(to_right,transparent_8%,black_42%)] [-webkit-mask-image:linear-gradient(to_right,transparent_8%,black_42%)]"
+                            />
+                            <img
+                                src={CONTACT_HERO_IMAGE}
+                                alt="Resonancia magnética cerebral"
+                                className="absolute inset-0 size-full object-cover object-right [mask-image:linear-gradient(to_right,transparent_12%,black_48%)] [-webkit-mask-image:linear-gradient(to_right,transparent_12%,black_48%)]"
+                            />
+                            <div className="absolute inset-y-0 left-0 w-[42%] bg-gradient-to-r from-neutral-950 from-20% via-neutral-950/75 via-70% to-transparent" />
+                        </div>
+
+                        <p className="relative z-10 max-w-[15.5rem] pt-10 text-xl font-semibold leading-snug text-white sm:pt-14 sm:text-2xl lg:pt-16">
+                            “Tecnología y servicio al servicio de la vida”
                         </p>
                     </div>
                 </div>
@@ -118,7 +176,9 @@ export default function ContactoInter() {
                                         src={contactAvatar}
                                         alt=""
                                         className="size-20 shrink-0 rounded-lg object-cover object-center sm:size-24"
-                                        style={{ backgroundColor: BRAND_COLOR }}
+                                        style={{
+                                            backgroundColor: BRAND_COLOR,
+                                        }}
                                         aria-hidden="true"
                                     />
                                     <div className="min-w-0">

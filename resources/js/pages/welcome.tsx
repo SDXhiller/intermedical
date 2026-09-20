@@ -1,31 +1,33 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
-    Box,
+    Building2,
     CircleCheck,
     Clock,
     Cog,
     Drill,
-    GraduationCap,
+    Headphones,
+    MonitorSmartphone,
+    PackageMinus,
+    ScanSearch,
+    Settings,
+    Settings2,
+    ShieldCheck,
+    Target,
+    Users,
     Wrench,
     type LucideIcon,
 } from 'lucide-react';
 import { useMemo, type CSSProperties, type ReactNode } from 'react';
-import { GlobalSearchBar } from '@/components/global-search-bar';
 import {
     BRAND_COLOR,
     CONTENT_WIDTH,
     type EquipmentItem,
     type ManufacturerItem,
 } from '@/data/equipment';
-import { contacto, sobreNosotros } from '@/routes';
+import { maintenanceServices } from '@/data/maintenance-services';
+import { contacto, mantenimiento, sobreNosotros } from '@/routes';
 import { index as equiposIndex } from '@/routes/equipos';
-
-const MIG_HORIZONTAL_ORIGINAL = '/Imagen/Logos/MIG-horizontal-original.png';
-
-function maintenanceImage(filename: string): string {
-    return `/Imagen/Mantenimiento/${encodeURIComponent(filename)}`;
-}
 
 function CorrectiveMaintenanceIcon({
     className,
@@ -55,137 +57,201 @@ function CorrectiveMaintenanceIcon({
 type PopularService = {
     title: string;
     slug: string;
-    image: string;
     icon?: LucideIcon;
     customIcon?: ReactNode;
     features: string[];
-    responseTime: string;
-    responseTimeBold?: boolean;
 };
 
-const popularServices: PopularService[] = [
-    {
-        title: 'Mantenimiento preventivo',
-        slug: 'mantenimiento-preventivo',
-        image: maintenanceImage('Mantenimeinto preventivo.png'),
+const serviceVisuals: Record<
+    string,
+    { icon?: LucideIcon; customIcon?: ReactNode }
+> = {
+    'mantenimiento-preventivo': {
         icon: Cog,
-        features: ['Revisión general', 'Calibración', 'Limpieza y ajustes'],
-        responseTime: '24 - 48 horas',
     },
-    {
-        title: 'Mantenimiento correctivo',
-        slug: 'mantenimiento-correctivo',
-        image: maintenanceImage('mantenimiento correctivo.png'),
+    'mantenimiento-correctivo': {
         customIcon: (
             <CorrectiveMaintenanceIcon
                 className="size-5"
                 style={{ color: 'white' }}
             />
         ),
-        features: [
-            'Diagnóstico especializado',
-            'Reparación de fallas',
-            'Refacciones originales',
-        ],
-        responseTime: 'Según diagnóstico',
-        responseTimeBold: true,
     },
-    {
-        title: 'Instalación',
-        slug: 'instalacion',
-        image: maintenanceImage('Instalacion y puesta en marca.png'),
-        icon: Box,
-        features: [
-            'Configuración completa',
-            'Pruebas de funcionamiento',
-            'Capacitación básica',
-        ],
-        responseTime: 'Programado',
+    diagnostico: {
+        icon: ScanSearch,
     },
-    {
-        title: 'Diagnóstico',
-        slug: 'diagnostico',
-        image: maintenanceImage('capacitacion tecnica.png'),
-        icon: GraduationCap,
-        features: [
-            'Evaluación del equipo',
-            'Origen de la falla',
-            'Alternativas de solución',
-        ],
-        responseTime: '24 - 48 horas',
+    'renta-de-equipos-medicos': {
+        icon: MonitorSmartphone,
     },
+    instalacion: {
+        icon: Settings2,
+    },
+    desinstalacion: {
+        icon: PackageMinus,
+    },
+    'puesta-en-marcha': {
+        icon: ShieldCheck,
+    },
+};
+
+const popularServices: PopularService[] = maintenanceServices.map((service) => {
+    const visual = serviceVisuals[service.slug] ?? {
+        icon: Cog,
+    };
+
+    return {
+        title: service.title,
+        slug: service.slug,
+        features: service.features,
+        ...visual,
+    };
+});
+
+const HERO_BANNER = `/Imagen/Body/${encodeURIComponent('banner principal.jpg')}`;
+const NOSOTROS_IMAGE = '/Imagen/Body/Body.png';
+const MISION_IMAGE = `/Imagen/empresa/${encodeURIComponent('ChatGPT Image 20 sept 2026, 01_19_34 p.m..png')}`;
+
+const heroHighlights: {
+    title: string;
+    icon: LucideIcon;
+}[] = [
+    { title: 'Mantenimiento especializado', icon: Wrench },
+    { title: 'Instalación y puesta en marcha', icon: Settings },
+    { title: 'Capacitación', icon: Users },
+    { title: 'Soporte técnico', icon: Headphones },
 ];
+
+function HomeSpotlightCard({
+    title,
+    description,
+    href,
+    action,
+    image,
+    icon: Icon,
+}: {
+    title: string;
+    description: string;
+    href: string;
+    action: string;
+    image: string;
+    icon: LucideIcon;
+}) {
+    return (
+        <article className="relative isolate min-h-[168px] overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 sm:min-h-[188px]">
+            <div
+                className="pointer-events-none absolute inset-0 hidden sm:block"
+                aria-hidden="true"
+            >
+                <img
+                    src={image}
+                    alt=""
+                    className="absolute inset-0 size-full scale-110 object-cover object-right opacity-50 blur-2xl [mask-image:linear-gradient(to_right,transparent_38%,black_68%)] [-webkit-mask-image:linear-gradient(to_right,transparent_38%,black_68%)]"
+                />
+                <img
+                    src={image}
+                    alt=""
+                    className="absolute inset-0 size-full object-cover object-right [mask-image:linear-gradient(to_right,transparent_46%,black_74%)] [-webkit-mask-image:linear-gradient(to_right,transparent_46%,black_74%)]"
+                />
+                <div className="absolute inset-y-0 left-0 w-[68%] bg-gradient-to-r from-neutral-900 from-42% via-neutral-900/80 via-72% to-transparent" />
+            </div>
+            <div className="relative z-10 flex min-w-0 max-w-[62%] items-start gap-3 p-5 sm:gap-4 sm:p-6">
+                <span
+                    className="flex size-11 shrink-0 items-center justify-center rounded-full text-white"
+                    style={{ backgroundColor: BRAND_COLOR }}
+                >
+                    <Icon className="size-5" strokeWidth={1.75} />
+                </span>
+                <div className="min-w-0">
+                    <h2 className="text-sm font-bold tracking-wide text-white sm:text-base">
+                        {title}
+                    </h2>
+                    <p className="mt-1.5 text-xs leading-relaxed text-white/75 sm:text-sm">
+                        {description}
+                    </p>
+                    <Link
+                        href={href}
+                        className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-white transition hover:opacity-80"
+                    >
+                        {action}
+                        <ArrowRight
+                            className="size-4"
+                            style={{ color: BRAND_COLOR }}
+                        />
+                    </Link>
+                </div>
+            </div>
+        </article>
+    );
+}
+
+function FeatureItem({ feature }: { feature: string }) {
+    return (
+        <div className="flex min-w-0 items-start gap-2 text-xs leading-snug text-muted-foreground sm:text-sm">
+            <CircleCheck
+                className="mt-0.5 size-4 shrink-0"
+                style={{ color: BRAND_COLOR }}
+                strokeWidth={2}
+            />
+            <span>{feature}</span>
+        </div>
+    );
+}
 
 function PopularServiceCard({
     title,
     slug,
-    image,
     icon: Icon,
     customIcon,
     features,
-    responseTime,
-    responseTimeBold = false,
 }: PopularService) {
+    const [firstFeature, secondFeature, thirdFeature] = features;
+
     return (
         <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-4 opacity-75 transition-opacity hover:opacity-100 focus-within:opacity-100 active:opacity-100 dark:border-neutral-800 dark:bg-neutral-900 sm:p-5">
-            <div className="flex gap-4">
-                <div className="relative shrink-0">
-                    <img
-                        src={image}
-                        alt={title}
-                        className="h-28 w-32 rounded-lg object-cover object-center sm:h-32 sm:w-36"
-                    />
-                    <div
-                        className="absolute -bottom-2 -right-2 flex size-10 items-center justify-center rounded-full text-white shadow-md"
-                        style={{ backgroundColor: BRAND_COLOR }}
-                    >
-                        {customIcon ??
-                            (Icon && (
-                                <Icon className="size-5" strokeWidth={1.75} />
-                            ))}
-                    </div>
-                </div>
-
-                <div className="min-w-0 flex-1">
-                    <h3 className="text-base font-bold leading-snug text-gray-900 dark:text-white sm:text-lg">
-                        {title}
-                    </h3>
-                    <ul className="mt-3 space-y-1.5">
-                        {features.map((feature) => (
-                            <li
-                                key={feature}
-                                className="flex items-start gap-2 text-xs leading-snug text-muted-foreground sm:text-sm"
-                            >
-                                <CircleCheck
-                                    className="mt-0.5 size-4 shrink-0"
-                                    style={{ color: BRAND_COLOR }}
-                                    strokeWidth={2}
-                                />
-                                {feature}
-                            </li>
+            <div className="flex items-center gap-2.5">
+                <div
+                    className="flex size-10 shrink-0 items-center justify-center rounded-full text-white shadow-md"
+                    style={{ backgroundColor: BRAND_COLOR }}
+                >
+                    {customIcon ??
+                        (Icon && (
+                            <Icon className="size-5" strokeWidth={1.75} />
                         ))}
-                    </ul>
-                    <div className="mt-3">
-                        <p className="text-xs text-muted-foreground">
-                            Tiempo de respuesta
-                        </p>
-                        <p
-                            className={`mt-0.5 flex items-center gap-1.5 text-sm text-gray-900 dark:text-white ${responseTimeBold ? 'font-bold' : 'font-semibold'}`}
-                        >
-                            <Clock
-                                className="size-4 shrink-0"
-                                style={{ color: BRAND_COLOR }}
-                                strokeWidth={1.75}
-                            />
-                            {responseTime}
-                        </p>
-                    </div>
+                </div>
+                <span
+                    className="shrink-0 text-sm font-semibold"
+                    style={{ color: BRAND_COLOR }}
+                    aria-hidden="true"
+                >
+                    -
+                </span>
+                <h3 className="min-w-0 text-base font-bold leading-snug text-gray-900 dark:text-white sm:text-lg">
+                    {title}
+                </h3>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3">
+                {firstFeature && <FeatureItem feature={firstFeature} />}
+                {secondFeature && <FeatureItem feature={secondFeature} />}
+                {thirdFeature && <FeatureItem feature={thirdFeature} />}
+                <div>
+                    <p className="text-xs text-muted-foreground">
+                        Tiempo de respuesta
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
+                        <Clock
+                            className="size-4 shrink-0"
+                            style={{ color: BRAND_COLOR }}
+                            strokeWidth={1.75}
+                        />
+                        -
+                    </p>
                 </div>
             </div>
 
             <Link
                 href={contacto.url({ query: { tipo: slug } })}
-                className="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-lg border-2 px-4 py-2.5 text-sm font-semibold transition hover:bg-[#0a7c4a]/5"
+                className="mt-auto inline-flex w-full items-center justify-center gap-1 rounded-lg border-2 px-4 py-2.5 text-sm font-semibold transition hover:bg-[#0a7c4a]/5"
                 style={{ borderColor: BRAND_COLOR, color: BRAND_COLOR }}
             >
                 Solicitar servicio
@@ -414,47 +480,118 @@ export default function Welcome() {
             <Head title="Medical Imaging Group" />
 
             {/* Hero */}
-            <section className="relative min-h-[440px] overflow-visible sm:min-h-[480px] lg:min-h-[700px]">
-                <div className="absolute inset-0 overflow-hidden">
+            <section className="relative overflow-hidden bg-neutral-950">
+                <div
+                    className="pointer-events-none absolute inset-0"
+                    aria-hidden="true"
+                >
                     <img
-                        src="/Imagen/Body/Body.png"
+                        src={HERO_BANNER}
                         alt=""
-                        className="absolute inset-0 size-full object-cover object-[70%_center] lg:object-right"
-                        aria-hidden="true"
+                        className="absolute inset-0 size-full scale-110 object-cover object-[center_70%] opacity-50 blur-2xl [mask-image:linear-gradient(to_right,transparent_18%,black_48%,black_82%,transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent_18%,black_48%,black_82%,transparent)]"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/30 via-white/10 to-transparent dark:from-black/60 dark:via-black/35 dark:to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-slate-900/40 via-slate-900/15 to-transparent dark:from-black/70 dark:via-black/45 dark:to-black/20" />
+                    <img
+                        src={HERO_BANNER}
+                        alt=""
+                        className="absolute inset-0 size-full object-cover object-[center_70%] [mask-image:linear-gradient(to_right,transparent_32%,black_58%,black_86%,transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent_32%,black_58%,black_86%,transparent)]"
+                    />
+                    <div className="absolute inset-y-0 left-0 w-[46%] bg-gradient-to-r from-neutral-950 from-40% via-neutral-950/70 via-70% to-transparent" />
+                    <div className="absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-neutral-950 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-neutral-950 to-transparent" />
                 </div>
 
                 <div
-                    className={`relative z-10 mx-auto flex min-h-[440px] flex-col justify-end pb-14 pt-10 sm:min-h-[480px] sm:pb-16 sm:pt-12 lg:min-h-[700px] lg:pb-20 ${CONTENT_WIDTH}`}
+                    className={`relative z-10 mx-auto grid items-center gap-8 py-12 sm:py-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)] lg:gap-6 lg:py-16 ${CONTENT_WIDTH}`}
                 >
-                    <div className="grid w-full items-center gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-10">
-                        <div className="max-w-3xl">
-                            <h1 className="text-2xl font-bold text-white drop-shadow-md sm:text-3xl lg:text-[2.5rem] lg:leading-tight">
-                                ¿Qué necesita hoy?
+                    <div className="relative z-10">
+                        <div className="max-w-xl">
+                            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
+                                Tecnología que impulsa la salud
                             </h1>
-                            <p className="mt-3 max-w-lg text-sm text-white drop-shadow-sm sm:text-base">
-                            Encuentre soporte para su equipo de diagnóstico por imagen
-                            Consulte nuestros servicios de mantenimiento, equipos o refacciones
+                            <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/80 sm:text-base">
+                                En Medical Imaging Group ofrecemos soluciones
+                                integrales en equipamiento médico, mantenimiento,
+                                instalación y soporte especializado en
+                                imagenología.
                             </p>
-
-                            <GlobalSearchBar
-                                variant="hero"
-                                className="mt-7 w-full max-w-xl sm:mt-8 lg:max-w-2xl"
-                                placeholder="Buscar servicios, equipos o refacciones"
-                            />
-
                         </div>
 
-                        <div className="flex items-center justify-center lg:translate-x-[18px] lg:-translate-y-[74px] lg:justify-center xl:translate-x-[2px] xl:-translate-y-[130px]">
-                            <img
-                                src={MIG_HORIZONTAL_ORIGINAL}
-                                alt="Medical Imaging Group"
-                                className="h-auto w-full max-w-[280px] object-contain drop-shadow-[0_0_18px_rgba(255,255,255,0.85)] sm:max-w-[340px] lg:max-w-[400px]"
-                            />
+                        <ul className="mt-8 grid grid-cols-4 items-start gap-3 sm:gap-4">
+                            {heroHighlights.map(({ title, icon: Icon }) => (
+                                <li
+                                    key={title}
+                                    className="flex min-w-0 flex-col items-start gap-2"
+                                >
+                                    <span
+                                        className="flex size-9 shrink-0 items-center justify-center rounded-full text-white sm:size-10"
+                                        style={{ backgroundColor: BRAND_COLOR }}
+                                    >
+                                        <Icon
+                                            className="size-4 sm:size-5"
+                                            strokeWidth={1.75}
+                                        />
+                                    </span>
+                                    <span className="text-[11px] font-medium leading-snug text-white sm:text-xs">
+                                        {title}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <Link
+                            href={mantenimiento()}
+                            className="mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                            style={{ backgroundColor: BRAND_COLOR }}
+                        >
+                            Conocer nuestros servicios
+                            <ArrowRight className="size-4" />
+                        </Link>
+                    </div>
+
+                    <div className="relative z-10 flex min-h-[220px] items-end justify-end sm:min-h-[280px] lg:min-h-[420px] lg:items-center">
+                        <img
+                            src={HERO_BANNER}
+                            alt="Equipo de imagenología médica"
+                            className="sr-only"
+                        />
+                        <div className="w-full max-w-[15.5rem] pb-2 lg:pb-0 xl:max-w-[17rem]">
+                            <h2 className="text-2xl font-bold leading-tight text-white sm:text-[1.7rem]">
+                                Soluciones en Imagenología Médica
+                            </h2>
+                            <p
+                                className="mt-3 text-sm font-medium"
+                                style={{ color: BRAND_COLOR }}
+                            >
+                                Equipos · Servicios · Soporte
+                            </p>
+                            <p className="mt-4 text-sm italic leading-relaxed text-white/85">
+                                “Comprometidos con el diagnóstico y la vida”
+                            </p>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <section className="relative z-20 mt-[10px] bg-neutral-950 pb-8 sm:pb-10">
+                <div
+                    className={`mx-auto grid gap-4 sm:gap-5 lg:grid-cols-2 ${CONTENT_WIDTH}`}
+                >
+                    <HomeSpotlightCard
+                        title="NOSOTROS"
+                        description="Conoce nuestra historia, experiencia y el equipo de profesionales que hacen posible Medical Imaging Group."
+                        href={sobreNosotros.url()}
+                        action="Conocer más"
+                        image={NOSOTROS_IMAGE}
+                        icon={Building2}
+                    />
+                    <HomeSpotlightCard
+                        title="NUESTRA MISIÓN"
+                        description="Brindar soluciones en imagenología médica con excelencia, compromiso y un enfoque en la mejora continua."
+                        href={`${sobreNosotros.url()}#vision`}
+                        action="Conocer nuestra visión"
+                        image={MISION_IMAGE}
+                        icon={Target}
+                    />
                 </div>
             </section>
 
@@ -644,10 +781,10 @@ export default function Welcome() {
                         style={{ backgroundColor: BRAND_COLOR }}
                     />
 
-                    <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+                    <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
                         {popularServices.map((service) => (
                             <PopularServiceCard
-                                key={service.title}
+                                key={service.slug}
                                 {...service}
                             />
                         ))}

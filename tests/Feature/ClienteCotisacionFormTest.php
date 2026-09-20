@@ -4,10 +4,11 @@ use App\Models\ClienteCotisacion;
 use App\Models\EquipoModulo;
 use App\Models\Modulo;
 use App\Models\Status;
+use Database\Seeders\StatusSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\StatusSeeder::class);
+    $this->seed(StatusSeeder::class);
 });
 
 test('public quote form page is accessible', function () {
@@ -17,6 +18,28 @@ test('public quote form page is accessible', function () {
             ->component('Cliente')
             ->where('equipo', null)
         );
+});
+
+test('the public quote form uses the same contact hero visualization', function () {
+    $page = file_get_contents(resource_path('js/pages/Cliente.tsx'));
+
+    expect($page)->not->toBeFalse();
+    expect($page)
+        ->toContain('ChatGPT Image 20 sept 2026, 01_19_34 p.m..png')
+        ->toContain('Tecnología y servicio al servicio de la vida')
+        ->toContain('Atención especializada')
+        ->toContain('Estamos listos para atender tus necesidades')
+        ->not->toContain('Formulario público')
+        ->not->toContain('ChatGPT Image 28 ago 2026, 02_20_15 p.m..png')
+        ->toContain('Tu solicitud')
+        ->toContain('¿Cómo deseas contactarnos?')
+        ->toContain('Contáctanos por WhatsApp')
+        ->toContain('WhatsApp no está habilitado por el momento')
+        ->toContain('contacto@medicalimaging.com.mx')
+        ->toContain('disabled')
+        ->not->toContain('Regresar')
+        ->toContain('equiposIndex.url')
+        ->toContain('moduloShow.url');
 });
 
 test('public quote form page resolves equipment from slug query string', function () {
@@ -36,6 +59,8 @@ test('public quote form page resolves equipment from slug query string', functio
             ->where('equipo.id', $equipo->id)
             ->where('equipo.slug', 'ultrasonido-gbp')
             ->where('equipo.nombre', 'Ultrasonido GBP')
+            ->where('equipo.categoria', $modulo->modulo)
+            ->where('equipo.categoria_slug', $modulo->slug)
         );
 });
 

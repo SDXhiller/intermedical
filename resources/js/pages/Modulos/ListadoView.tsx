@@ -1,12 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
 import {
-    ChevronLeft,
-    ChevronRight,
-    ChevronsRight,
     CircleCheck,
     Layers,
     Package,
-    Scale,
     Search,
     ShoppingCart,
     Tag,
@@ -100,15 +96,7 @@ function uniqueValues(values: string[]): string[] {
     return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
-function ProductCard({
-    product,
-    selected,
-    onToggleCompare,
-}: {
-    product: Product;
-    selected: boolean;
-    onToggleCompare: () => void;
-}) {
+function ProductCard({ product }: { product: Product }) {
     const color = placeholderColorFor(product.slug);
     const hasImage = product.image.trim() !== '';
 
@@ -120,15 +108,6 @@ function ProductCard({
                         <StatusBadge status={product.status} />
                     </div>
                 ) : null}
-                <label className="absolute right-5 top-5 z-10 flex size-5 cursor-pointer items-center justify-center rounded border border-gray-300 bg-white dark:border-neutral-600 dark:bg-neutral-800">
-                    <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={onToggleCompare}
-                        className="size-3 accent-[#0a7c4a]"
-                        aria-label={`Comparar ${product.name}`}
-                    />
-                </label>
                 <div
                     className="relative flex aspect-[4/3] items-end overflow-hidden rounded-lg"
                     style={
@@ -202,7 +181,6 @@ function ProductCard({
 
 export default function ListadoView({ category, products }: ListadoProps) {
     const [search, setSearch] = useState('');
-    const [compareIds, setCompareIds] = useState<string[]>([]);
 
     const brandOptions = useMemo(
         () => uniqueValues(products.map((product) => product.brand)),
@@ -243,18 +221,6 @@ export default function ListadoView({ category, products }: ListadoProps) {
             );
         });
     }, [products, search]);
-
-    function toggleValue<T extends string>(
-        value: T,
-        current: T[],
-        setter: (next: T[]) => void,
-    ): void {
-        setter(
-            current.includes(value)
-                ? current.filter((item) => item !== value)
-                : [...current, value],
-        );
-    }
 
     const stats = [
         {
@@ -413,8 +379,8 @@ export default function ListadoView({ category, products }: ListadoProps) {
                     </div>
                 </section>
 
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <div className="relative flex-1">
+                <div className="mt-6">
+                    <div className="relative">
                         <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <input
                             type="search"
@@ -424,13 +390,6 @@ export default function ListadoView({ category, products }: ListadoProps) {
                             className="w-full rounded-full border border-gray-200 bg-white py-3 pr-4 pl-11 text-sm outline-none focus:border-[#0a7c4a]/50 dark:border-neutral-700 dark:bg-neutral-900"
                         />
                     </div>
-                    <button
-                        type="button"
-                        className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-gray-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                    >
-                        <Scale className="size-4" />
-                        Comparar equipos ({compareIds.length})
-                    </button>
                 </div>
 
                 <div className="mt-8">
@@ -458,14 +417,6 @@ export default function ListadoView({ category, products }: ListadoProps) {
                             <ProductCard
                                 key={product.slug}
                                 product={product}
-                                selected={compareIds.includes(product.slug)}
-                                onToggleCompare={() =>
-                                    toggleValue(
-                                        product.slug,
-                                        compareIds,
-                                        setCompareIds,
-                                    )
-                                }
                             />
                         ))}
                     </div>
@@ -480,55 +431,6 @@ export default function ListadoView({ category, products }: ListadoProps) {
                             </p>
                         </div>
                     )}
-
-                    <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-6 sm:flex-row dark:border-neutral-800">
-                        <p className="text-sm text-muted-foreground">
-                            Mostrando 1 a {filteredProducts.length} de{' '}
-                            {products.length} resultados
-                        </p>
-                        <div className="flex items-center gap-1">
-                            <button
-                                type="button"
-                                className="inline-flex size-9 items-center justify-center rounded-md border border-gray-200 text-muted-foreground dark:border-neutral-700"
-                                aria-label="Anterior"
-                            >
-                                <ChevronLeft className="size-4" />
-                            </button>
-                            <button
-                                type="button"
-                                className="inline-flex size-9 items-center justify-center rounded-md text-sm font-semibold text-white"
-                                style={{ backgroundColor: BRAND_COLOR }}
-                            >
-                                1
-                            </button>
-                            <button
-                                type="button"
-                                className="inline-flex size-9 items-center justify-center rounded-md border border-gray-200 text-sm text-muted-foreground dark:border-neutral-700"
-                            >
-                                2
-                            </button>
-                            <button
-                                type="button"
-                                className="inline-flex size-9 items-center justify-center rounded-md border border-gray-200 text-sm text-muted-foreground dark:border-neutral-700"
-                            >
-                                3
-                            </button>
-                            <button
-                                type="button"
-                                className="inline-flex size-9 items-center justify-center rounded-md border border-gray-200 text-muted-foreground dark:border-neutral-700"
-                                aria-label="Siguiente"
-                            >
-                                <ChevronRight className="size-4" />
-                            </button>
-                            <button
-                                type="button"
-                                className="inline-flex size-9 items-center justify-center rounded-md border border-gray-200 text-muted-foreground dark:border-neutral-700"
-                                aria-label="Última página"
-                            >
-                                <ChevronsRight className="size-4" />
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </>

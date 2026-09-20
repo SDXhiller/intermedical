@@ -442,9 +442,16 @@ export function GlobalSearchBar({
                                 }
                             }}
                             placeholder={placeholder}
-                            className="h-9 w-full rounded-full border border-border bg-background px-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-[#0a7c4a] focus:ring-2 focus:ring-[#0a7c4a]/20"
+                            className="h-10 w-full rounded-full border border-white/20 bg-white/10 py-2 pl-4 pr-11 text-sm text-white outline-none transition placeholder:text-white/55 focus:border-[#0a7c4a] focus:ring-2 focus:ring-[#0a7c4a]/20"
                             autoComplete="off"
                         />
+                        <button
+                            type="submit"
+                            className="absolute right-1 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-white/70 transition hover:text-[#0a7c4a]"
+                            aria-label="Buscar"
+                        >
+                            <Search className="size-4" />
+                        </button>
                     </form>
                 </div>
 

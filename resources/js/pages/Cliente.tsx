@@ -1,5 +1,20 @@
 import { Form, Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, FileText, MapPin } from 'lucide-react';
+import {
+    CheckCircle2,
+    Clock3,
+    Copy,
+    FileText,
+    Headphones,
+    Home,
+    Mail,
+    MapPin,
+    MessageCircle,
+    Monitor,
+    Pencil,
+    Send,
+    ShieldCheck,
+    type LucideIcon,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ClienteCoordenadasModal, {
     formatCoordenadas,
@@ -17,8 +32,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
+import { useClipboard } from '@/hooks/use-clipboard';
 import { home } from '@/routes';
 import { store as clienteCotisacionStore } from '@/routes/cliente-cotisacion';
+import { index as equiposIndex } from '@/routes/equipos';
 import { show as moduloShow } from '@/routes/modulos';
 
 type PageProps = {
@@ -26,6 +43,9 @@ type PageProps = {
         id: number;
         slug: string;
         nombre: string;
+        categoria: string | null;
+        categoria_slug: string | null;
+        imagen: string | null;
     } | null;
     flash?: {
         success?: string | null;
@@ -34,11 +54,28 @@ type PageProps = {
     };
 };
 
-const HERO_IMAGE = `/Imagen/Body/${encodeURIComponent('ChatGPT Image 28 ago 2026, 02_20_15 p.m..png')}`;
+const CONTACT_HERO_IMAGE = `/Imagen/empresa/${encodeURIComponent('ChatGPT Image 20 sept 2026, 01_19_34 p.m..png')}`;
+const CONTACT_EMAIL = 'contacto@medicalimaging.com.mx';
+
+const heroHighlights: {
+    title: string;
+    icon: LucideIcon;
+}[] = [
+    { title: 'Atención especializada', icon: Headphones },
+    { title: 'Respuesta oportuna', icon: Clock3 },
+    { title: 'Acompañamiento en todo el proceso', icon: ShieldCheck },
+];
 
 export default function Cliente() {
     const { equipo, flash } = usePage<PageProps>().props;
+    const [copiedEmail, copyEmail] = useClipboard();
+    const cambiarSeleccionHref = equipo?.categoria_slug
+        ? equiposIndex.url(equipo.categoria_slug)
+        : home();
     const regresarHref = equipo ? moduloShow.url(equipo.slug) : home();
+    const whatsappPreview = equipo
+        ? `Hola, me interesa solicitar una cotización del siguiente equipo:\nEquipo: ${equipo.categoria ?? 'Equipo médico'}\nModelo: ${equipo.nombre}\nMotivo: Cotización de equipo\n¿Podrían brindarme más información?`
+        : 'Hola, me interesa solicitar una cotización.\nMotivo: Cotización de equipo\n¿Podrían brindarme más información?';
     const [coordenadas, setCoordenadas] = useState<Coordenadas | null>(null);
     const [mapOpen, setMapOpen] = useState(false);
     const [successModalOpen, setSuccessModalOpen] = useState(false);
@@ -71,43 +108,200 @@ export default function Cliente() {
         <>
             <Head title="Solicitar cotización" />
 
-            <section className="relative h-[250px] overflow-hidden">
-                <img
-                    src={HERO_IMAGE}
-                    alt=""
-                    className="absolute inset-0 size-full object-cover object-center"
-                    aria-hidden="true"
-                />
-                <div className="absolute inset-0 bg-white/45" />
-                <div className="absolute inset-0 bg-gradient-to-r from-white/75 via-white/45 to-white/20" />
-
+            <section className="relative overflow-hidden bg-neutral-950">
                 <div
-                    className={`relative mx-auto flex h-full ${CONTENT_WIDTH} max-w-6xl items-center py-6`}
+                    className={`relative mx-auto grid items-center gap-8 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10 lg:py-14 ${CONTENT_WIDTH}`}
                 >
-                    <div className="max-w-2xl">
-                        <p
-                            className="text-xs font-bold tracking-[0.14em] uppercase sm:text-sm"
-                            style={{ color: BRAND_COLOR }}
+                    <div className="relative z-10">
+                        <nav
+                            aria-label="Breadcrumb"
+                            className="flex flex-wrap items-center gap-1.5 text-xs text-white/70 sm:text-sm"
                         >
-                            Formulario público
-                        </p>
-                        <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-                            Solicitar cotización
+                            <Link
+                                href={home()}
+                                className="inline-flex items-center gap-1.5 transition hover:text-white"
+                            >
+                                <Home className="size-3.5 shrink-0" />
+                                Inicio
+                            </Link>
+                            {equipo?.categoria_slug && equipo.categoria ? (
+                                <>
+                                    <span aria-hidden="true">›</span>
+                                    <Link
+                                        href={equiposIndex.url(
+                                            equipo.categoria_slug,
+                                        )}
+                                        className="max-w-[9rem] truncate transition hover:text-white"
+                                    >
+                                        {equipo.categoria}
+                                    </Link>
+                                </>
+                            ) : null}
+                            {equipo ? (
+                                <>
+                                    <span aria-hidden="true">›</span>
+                                    <Link
+                                        href={moduloShow.url(equipo.slug)}
+                                        className="max-w-[11rem] truncate transition hover:text-white"
+                                    >
+                                        {equipo.nombre}
+                                    </Link>
+                                </>
+                            ) : null}
+                            <span aria-hidden="true">›</span>
+                            <span
+                                className="font-semibold text-white"
+                                aria-current="page"
+                            >
+                                Contacto
+                            </span>
+                        </nav>
+
+                        <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.25rem] lg:leading-tight">
+                            Contacto
                         </h1>
+                        <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
+                            Estamos listos para atender tus necesidades en
+                            imagenología médica. Elige la forma de contacto que
+                            prefieras y cuéntanos cómo podemos ayudarte.
+                        </p>
+
+                        <ul className="mt-7 grid gap-3 sm:grid-cols-3 sm:gap-4">
+                            {heroHighlights.map(({ title, icon: Icon }) => (
+                                <li
+                                    key={title}
+                                    className="flex items-start gap-2.5"
+                                >
+                                    <span
+                                        className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full text-white"
+                                        style={{
+                                            backgroundColor: BRAND_COLOR,
+                                        }}
+                                    >
+                                        <Icon
+                                            className="size-4"
+                                            strokeWidth={1.75}
+                                        />
+                                    </span>
+                                    <span className="text-xs font-medium leading-snug text-white sm:text-[13px]">
+                                        {title}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div className="relative min-h-[220px] overflow-hidden sm:min-h-[260px] lg:min-h-[320px]">
                         <div
-                            className="mt-3 h-1 w-14 rounded-full"
-                            style={{ backgroundColor: BRAND_COLOR }}
-                        />
-                        <p className="mt-3 max-w-xl text-sm leading-relaxed text-gray-700">
-                            Complete sus datos para que nuestro equipo comercial
-                            prepare una propuesta personalizada.
+                            className="pointer-events-none absolute inset-0"
+                            aria-hidden="true"
+                        >
+                            <img
+                                src={CONTACT_HERO_IMAGE}
+                                alt=""
+                                className="absolute inset-0 size-full scale-110 object-cover object-right opacity-50 blur-2xl [mask-image:linear-gradient(to_right,transparent_8%,black_42%)] [-webkit-mask-image:linear-gradient(to_right,transparent_8%,black_42%)]"
+                            />
+                            <img
+                                src={CONTACT_HERO_IMAGE}
+                                alt="Resonancia magnética cerebral"
+                                className="absolute inset-0 size-full object-cover object-right [mask-image:linear-gradient(to_right,transparent_12%,black_48%)] [-webkit-mask-image:linear-gradient(to_right,transparent_12%,black_48%)]"
+                            />
+                            <div className="absolute inset-y-0 left-0 w-[42%] bg-gradient-to-r from-neutral-950 from-20% via-neutral-950/75 via-70% to-transparent" />
+                        </div>
+
+                        <p className="relative z-10 max-w-[15.5rem] pt-10 text-xl font-semibold leading-snug text-white sm:pt-14 sm:text-2xl lg:pt-16">
+                            “Tecnología y servicio al servicio de la vida”
                         </p>
                     </div>
                 </div>
             </section>
 
             <section className="bg-white py-6 dark:bg-neutral-950 lg:py-8">
-                <div className={`mx-auto ${CONTENT_WIDTH} max-w-3xl`}>
+                <div className={`mx-auto ${CONTENT_WIDTH} max-w-6xl`}>
+                    <article className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-6">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="flex min-w-0 items-start gap-3">
+                                <span
+                                    className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#0a7c4a]/10"
+                                    style={{ color: BRAND_COLOR }}
+                                >
+                                    <FileText
+                                        className="size-5"
+                                        strokeWidth={1.75}
+                                    />
+                                </span>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-bold tracking-wide text-gray-900 uppercase dark:text-white">
+                                        Tu solicitud
+                                    </p>
+                                    <p className="mt-0.5 text-sm text-muted-foreground">
+                                        Estás solicitando información sobre:
+                                    </p>
+                                    <div className="mt-3 flex items-center gap-3">
+                                        {equipo?.imagen ? (
+                                            <img
+                                                src={equipo.imagen}
+                                                alt=""
+                                                className="size-14 shrink-0 rounded-lg object-cover"
+                                            />
+                                        ) : (
+                                            <span className="flex size-14 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-muted-foreground dark:bg-neutral-800">
+                                                <Monitor className="size-6" />
+                                            </span>
+                                        )}
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-gray-900 dark:text-white">
+                                                {equipo?.categoria ??
+                                                    'Equipo médico'}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Modelo:{' '}
+                                                {equipo?.nombre ??
+                                                    'Sin equipo seleccionado'}
+                                            </p>
+                                            <p
+                                                className="text-sm font-medium"
+                                                style={{ color: BRAND_COLOR }}
+                                            >
+                                                Cotización de equipo
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:flex-col lg:items-end">
+                                <Link
+                                    href={cambiarSeleccionHref}
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 text-sm font-semibold transition hover:bg-[#0a7c4a]/5"
+                                    style={{
+                                        borderColor: BRAND_COLOR,
+                                        color: BRAND_COLOR,
+                                    }}
+                                >
+                                    <Pencil className="size-4" />
+                                    Cambiar selección
+                                </Link>
+                                <p className="max-w-xs text-xs leading-relaxed text-muted-foreground lg:text-right">
+                                    Si esta información no es correcta, puedes
+                                    modificarla o seleccionar otro equipo desde
+                                    el menú.
+                                </p>
+                            </div>
+                        </div>
+                    </article>
+
+                    <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                            ¿Cómo deseas contactarnos?
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            Puedes elegir una o ambas opciones. Nuestro equipo
+                            te atenderá lo antes posible.
+                        </p>
+                    </div>
+
+                    <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-8">
                         <div className="flex items-start gap-3">
                             <span
@@ -117,11 +311,12 @@ export default function Cliente() {
                                 <FileText className="size-5" strokeWidth={1.75} />
                             </span>
                             <div>
-                                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                                    Datos del cliente
-                                </h2>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                    Envíanos un mensaje
+                                </h3>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    Todos los campos son obligatorios.
+                                    Completa el formulario y nuestro equipo te
+                                    contactará.
                                 </p>
                             </div>
                         </div>
@@ -147,17 +342,7 @@ export default function Cliente() {
                             {({ processing, errors }) => (
                                 <>
                                     {equipo && (
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="equipo_solicitado">
-                                                Equipo solicitado
-                                            </Label>
-                                            <Input
-                                                id="equipo_solicitado"
-                                                value={equipo.nombre}
-                                                readOnly
-                                                tabIndex={-1}
-                                                className="cursor-default bg-gray-50 text-gray-900 dark:bg-neutral-800 dark:text-white"
-                                            />
+                                        <>
                                             <input
                                                 type="hidden"
                                                 name="equipo_modulo_id"
@@ -166,7 +351,7 @@ export default function Cliente() {
                                             <InputError
                                                 message={errors.equipo_modulo_id}
                                             />
-                                        </div>
+                                        </>
                                     )}
 
                                     <div className="grid gap-2">
@@ -370,30 +555,116 @@ export default function Cliente() {
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                        <Link
-                                            href={regresarHref}
-                                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-900 transition hover:border-[#0a7c4a]/40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white sm:w-auto"
-                                        >
-                                            <ArrowLeft className="size-4" />
-                                            Regresar
-                                        </Link>
-                                        <button
-                                            type="submit"
-                                            disabled={processing}
-                                            className="inline-flex w-full items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                                            style={{
-                                                backgroundColor: BRAND_COLOR,
-                                            }}
-                                        >
-                                            {processing
-                                                ? 'Enviando...'
-                                                : 'Enviar solicitud'}
-                                        </button>
-                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                                        style={{
+                                            backgroundColor: BRAND_COLOR,
+                                        }}
+                                    >
+                                        <Send className="size-4" />
+                                        {processing
+                                            ? 'Enviando...'
+                                            : 'Enviar solicitud'}
+                                    </button>
                                 </>
                             )}
                         </Form>
+                    </div>
+
+                    <div className="flex flex-col gap-6">
+                        <article className="rounded-2xl border border-[#0a7c4a]/25 bg-[#0a7c4a]/5 p-6 dark:border-[#0a7c4a]/30 dark:bg-[#0a7c4a]/10 sm:p-7">
+                            <div className="flex items-start gap-3">
+                                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white">
+                                    <MessageCircle
+                                        className="size-5"
+                                        strokeWidth={1.75}
+                                    />
+                                </span>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                        Contáctanos por WhatsApp
+                                    </h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Habla directamente con nuestro equipo.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p className="mt-4 text-sm text-muted-foreground">
+                                Se abrirá el número oficial de MIG con un
+                                mensaje prellenado con la información de tu
+                                solicitud.
+                            </p>
+
+                            <div className="mt-4 rounded-xl border border-white/10 bg-white p-4 text-sm leading-relaxed text-gray-700 dark:bg-neutral-950 dark:text-white/80">
+                                {whatsappPreview.split('\n').map((line, index) => (
+                                    <p key={`${index}-${line}`}>{line}</p>
+                                ))}
+                            </div>
+
+                            <button
+                                type="button"
+                                disabled
+                                aria-disabled="true"
+                                title="WhatsApp no está disponible por el momento"
+                                className="mt-5 inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-semibold text-white opacity-50"
+                            >
+                                <MessageCircle className="size-4" />
+                                Abrir WhatsApp
+                            </button>
+                            <p className="mt-2 text-center text-xs text-muted-foreground">
+                                WhatsApp no está habilitado por el momento.
+                            </p>
+                        </article>
+
+                        <article className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-7">
+                            <div className="flex items-start gap-3">
+                                <span
+                                    className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#0a7c4a]/10"
+                                    style={{ color: BRAND_COLOR }}
+                                >
+                                    <Mail
+                                        className="size-5"
+                                        strokeWidth={1.75}
+                                    />
+                                </span>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                        También puedes escribirnos
+                                    </h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Si prefieres, envíanos un correo
+                                        directamente.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-3 dark:border-neutral-700">
+                                <a
+                                    href={`mailto:${CONTACT_EMAIL}`}
+                                    className="truncate text-sm font-semibold"
+                                    style={{ color: BRAND_COLOR }}
+                                >
+                                    {CONTACT_EMAIL}
+                                </a>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        void copyEmail(CONTACT_EMAIL);
+                                    }}
+                                    className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                                    aria-label="Copiar correo"
+                                >
+                                    <Copy className="size-4" />
+                                    {copiedEmail === CONTACT_EMAIL
+                                        ? 'Copiado'
+                                        : null}
+                                </button>
+                            </div>
+                        </article>
+                    </div>
                     </div>
                 </div>
             </section>

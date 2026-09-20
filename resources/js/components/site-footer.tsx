@@ -3,13 +3,18 @@ import { Mail, Phone, type LucideProps } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { contacto, home, mantenimiento, sobreNosotros } from '@/routes';
+import { equipos as bibliotecaEquipos } from '@/routes/biblioteca';
 
 const MIG_HORIZONTAL_WHITE = '/Imagen/Logos/MIG-horizontal-blanco.png';
 
 const serviceLinks = [
-    { label: 'Mantenimiento preventivo', href: mantenimiento.url() },
-    { label: 'Sobre nosotros', href: sobreNosotros.url() },
-    { label: 'Contacto', href: contacto.url() },
+    { label: 'Mantenimiento', href: mantenimiento.url() },
+    { label: 'Equipos', href: bibliotecaEquipos.url() },
+] as const;
+
+const empresaLinks = [
+    { label: 'Conócenos', href: sobreNosotros.url() },
+    { label: 'Contáctanos', href: contacto.url() },
 ] as const;
 
 function FacebookIcon({ className, style, strokeWidth = 1.75 }: LucideProps) {
@@ -77,18 +82,18 @@ const socialLinks: {
 }[] = [
     {
         label: 'Facebook',
-        href: 'https://www.facebook.com/',
+        href: 'https://www.facebook.com/share/1DBpkizaoD/',
         icon: FacebookIcon,
     },
     {
-        label: 'Instagram',
-        href: 'https://www.instagram.com/',
-        icon: InstagramIcon,
+        label: 'LinkedIn',
+        href: 'https://www.linkedin.com/company/medical_imaging.com.mx/',
+        icon: LinkedInIcon,
     },
     {
-        label: 'LinkedIn',
-        href: 'https://www.linkedin.com/',
-        icon: LinkedInIcon,
+        label: 'Instagram',
+        href: 'https://www.instagram.com/medicalimagingroup.com.mx?igsh=MTlhc2EycmxvZmxsMg==',
+        icon: InstagramIcon,
     },
 ];
 
@@ -125,6 +130,27 @@ export default function SiteFooter() {
                         C. Nte. 182 520, Pensador Mexicano, Venustiano Carranza,
                         15510, Ciudad de México, CDMX.
                     </p>
+                    <div>
+                        <ul className="flex items-center gap-3">
+                            {socialLinks.map(({ label, href, icon: Icon }) => (
+                                <li key={label}>
+                                    <a
+                                        href={href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label={label}
+                                        className="inline-flex size-10 items-center justify-center rounded-full border border-[#0a7c4a]/30 transition hover:bg-[#0a7c4a]/10"
+                                        style={{ color: BRAND_COLOR }}
+                                    >
+                                        <Icon
+                                            className="size-5"
+                                            strokeWidth={1.75}
+                                        />
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 </div>
 
                 <div>
@@ -147,21 +173,17 @@ export default function SiteFooter() {
 
                 <div>
                     <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                        Conoce mas sobre nosotros
+                        Empresa
                     </h3>
-                    <ul className="mt-4 flex items-center gap-3">
-                        {socialLinks.map(({ label, href, icon: Icon }) => (
+                    <ul className="mt-4 space-y-2.5">
+                        {empresaLinks.map(({ label, href }) => (
                             <li key={label}>
-                                <a
+                                <Link
                                     href={href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label={label}
-                                    className="inline-flex size-10 items-center justify-center rounded-full border border-[#0a7c4a]/30 transition hover:bg-[#0a7c4a]/10"
-                                    style={{ color: BRAND_COLOR }}
+                                    className="text-sm text-muted-foreground transition hover:text-[#0a7c4a]"
                                 >
-                                    <Icon className="size-5" strokeWidth={1.75} />
-                                </a>
+                                    {label}
+                                </Link>
                             </li>
                         ))}
                     </ul>
