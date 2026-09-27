@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import {
     Building2,
     Clock3,
@@ -11,6 +11,7 @@ import {
     type LucideIcon,
 } from 'lucide-react';
 import ContactoOfficeMap from '@/components/contacto-office-map';
+import { SiteBreadcrumb } from '@/components/site-breadcrumb';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { home } from '@/routes';
 
@@ -73,25 +74,12 @@ export default function ContactoInter() {
                     className={`relative mx-auto grid items-center gap-8 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10 lg:py-14 ${CONTENT_WIDTH}`}
                 >
                     <div className="relative z-10">
-                        <nav
-                            aria-label="Breadcrumb"
-                            className="flex flex-wrap items-center gap-1.5 text-xs text-white/70 sm:text-sm"
-                        >
-                            <Link
-                                href={home()}
-                                className="inline-flex items-center gap-1.5 transition hover:text-white"
-                            >
-                                <Home className="size-3.5 shrink-0" />
-                                Inicio
-                            </Link>
-                            <span aria-hidden="true">›</span>
-                            <span
-                                className="font-semibold text-white"
-                                aria-current="page"
-                            >
-                                Contacto
-                            </span>
-                        </nav>
+                        <SiteBreadcrumb
+                            items={[
+                                { label: 'Inicio', href: home.url(), icon: Home },
+                                { label: 'Contacto', icon: Mail },
+                            ]}
+                        />
 
                         <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.25rem] lg:leading-tight">
                             Contacto
@@ -144,10 +132,6 @@ export default function ContactoInter() {
                             />
                             <div className="absolute inset-y-0 left-0 w-[42%] bg-gradient-to-r from-neutral-950 from-20% via-neutral-950/75 via-70% to-transparent" />
                         </div>
-
-                        <p className="relative z-10 max-w-[15.5rem] pt-10 text-xl font-semibold leading-snug text-white sm:pt-14 sm:text-2xl lg:pt-16">
-                            “Tecnología y servicio al servicio de la vida”
-                        </p>
                     </div>
                 </div>
             </section>

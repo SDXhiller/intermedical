@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import {
     CircleCheck,
+    Home,
     Layers,
     Package,
     Search,
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { show as moduloShow } from '@/actions/App/Http/Controllers/ModuloController';
+import { SiteBreadcrumb } from '@/components/site-breadcrumb';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { home } from '@/routes';
 import { create as clienteCotisacionCreate } from '@/routes/cliente-cotisacion';
@@ -109,7 +111,7 @@ function ProductCard({ product }: { product: Product }) {
                     </div>
                 ) : null}
                 <div
-                    className="relative flex aspect-[4/3] items-end overflow-hidden rounded-lg"
+                    className="relative flex aspect-[4/3] items-end overflow-hidden rounded-lg bg-white dark:bg-neutral-800"
                     style={
                         hasImage
                             ? undefined
@@ -121,7 +123,7 @@ function ProductCard({ product }: { product: Product }) {
                         <img
                             src={product.image}
                             alt={product.name}
-                            className="absolute inset-0 size-full object-cover"
+                            className="absolute inset-0 size-full object-contain object-center"
                         />
                     ) : null}
                     <div
@@ -159,7 +161,7 @@ function ProductCard({ product }: { product: Product }) {
                 <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-3 dark:border-neutral-800 sm:flex-row">
                     <Link
                         href={moduloShow.url(product.slug)}
-                        className="inline-flex flex-1 items-center justify-center rounded-lg border-2 px-3 py-2 text-xs font-semibold transition hover:bg-[#0a7c4a]/5"
+                        className="inline-flex w-full flex-1 items-center justify-center rounded-lg border-2 px-3 py-2.5 text-xs font-semibold transition hover:bg-[#0a7c4a]/5 sm:py-2"
                         style={{ borderColor: BRAND_COLOR, color: BRAND_COLOR }}
                     >
                         Ver equipo
@@ -168,7 +170,7 @@ function ProductCard({ product }: { product: Product }) {
                         href={clienteCotisacionCreate.url({
                             query: { equipo: product.slug },
                         })}
-                        className="inline-flex flex-1 items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90"
+                        className="inline-flex w-full flex-1 items-center justify-center rounded-lg px-3 py-2.5 text-xs font-semibold text-white transition hover:opacity-90 sm:py-2"
                         style={{ backgroundColor: BRAND_COLOR }}
                     >
                         Solicitar cotización
@@ -255,25 +257,22 @@ export default function ListadoView({ category, products }: ListadoProps) {
         <>
             <Head title={category.plural_title} />
 
-            <div className={`mx-auto ${CONTENT_WIDTH} py-6 lg:py-8`}>
-                <nav className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-                    <Link href={home()} className="hover:text-[#0a7c4a]">
-                        Inicio
-                    </Link>
-                    <span>/</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
-                        {category.name}
-                    </span>
-                </nav>
+            <div className={`mx-auto ${CONTENT_WIDTH} py-5 sm:py-6 lg:py-8`}>
+                <SiteBreadcrumb
+                    items={[
+                        { label: 'Inicio', href: home.url(), icon: Home },
+                        { label: category.name, icon: Layers },
+                    ]}
+                />
 
-                <section className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+                <section className="mt-5 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 sm:mt-6">
                     <div className="grid gap-0 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-                        <div className="relative min-h-56 overflow-hidden bg-neutral-100 dark:bg-neutral-800 lg:min-h-[22rem]">
+                        <div className="relative h-52 overflow-hidden bg-white dark:bg-neutral-800 sm:h-64 lg:h-auto lg:min-h-[22rem]">
                             {category.image ? (
                                 <img
                                     src={category.image}
                                     alt={category.name}
-                                    className="size-full object-cover object-center"
+                                    className="size-full object-contain object-center lg:object-cover"
                                 />
                             ) : (
                                 <div
@@ -287,8 +286,8 @@ export default function ListadoView({ category, products }: ListadoProps) {
                             )}
                         </div>
 
-                        <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-                            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
+                        <div className="flex flex-col justify-center p-4 sm:p-8 lg:p-10">
+                            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
                                 {category.name}
                             </h1>
                             <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
@@ -298,25 +297,25 @@ export default function ListadoView({ category, products }: ListadoProps) {
                             </p>
 
                             <div
-                                className={`mt-6 grid gap-3 ${
+                                className={`mt-5 grid gap-2 sm:mt-6 sm:gap-3 ${
                                     ENABLE_EQUIPO_ESTADO
-                                        ? 'grid-cols-2 sm:grid-cols-4'
-                                        : 'grid-cols-3'
+                                        ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+                                        : 'grid-cols-1 sm:grid-cols-3'
                                 }`}
                             >
                                 {stats.map((stat) => (
                                     <div
                                         key={stat.label}
-                                        className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-3 dark:border-neutral-800 dark:bg-neutral-950/60"
+                                        className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3 dark:border-neutral-800 dark:bg-neutral-950/60 sm:flex-col sm:items-start sm:gap-1.5"
                                     >
-                                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                                            <stat.icon className="size-3.5 shrink-0 text-[#0a7c4a]" />
-                                            <span className="leading-tight">
+                                        <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-col sm:items-start sm:gap-1.5">
+                                            <stat.icon className="size-4 shrink-0 text-[#0a7c4a] sm:size-3.5" />
+                                            <span className="text-xs leading-tight text-muted-foreground sm:text-[11px]">
                                                 {stat.label}
                                             </span>
                                         </div>
                                         <p
-                                            className={`mt-1.5 text-sm font-bold sm:text-base ${
+                                            className={`shrink-0 text-lg font-bold sm:mt-0.5 sm:text-base ${
                                                 stat.highlight
                                                     ? 'text-[#0a7c4a]'
                                                     : stat.waiting
@@ -338,39 +337,43 @@ export default function ListadoView({ category, products }: ListadoProps) {
 
                             {(applicationOptions.length > 0 ||
                                 technologyOptions.length > 0) && (
-                                <div className="mt-6 space-y-3 border-t border-gray-100 pt-5 dark:border-neutral-800">
+                                <div className="mt-5 space-y-4 border-t border-gray-100 pt-5 dark:border-neutral-800 sm:mt-6 sm:space-y-3">
                                     {applicationOptions.length > 0 && (
-                                        <div className="flex flex-wrap items-start gap-2">
-                                            <span className="pt-0.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                        <div className="flex flex-col gap-2">
+                                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                                                 Aplicaciones
                                             </span>
-                                            {applicationOptions
-                                                .slice(0, 6)
-                                                .map((item) => (
-                                                    <span
-                                                        key={item}
-                                                        className="rounded-full border border-gray-200 px-2.5 py-1 text-xs text-gray-700 dark:border-neutral-700 dark:text-gray-300"
-                                                    >
-                                                        {item}
-                                                    </span>
-                                                ))}
+                                            <div className="flex flex-wrap gap-2">
+                                                {applicationOptions
+                                                    .slice(0, 6)
+                                                    .map((item) => (
+                                                        <span
+                                                            key={item}
+                                                            className="rounded-full border border-gray-200 px-2.5 py-1 text-xs text-gray-700 dark:border-neutral-700 dark:text-gray-300"
+                                                        >
+                                                            {item}
+                                                        </span>
+                                                    ))}
+                                            </div>
                                         </div>
                                     )}
                                     {technologyOptions.length > 0 && (
-                                        <div className="flex flex-wrap items-start gap-2">
-                                            <span className="pt-0.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                        <div className="flex flex-col gap-2">
+                                            <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                                                 Tecnología
                                             </span>
-                                            {technologyOptions
-                                                .slice(0, 6)
-                                                .map((item) => (
-                                                    <span
-                                                        key={item}
-                                                        className="rounded-full border border-[#0a7c4a]/25 bg-[#0a7c4a]/10 px-2.5 py-1 text-xs font-medium text-[#0a7c4a]"
-                                                    >
-                                                        {item}
-                                                    </span>
-                                                ))}
+                                            <div className="flex flex-wrap gap-2">
+                                                {technologyOptions
+                                                    .slice(0, 6)
+                                                    .map((item) => (
+                                                        <span
+                                                            key={item}
+                                                            className="rounded-full border border-[#0a7c4a]/25 bg-[#0a7c4a]/10 px-2.5 py-1 text-xs font-medium text-[#0a7c4a]"
+                                                        >
+                                                            {item}
+                                                        </span>
+                                                    ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -387,7 +390,7 @@ export default function ListadoView({ category, products }: ListadoProps) {
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
                             placeholder="Buscar marca, modelo o aplicación clínica..."
-                            className="w-full rounded-full border border-gray-200 bg-white py-3 pr-4 pl-11 text-sm outline-none focus:border-[#0a7c4a]/50 dark:border-neutral-700 dark:bg-neutral-900"
+                            className="w-full rounded-full border border-gray-200 bg-white py-2.5 pr-4 pl-11 text-sm outline-none focus:border-[#0a7c4a]/50 dark:border-neutral-700 dark:bg-neutral-900 sm:py-3"
                         />
                     </div>
                 </div>

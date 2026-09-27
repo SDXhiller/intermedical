@@ -1,4 +1,5 @@
 import type { EquipmentItem } from '@/data/equipment';
+import type { MaintenanceService } from '@/data/maintenance-services';
 import type { Auth } from '@/types/auth';
 
 declare module 'react' {
@@ -16,6 +17,7 @@ declare module '@inertiajs/core' {
             sidebarOpen: boolean;
             equipmentItems: EquipmentItem[];
             subEquipmentItems: EquipmentItem[];
+            maintenanceServiceItems: MaintenanceService[];
             [key: string]: unknown;
         };
     }

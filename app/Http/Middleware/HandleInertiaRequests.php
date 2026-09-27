@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\EquipoModulo;
 use App\Models\Fabricante;
 use App\Models\Modulo;
+use App\Models\TipoServicioMantenimiento;
 use App\Models\UserAdmin;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -67,6 +68,7 @@ class HandleInertiaRequests extends Middleware
             'equipmentItems' => fn () => Modulo::catalogItems(),
             'subEquipmentItems' => fn () => EquipoModulo::catalogItems(),
             'manufacturerItems' => fn () => Fabricante::catalogItems(),
+            'maintenanceServiceItems' => fn () => TipoServicioMantenimiento::catalogItems(),
         ];
     }
 }

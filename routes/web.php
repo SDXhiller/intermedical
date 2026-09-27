@@ -9,11 +9,14 @@ use App\Http\Controllers\Admin\Imagen360Controller as AdminImagen360Controller;
 use App\Http\Controllers\Admin\ModuloController as AdminModuloController;
 use App\Http\Controllers\Admin\MonitoreoController as AdminMonitoreoController;
 use App\Http\Controllers\Admin\ServicioController as AdminServicioController;
+use App\Http\Controllers\Admin\SiteMaintenanceController as AdminSiteMaintenanceController;
+use App\Http\Controllers\Admin\TipoServicioMantenimientoController as AdminTipoServicioMantenimientoController;
 use App\Http\Controllers\Admin\UsuarioController as AdminUsuarioController;
 use App\Http\Controllers\Auth\AdminAuthenticatedSessionController;
 use App\Http\Controllers\BibliotecaEquipoController;
 use App\Http\Controllers\ClienteCotisacionController;
 use App\Http\Controllers\ContactoController;
+use App\Http\Controllers\MantenimientoController;
 use App\Http\Controllers\ModuloController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SearchController;
@@ -23,7 +26,7 @@ use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
-Route::inertia('mantenimiento', 'Mantenimiento/Mantenimiento')->name('mantenimiento');
+Route::get('mantenimiento', [MantenimientoController::class, 'index'])->name('mantenimiento');
 Route::get('mantenimiento/soporte', [SoporteController::class, 'show'])
     ->name('mantenimiento.soporte');
 Route::inertia('sobre-nosotros', 'Empresa/Sobrenosotros')->name('sobre-nosotros');
@@ -152,6 +155,18 @@ Route::middleware(EnsureUserIsAdmin::class)->prefix('admin')->name('admin.')->gr
     });
 
     Route::middleware('admin.area:configuracion')->group(function () {
+        Route::put('mantenimiento-sitio', [AdminSiteMaintenanceController::class, 'update'])
+            ->name('mantenimiento-sitio.update');
+        Route::get('configuracion', [AdminTipoServicioMantenimientoController::class, 'index'])
+            ->name('configuracion');
+        Route::post('configuracion/tipos-servicio', [AdminTipoServicioMantenimientoController::class, 'store'])
+            ->name('configuracion.tipos-servicio.store');
+        Route::put('configuracion/tipos-servicio/{tipoServicioMantenimiento}', [AdminTipoServicioMantenimientoController::class, 'update'])
+            ->name('configuracion.tipos-servicio.update');
+        Route::patch('configuracion/tipos-servicio/{tipoServicioMantenimiento}/estatus', [AdminTipoServicioMantenimientoController::class, 'toggleStatus'])
+            ->name('configuracion.tipos-servicio.toggle-status');
+        Route::delete('configuracion/tipos-servicio/{tipoServicioMantenimiento}', [AdminTipoServicioMantenimientoController::class, 'destroy'])
+            ->name('configuracion.tipos-servicio.destroy');
         Route::get('monitoreo', AdminMonitoreoController::class)->name('monitoreo');
     });
 });

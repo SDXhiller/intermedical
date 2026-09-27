@@ -4,6 +4,7 @@ use App\Models\EquipoModulo;
 use App\Models\Fabricante;
 use App\Models\Modulo;
 use App\Models\Status;
+use App\Models\TipoServicioMantenimiento;
 use Database\Seeders\StatusSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -53,7 +54,28 @@ test('guests can view the support page with registered equipment for a modality'
         );
 });
 
-test('the support page defaults the service and first active modality', function () {
+test('the support page leaves the service and modality empty until they are chosen', function () {
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    Modulo::factory()->create([
+        'modulo' => 'Arcos c',
+        'slug' => 'arcos-c',
+        'estatus_id' => $activo->id,
+    ]);
+
+    $this->get(route('mantenimiento.soporte', [
+        'servicio' => 'mantenimiento-correctivo',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Mantenimiento/ViewSoporte')
+            ->where('servicio.slug', 'mantenimiento-correctivo')
+            ->where('modalidad', null)
+            ->where('equipo', null)
+            ->has('equipos', 0)
+        );
+});
+
+test('the support page leaves an unknown modality unselected', function () {
     $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
     Modulo::factory()->create([
         'modulo' => 'Rayos X',
@@ -61,19 +83,94 @@ test('the support page defaults the service and first active modality', function
         'estatus_id' => $activo->id,
     ]);
 
-    $this->get(route('mantenimiento.soporte'))
+    $this->get(route('mantenimiento.soporte', ['modalidad' => 'no-existe']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('Mantenimiento/ViewSoporte')
-            ->where('servicio.slug', 'mantenimiento-correctivo')
-            ->where('modalidad.slug', 'rayos-x')
-            ->where('equipo', null)
+            ->where('modalidad', null)
         );
 });
 
-test('the support page returns not found for an unknown modality', function () {
-    $this->get(route('mantenimiento.soporte', ['modalidad' => 'no-existe']))
-        ->assertNotFound();
+test('the support page lists active modalities so the selection can change', function () {
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    $inactivo = Status::query()->where('nombre', 'Inactivo')->firstOrFail();
+
+    Modulo::factory()->create([
+        'modulo' => 'Ultrasonido',
+        'slug' => 'ultrasonido',
+        'estatus_id' => $activo->id,
+    ]);
+    Modulo::factory()->create([
+        'modulo' => 'Rayos X',
+        'slug' => 'rayos-x',
+        'estatus_id' => $activo->id,
+    ]);
+    Modulo::factory()->create([
+        'modulo' => 'Oculto',
+        'slug' => 'oculto',
+        'estatus_id' => $inactivo->id,
+    ]);
+
+    $this->get(route('mantenimiento.soporte', ['modalidad' => 'rayos-x']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('modalidad.slug', 'rayos-x')
+            ->has('modalidades', 2)
+            ->where(
+                'modalidades',
+                fn ($modalidades) => $modalidades->contains('slug', 'ultrasonido')
+                    && $modalidades->contains('slug', 'rayos-x')
+                    && ! $modalidades->contains('slug', 'oculto'),
+            )
+        );
+});
+
+test('the support page only lists active service types', function () {
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    Modulo::factory()->create([
+        'modulo' => 'Rayos X',
+        'slug' => 'rayos-x',
+        'estatus_id' => $activo->id,
+    ]);
+
+    TipoServicioMantenimiento::query()
+        ->where('slug', 'diagnostico')
+        ->update(['activo' => false]);
+
+    TipoServicioMantenimiento::query()
+        ->where('slug', 'mantenimiento-preventivo')
+        ->update(['nombre' => 'Preventivo premium']);
+
+    $this->get(route('mantenimiento.soporte'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where(
+                'servicios',
+                fn ($servicios) => ! $servicios->contains('slug', 'diagnostico')
+                    && $servicios->contains(fn ($item) => $item['slug'] === 'mantenimiento-preventivo'
+                        && $item['title'] === 'Preventivo premium'),
+            )
+        );
+});
+
+test('the support page ignores an unknown or inactive service slug', function () {
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    Modulo::factory()->create([
+        'modulo' => 'Rayos X',
+        'slug' => 'rayos-x',
+        'estatus_id' => $activo->id,
+    ]);
+
+    TipoServicioMantenimiento::query()
+        ->where('slug', 'mantenimiento-correctivo')
+        ->update(['activo' => false]);
+
+    $this->get(route('mantenimiento.soporte', [
+        'servicio' => 'mantenimiento-correctivo',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('servicio', null)
+        );
 });
 
 test('the support page is not wired to a form submission', function () {
@@ -81,13 +178,24 @@ test('the support page is not wired to a form submission', function () {
 
     expect($page)
         ->toContain('Solicitar soporte técnico')
+        ->toContain('{modalidad.nombre}')
+        ->toContain('{equipo.nombre}')
+        ->toContain('Elegir servicio')
         ->toContain('Cambiar servicio')
+        ->toContain('Sin seleccionar')
+        ->toContain('Elegir modalidad')
+        ->toContain('Cambiar modalidad')
+        ->toContain('Elegir equipo')
         ->toContain('Cambiar equipo')
-        ->toContain('Ver sub equipos')
+        ->not->toContain('Tipo de equipo (Modalidad)')
+        ->not->toContain('Ver sub equipos')
         ->toContain('El formulario aún no está conectado')
         ->toContain('WhatsApp no está habilitado por el momento')
         ->toContain('type="submit"')
         ->toContain('disabled')
-        ->not->toContain('Cambiar modalidad')
-        ->not->toContain('method="post"');
+        ->not->toContain('La modalidad queda fija')
+        ->not->toContain('method="post"')
+        ->toContain('w-full shrink-0 rounded-full sm:w-auto')
+        ->toContain('lg:hidden')
+        ->toContain('hidden min-h-[320px]');
 });

@@ -176,12 +176,16 @@ test('the home hero places the main banner in the imaging solutions panel', func
 
     expect($hero)->not->toBeFalse();
     expect($hero)
-        ->toContain('Tecnología que impulsa la salud')
-        ->toContain('Soluciones en Imagenología Médica')
-        ->toContain('banner principal.jpg')
-        ->toContain('Conocer nuestros servicios')
+        ->toContain('Ingeniería especializada para equipos de diagnóstico por imagen')
+        ->toContain('2149341486.jpg')
+        ->toContain('Conocer servicios')
+        ->toContain('Contactar a MIG')
+        ->toContain('contacto()')
+        ->toContain('ArrowRight')
+        ->not->toContain('border-white/35')
         ->toContain('grid-cols-4')
         ->toContain('blur-2xl')
+        ->not->toContain('Conocer nuestros servicios')
         ->not->toContain('blur-3xl')
         ->not->toContain('¿Qué necesita hoy?');
 });
@@ -201,7 +205,29 @@ test('the home page shows nosotros and mision spotlight cards below the hero', f
         ->toContain('from-neutral-900')
         ->toContain('mt-[10px]')
         ->not->toContain('-mt-4')
-        ->not->toContain('sm:-mt-6');
+        ->not->toContain('sm:-mt-6')
+        ->not->toContain('EquipmentCarousel')
+        ->not->toContain('Carrusel de productos');
+});
+
+test('the home page shows servicios modalidades and equipos explore cards', function () {
+    $home = file_get_contents(resource_path('js/pages/welcome.tsx'));
+
+    expect($home)
+        ->toContain("title: 'SERVICIOS'")
+        ->toContain("title: 'MODALIDADES'")
+        ->toContain("title: 'EQUIPOS DISPONIBLES'")
+        ->toContain('Ver servicios')
+        ->toContain('Imagen de ChatGPT 27 sept 2026, 04_37_57 p.m..png')
+        ->toContain('max-w-[86%]')
+        ->toContain('object-right')
+        ->toContain('Ver modalidades')
+        ->toContain('Ver equipos')
+        ->toContain('icon: Wrench')
+        ->toContain('icon: Layers')
+        ->toContain('icon: Monitor')
+        ->not->toContain('PopularServiceCard')
+        ->not->toContain('Solicitar servicio');
 });
 
 test('home shows only active manufacturers in the brands carousel', function () {

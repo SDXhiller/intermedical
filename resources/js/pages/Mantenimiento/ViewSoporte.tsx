@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     Activity,
     Check,
@@ -13,7 +13,8 @@ import {
     Send,
     Wrench,
 } from 'lucide-react';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { SiteBreadcrumb } from '@/components/site-breadcrumb';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -34,7 +35,6 @@ import {
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { useClipboard } from '@/hooks/use-clipboard';
 import { home, mantenimiento } from '@/routes';
-import { index as equiposIndex } from '@/routes/equipos';
 import { soporte } from '@/routes/mantenimiento';
 
 type ServicioItem = {
@@ -56,9 +56,10 @@ type EquipoItem = {
 };
 
 type ViewSoporteProps = {
-    servicio: ServicioItem;
+    servicio: ServicioItem | null;
     servicios: ServicioItem[];
-    modalidad: ModalidadItem;
+    modalidad: ModalidadItem | null;
+    modalidades: ModalidadItem[];
     equipos: EquipoItem[];
     equipo: EquipoItem | null;
 };
@@ -102,15 +103,15 @@ const mexicanStates = [
 ] as const;
 
 function visitSoporte(params: {
-    servicio: string;
-    modalidad: string;
+    servicio?: string | null;
+    modalidad?: string | null;
     equipo?: string | null;
 }): void {
     router.get(
         soporte.url({
             query: {
-                servicio: params.servicio,
-                modalidad: params.modalidad,
+                ...(params.servicio ? { servicio: params.servicio } : {}),
+                ...(params.modalidad ? { modalidad: params.modalidad } : {}),
                 ...(params.equipo ? { equipo: params.equipo } : {}),
             },
         }),
@@ -119,32 +120,82 @@ function visitSoporte(params: {
     );
 }
 
+function SelectionCard({
+    icon,
+    label,
+    value,
+    empty = false,
+    action,
+    onAction,
+    disabled = false,
+}: {
+    icon: ReactNode;
+    label: string;
+    value: string;
+    empty?: boolean;
+    action: string;
+    onAction: () => void;
+    disabled?: boolean;
+}) {
+    return (
+        <article className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-3">
+            <div className="flex min-w-0 items-center gap-3">
+                {icon}
+                <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground">{label}</p>
+                    <p
+                        className={`truncate text-sm font-semibold ${
+                            empty
+                                ? 'text-muted-foreground'
+                                : 'text-gray-900 dark:text-white'
+                        }`}
+                    >
+                        {value}
+                    </p>
+                </div>
+            </div>
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full shrink-0 rounded-full sm:w-auto"
+                disabled={disabled}
+                onClick={onAction}
+            >
+                {action}
+            </Button>
+        </article>
+    );
+}
+
 export default function ViewSoporte({
     servicio,
     servicios,
     modalidad,
+    modalidades,
     equipos,
     equipo,
 }: ViewSoporteProps) {
     const [copiedEmail, copyEmail] = useClipboard();
     const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+    const [modalidadDialogOpen, setModalidadDialogOpen] = useState(false);
     const [equipoDialogOpen, setEquipoDialogOpen] = useState(false);
     const [descripcion, setDescripcion] = useState('');
     const heroImage =
-        equipo?.imagen || modalidad.imagen || FALLBACK_HERO_IMAGE;
+        equipo?.imagen || modalidad?.imagen || FALLBACK_HERO_IMAGE;
 
     const whatsappPreview = useMemo(() => {
         return [
             'Hola, me gustaría solicitar soporte técnico.',
             '',
-            `Servicio: ${servicio.title}`,
-            `Modalidad: ${modalidad.nombre}`,
+            `Servicio: ${servicio?.title ?? 'Por seleccionar'}`,
+            `Modalidad: ${modalidad?.nombre ?? 'Por seleccionar'}`,
             `Equipo: ${equipo ? `${equipo.nombre} (${equipo.marca})` : 'Por seleccionar'}`,
             `Descripción: ${descripcion.trim() !== '' ? descripcion.trim() : '[Puedes agregar más detalles]'}`,
             '',
             '¿Podrían brindarme más información?',
         ].join('\n');
-    }, [descripcion, equipo, modalidad.nombre, servicio.title]);
+    }, [descripcion, equipo, modalidad?.nombre, servicio?.title]);
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -156,43 +207,41 @@ export default function ViewSoporte({
 
             <section className="relative overflow-hidden bg-neutral-950">
                 <div
-                    className={`relative mx-auto grid items-center gap-8 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10 lg:py-14 ${CONTENT_WIDTH}`}
+                    className={`relative mx-auto grid items-center gap-6 py-8 sm:gap-8 sm:py-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10 lg:py-14 ${CONTENT_WIDTH}`}
                 >
                     <div className="relative z-10">
-                        <nav
-                            aria-label="Breadcrumb"
-                            className="flex flex-wrap items-center gap-1.5 text-xs text-white/70 sm:text-sm"
-                        >
-                            <Link
-                                href={home()}
-                                className="inline-flex items-center gap-1.5 transition hover:text-white"
-                            >
-                                <Home className="size-3.5 shrink-0" />
-                                Inicio
-                            </Link>
-                            <span aria-hidden="true">›</span>
-                            <Link
-                                href={mantenimiento()}
-                                className="transition hover:text-white"
-                            >
-                                Servicios
-                            </Link>
-                            <span aria-hidden="true">›</span>
-                            <span className="max-w-[12rem] truncate">
-                                {servicio.title}
-                            </span>
-                            <span aria-hidden="true">›</span>
-                            <span
-                                className="font-semibold text-white"
-                                aria-current="page"
-                            >
-                                Contacto
-                            </span>
-                        </nav>
+                        <SiteBreadcrumb
+                            items={[
+                                { label: 'Inicio', href: home.url(), icon: Home },
+                                {
+                                    label: 'Servicios',
+                                    href: mantenimiento.url(),
+                                    icon: Wrench,
+                                },
+                                ...(servicio
+                                    ? [
+                                          {
+                                              label: servicio.title,
+                                              icon: Wrench,
+                                          },
+                                      ]
+                                    : []),
+                                { label: 'Contacto', icon: Mail },
+                            ]}
+                        />
 
-                        <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.25rem] lg:leading-tight">
+                        <h1 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.25rem] lg:leading-tight">
                             Solicitar soporte técnico
                         </h1>
+                        {modalidad ? (
+                            <p
+                                className="mt-3 text-sm font-semibold break-words sm:text-lg"
+                                style={{ color: BRAND_COLOR }}
+                            >
+                                {modalidad.nombre}
+                                {equipo ? ` / ${equipo.nombre}` : ''}
+                            </p>
+                        ) : null}
                         <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
                             Completa la información de tu equipo y cuéntanos el
                             problema. Nuestro equipo te contactará a la
@@ -200,7 +249,15 @@ export default function ViewSoporte({
                         </p>
                     </div>
 
-                    <div className="relative min-h-[220px] overflow-hidden sm:min-h-[260px] lg:min-h-[320px]">
+                    <div className="relative overflow-hidden rounded-2xl bg-white lg:hidden">
+                        <img
+                            src={heroImage}
+                            alt={equipo?.nombre ?? modalidad?.nombre ?? ''}
+                            className="mx-auto h-48 w-full object-contain object-center sm:h-56"
+                        />
+                    </div>
+
+                    <div className="relative hidden min-h-[320px] overflow-hidden lg:block">
                         <div
                             className="pointer-events-none absolute inset-0"
                             aria-hidden="true"
@@ -212,29 +269,20 @@ export default function ViewSoporte({
                             />
                             <img
                                 src={heroImage}
-                                alt={equipo?.nombre ?? modalidad.nombre}
+                                alt={equipo?.nombre ?? modalidad?.nombre ?? ''}
                                 className="absolute inset-0 size-full object-contain object-right [mask-image:linear-gradient(to_right,transparent_12%,black_48%)] [-webkit-mask-image:linear-gradient(to_right,transparent_12%,black_48%)]"
                             />
                             <div className="absolute inset-y-0 left-0 w-[42%] bg-gradient-to-r from-neutral-950 from-20% via-neutral-950/75 via-70% to-transparent" />
-                        </div>
-
-                        <div className="relative z-10 max-w-[16rem] pt-10 sm:pt-14 lg:pt-16">
-                            <p className="text-xl font-semibold leading-snug text-white sm:text-2xl">
-                                “Tu equipo en las mejores manos”
-                            </p>
-                            <p className="mt-2 text-sm leading-relaxed text-white/75">
-                                Soporte especializado en todo el país
-                            </p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section className="bg-white py-6 dark:bg-neutral-950 lg:py-8">
+            <section className="bg-white py-4 dark:bg-neutral-950 sm:py-6 lg:py-8">
                 <div className={`mx-auto ${CONTENT_WIDTH} max-w-6xl`}>
                     <div className="grid gap-3 lg:grid-cols-3">
-                        <article className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-                            <div className="flex min-w-0 items-center gap-3">
+                        <SelectionCard
+                            icon={
                                 <span
                                     className="flex size-11 shrink-0 items-center justify-center rounded-full text-white"
                                     style={{ backgroundColor: BRAND_COLOR }}
@@ -244,28 +292,20 @@ export default function ViewSoporte({
                                         strokeWidth={1.75}
                                     />
                                 </span>
-                                <div className="min-w-0">
-                                    <p className="text-xs text-muted-foreground">
-                                        Servicio seleccionado
-                                    </p>
-                                    <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                                        {servicio.title}
-                                    </p>
-                                </div>
-                            </div>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="shrink-0 rounded-full"
-                                onClick={() => setServiceDialogOpen(true)}
-                            >
-                                Cambiar servicio
-                            </Button>
-                        </article>
+                            }
+                            label="Servicio seleccionado"
+                            value={servicio?.title ?? 'Sin seleccionar'}
+                            empty={servicio === null}
+                            action={
+                                servicio
+                                    ? 'Cambiar servicio'
+                                    : 'Elegir servicio'
+                            }
+                            onAction={() => setServiceDialogOpen(true)}
+                        />
 
-                        <article className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-                            <div className="flex min-w-0 items-center gap-3">
+                        <SelectionCard
+                            icon={
                                 <span
                                     className="flex size-11 shrink-0 items-center justify-center rounded-full text-white"
                                     style={{ backgroundColor: BRAND_COLOR }}
@@ -275,23 +315,20 @@ export default function ViewSoporte({
                                         strokeWidth={1.75}
                                     />
                                 </span>
-                                <div className="min-w-0">
-                                    <p className="text-xs text-muted-foreground">
-                                        Modalidad
-                                    </p>
-                                    <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                                        {modalidad.nombre}
-                                    </p>
-                                </div>
-                            </div>
-                            <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-gray-200 px-3 py-1 text-xs text-muted-foreground dark:border-neutral-700">
-                                <Lock className="size-3" />
-                                Fija
-                            </span>
-                        </article>
+                            }
+                            label="Modalidad"
+                            value={modalidad?.nombre ?? 'Sin seleccionar'}
+                            empty={modalidad === null}
+                            action={
+                                modalidad
+                                    ? 'Cambiar modalidad'
+                                    : 'Elegir modalidad'
+                            }
+                            onAction={() => setModalidadDialogOpen(true)}
+                        />
 
-                        <article className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-                            <div className="flex min-w-0 items-center gap-3">
+                        <SelectionCard
+                            icon={
                                 <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
                                     {equipo?.imagen ? (
                                         <img
@@ -303,34 +340,26 @@ export default function ViewSoporte({
                                         <Monitor className="size-5 text-muted-foreground" />
                                     )}
                                 </span>
-                                <div className="min-w-0">
-                                    <p className="text-xs text-muted-foreground">
-                                        Equipo / Sub equipo
-                                    </p>
-                                    <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                                        {equipo?.nombre ?? 'Sin seleccionar'}
-                                    </p>
-                                </div>
-                            </div>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="shrink-0 rounded-full"
-                                disabled={equipos.length === 0}
-                                onClick={() => setEquipoDialogOpen(true)}
-                            >
-                                Cambiar equipo
-                            </Button>
-                        </article>
+                            }
+                            label="Equipo / Sub equipo"
+                            value={equipo?.nombre ?? 'Sin seleccionar'}
+                            empty={equipo === null}
+                            action={
+                                equipo ? 'Cambiar equipo' : 'Elegir equipo'
+                            }
+                            disabled={
+                                modalidad === null || equipos.length === 0
+                            }
+                            onAction={() => setEquipoDialogOpen(true)}
+                        />
                     </div>
 
                     <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
                         <form
                             onSubmit={handleSubmit}
-                            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-6"
+                            className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-6"
                         >
-                            <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+                            <h2 className="flex items-center gap-2 text-base font-bold text-gray-900 dark:text-white sm:text-lg">
                                 <span
                                     className="flex size-6 items-center justify-center rounded-full text-xs text-white"
                                     style={{ backgroundColor: BRAND_COLOR }}
@@ -340,65 +369,7 @@ export default function ViewSoporte({
                                 Información del equipo
                             </h2>
 
-                            <div className="mt-5 grid gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="modalidad">
-                                        Tipo de equipo (Modalidad) *
-                                    </Label>
-                                    <Input
-                                        id="modalidad"
-                                        value={modalidad.nombre}
-                                        readOnly
-                                        disabled
-                                    />
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <Label htmlFor="sub-equipo">
-                                            Equipo / Sub equipo *
-                                        </Label>
-                                        <Link
-                                            href={equiposIndex.url(
-                                                modalidad.slug,
-                                            )}
-                                            className="text-xs font-semibold"
-                                            style={{ color: BRAND_COLOR }}
-                                        >
-                                            Ver sub equipos
-                                        </Link>
-                                    </div>
-                                    <Select
-                                        value={equipo?.slug}
-                                        onValueChange={(slug) =>
-                                            visitSoporte({
-                                                servicio: servicio.slug,
-                                                modalidad: modalidad.slug,
-                                                equipo: slug,
-                                            })
-                                        }
-                                        disabled={equipos.length === 0}
-                                    >
-                                        <SelectTrigger
-                                            id="sub-equipo"
-                                            className="w-full"
-                                        >
-                                            <SelectValue placeholder="Selecciona un sub equipo" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {equipos.map((item) => (
-                                                <SelectItem
-                                                    key={item.slug}
-                                                    value={item.slug}
-                                                >
-                                                    {item.nombre}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="mt-5 grid gap-4 sm:grid-cols-2">
                                     <div className="grid gap-2">
                                         <Label htmlFor="marca">Marca *</Label>
                                         <Input
@@ -419,10 +390,9 @@ export default function ViewSoporte({
                                             disabled
                                         />
                                     </div>
-                                </div>
                             </div>
 
-                            <h2 className="mt-8 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+                            <h2 className="mt-8 flex items-center gap-2 text-base font-bold text-gray-900 dark:text-white sm:text-lg">
                                 <span
                                     className="flex size-6 items-center justify-center rounded-full text-xs text-white"
                                     style={{ backgroundColor: BRAND_COLOR }}
@@ -508,7 +478,7 @@ export default function ViewSoporte({
                                 </div>
                             </div>
 
-                            <h2 className="mt-8 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+                            <h2 className="mt-8 flex items-center gap-2 text-base font-bold text-gray-900 dark:text-white sm:text-lg">
                                 <span
                                     className="flex size-6 items-center justify-center rounded-full text-xs text-white"
                                     style={{ backgroundColor: BRAND_COLOR }}
@@ -546,7 +516,14 @@ export default function ViewSoporte({
                                     >
                                         <FileUp className="size-6 text-muted-foreground" />
                                         <p className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                                            Arrastra archivos aquí o selecciona
+                                            <span className="sm:hidden">
+                                                Selecciona archivos de tu
+                                                dispositivo
+                                            </span>
+                                            <span className="hidden sm:inline">
+                                                Arrastra archivos aquí o
+                                                selecciona
+                                            </span>
                                         </p>
                                         <p className="mt-1 text-xs text-muted-foreground">
                                             Puedes subir imágenes, videos o
@@ -583,15 +560,15 @@ export default function ViewSoporte({
                                 <Send className="size-4" />
                                 Enviar solicitud
                             </button>
-                            <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-                                <Lock className="size-3.5" />
+                            <p className="mt-2 flex items-start justify-center gap-1.5 text-center text-xs text-muted-foreground sm:items-center">
+                                <Lock className="mt-0.5 size-3.5 shrink-0 sm:mt-0" />
                                 El formulario aún no está conectado. Tus datos
                                 no se enviarán por ahora.
                             </p>
                         </form>
 
                         <div className="flex flex-col gap-6">
-                            <article className="rounded-2xl border border-[#0a7c4a]/25 bg-[#0a7c4a]/5 p-6 dark:border-[#0a7c4a]/30 dark:bg-[#0a7c4a]/10 sm:p-7">
+                            <article className="rounded-2xl border border-[#0a7c4a]/25 bg-[#0a7c4a]/5 p-4 dark:border-[#0a7c4a]/30 dark:bg-[#0a7c4a]/10 sm:p-7">
                                 <div className="flex items-start gap-3">
                                     <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white">
                                         <MessageCircle
@@ -600,7 +577,7 @@ export default function ViewSoporte({
                                         />
                                     </span>
                                     <div>
-                                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                        <h3 className="text-base font-bold text-gray-900 dark:text-white sm:text-lg">
                                             2. Contactar por WhatsApp
                                         </h3>
                                         <p className="mt-1 text-sm text-muted-foreground">
@@ -612,7 +589,7 @@ export default function ViewSoporte({
                                     </div>
                                 </div>
 
-                                <div className="mt-4 rounded-xl border border-white/10 bg-white p-4 text-sm leading-relaxed text-gray-700 dark:bg-neutral-950 dark:text-white/80">
+                                <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-white p-4 text-xs leading-relaxed break-words text-gray-700 dark:bg-neutral-950 dark:text-white/80 sm:text-sm">
                                     {whatsappPreview
                                         .split('\n')
                                         .map((line, index) => (
@@ -637,7 +614,7 @@ export default function ViewSoporte({
                                 </p>
                             </article>
 
-                            <article className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-7">
+                            <article className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-7">
                                 <div className="flex items-start gap-3">
                                     <span
                                         className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#0a7c4a]/10"
@@ -649,7 +626,7 @@ export default function ViewSoporte({
                                         />
                                     </span>
                                     <div>
-                                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                        <h3 className="text-base font-bold text-gray-900 dark:text-white sm:text-lg">
                                             3. Contactar por correo electrónico
                                         </h3>
                                         <p className="mt-1 text-sm text-muted-foreground">
@@ -659,10 +636,10 @@ export default function ViewSoporte({
                                     </div>
                                 </div>
 
-                                <div className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-3 dark:border-neutral-700">
+                                <div className="mt-5 flex flex-col gap-3 rounded-xl border border-gray-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-700">
                                     <a
                                         href={`mailto:${CONTACT_EMAIL}`}
-                                        className="truncate text-sm font-semibold"
+                                        className="min-w-0 break-all text-sm font-semibold"
                                         style={{ color: BRAND_COLOR }}
                                     >
                                         {CONTACT_EMAIL}
@@ -672,7 +649,7 @@ export default function ViewSoporte({
                                         onClick={() => {
                                             void copyEmail(CONTACT_EMAIL);
                                         }}
-                                        className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                                        className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground sm:w-auto sm:border-0 sm:p-0 dark:border-neutral-700"
                                         aria-label="Copiar correo"
                                     >
                                         <Copy className="size-4" />
@@ -683,7 +660,7 @@ export default function ViewSoporte({
                                 </div>
                             </article>
 
-                            <article className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-7">
+                            <article className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-7">
                                 <div className="flex items-start gap-3">
                                     <span
                                         className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#0a7c4a]/10"
@@ -694,7 +671,7 @@ export default function ViewSoporte({
                                             strokeWidth={1.75}
                                         />
                                     </span>
-                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                    <h3 className="text-base font-bold text-gray-900 dark:text-white sm:text-lg">
                                         Información adicional
                                     </h3>
                                 </div>
@@ -712,16 +689,8 @@ export default function ViewSoporte({
                                             className="mt-0.5 size-4 shrink-0"
                                             style={{ color: BRAND_COLOR }}
                                         />
-                                        El servicio y el sub equipo se pueden
-                                        cambiar en esta página.
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <Check
-                                            className="mt-0.5 size-4 shrink-0"
-                                            style={{ color: BRAND_COLOR }}
-                                        />
-                                        La modalidad queda fija según el
-                                        registro de equipos.
+                                        El servicio, la modalidad y el sub
+                                        equipo se pueden cambiar en esta página.
                                     </li>
                                     <li className="flex items-start gap-2">
                                         <Check
@@ -741,12 +710,15 @@ export default function ViewSoporte({
                 open={serviceDialogOpen}
                 onOpenChange={setServiceDialogOpen}
             >
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-h-[min(85dvh,36rem)] overflow-y-auto p-4 sm:max-w-md sm:p-6">
                     <DialogHeader>
-                        <DialogTitle>Cambiar servicio</DialogTitle>
+                        <DialogTitle>
+                            {servicio
+                                ? 'Cambiar servicio'
+                                : 'Elegir servicio'}
+                        </DialogTitle>
                         <DialogDescription>
-                            Elige el tipo de soporte que necesitas. La
-                            modalidad no se modifica.
+                            Elige el tipo de soporte que necesitas.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-2">
@@ -758,18 +730,18 @@ export default function ViewSoporte({
                                     setServiceDialogOpen(false);
                                     visitSoporte({
                                         servicio: item.slug,
-                                        modalidad: modalidad.slug,
+                                        modalidad: modalidad?.slug,
                                         equipo: equipo?.slug,
                                     });
                                 }}
                                 className="rounded-xl border px-4 py-3 text-left text-sm font-semibold transition hover:bg-[#0a7c4a]/5"
                                 style={{
                                     borderColor:
-                                        item.slug === servicio.slug
+                                        item.slug === servicio?.slug
                                             ? BRAND_COLOR
                                             : undefined,
                                     color:
-                                        item.slug === servicio.slug
+                                        item.slug === servicio?.slug
                                             ? BRAND_COLOR
                                             : undefined,
                                 }}
@@ -781,12 +753,72 @@ export default function ViewSoporte({
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={equipoDialogOpen} onOpenChange={setEquipoDialogOpen}>
-                <DialogContent className="max-w-md">
+            <Dialog
+                open={modalidadDialogOpen}
+                onOpenChange={setModalidadDialogOpen}
+            >
+                <DialogContent className="max-h-[min(85dvh,36rem)] overflow-y-auto p-4 sm:max-w-md sm:p-6">
                     <DialogHeader>
-                        <DialogTitle>Cambiar sub equipo</DialogTitle>
+                        <DialogTitle>
+                            {modalidad
+                                ? 'Cambiar modalidad'
+                                : 'Elegir modalidad'}
+                        </DialogTitle>
                         <DialogDescription>
-                            Equipos registrados en {modalidad.nombre}.
+                            Elige cualquier modalidad registrada. Los sub
+                            equipos se actualizarán según esa selección.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid max-h-80 gap-2 overflow-y-auto">
+                        {modalidades.map((item) => (
+                            <button
+                                key={item.slug}
+                                type="button"
+                                onClick={() => {
+                                    setModalidadDialogOpen(false);
+                                    visitSoporte({
+                                        servicio: servicio?.slug,
+                                        modalidad: item.slug,
+                                    });
+                                }}
+                                className="flex items-center gap-3 rounded-xl border px-3 py-2 text-left transition hover:bg-[#0a7c4a]/5"
+                                style={{
+                                    borderColor:
+                                        item.slug === modalidad?.slug
+                                            ? BRAND_COLOR
+                                            : undefined,
+                                }}
+                            >
+                                {item.imagen ? (
+                                    <img
+                                        src={item.imagen}
+                                        alt=""
+                                        className="size-12 shrink-0 rounded-lg object-contain"
+                                    />
+                                ) : (
+                                    <span className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                                        <Activity className="size-5 text-muted-foreground" />
+                                    </span>
+                                )}
+                                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                    {item.nombre}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={equipoDialogOpen} onOpenChange={setEquipoDialogOpen}>
+                <DialogContent className="max-h-[min(85dvh,36rem)] overflow-y-auto p-4 sm:max-w-md sm:p-6">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {equipo ? 'Cambiar sub equipo' : 'Elegir sub equipo'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {modalidad
+                                ? `Equipos registrados en ${modalidad.nombre}.`
+                                : 'Elige primero una modalidad para ver sus equipos.'}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid max-h-80 gap-2 overflow-y-auto">
@@ -797,8 +829,8 @@ export default function ViewSoporte({
                                 onClick={() => {
                                     setEquipoDialogOpen(false);
                                     visitSoporte({
-                                        servicio: servicio.slug,
-                                        modalidad: modalidad.slug,
+                                        servicio: servicio?.slug,
+                                        modalidad: modalidad?.slug,
                                         equipo: item.slug,
                                     });
                                 }}

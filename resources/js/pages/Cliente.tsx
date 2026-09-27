@@ -6,6 +6,7 @@ import {
     FileText,
     Headphones,
     Home,
+    Layers,
     Mail,
     MapPin,
     MessageCircle,
@@ -31,6 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SiteBreadcrumb } from '@/components/site-breadcrumb';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { useClipboard } from '@/hooks/use-clipboard';
 import { home } from '@/routes';
@@ -113,49 +115,32 @@ export default function Cliente() {
                     className={`relative mx-auto grid items-center gap-8 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10 lg:py-14 ${CONTENT_WIDTH}`}
                 >
                     <div className="relative z-10">
-                        <nav
-                            aria-label="Breadcrumb"
-                            className="flex flex-wrap items-center gap-1.5 text-xs text-white/70 sm:text-sm"
-                        >
-                            <Link
-                                href={home()}
-                                className="inline-flex items-center gap-1.5 transition hover:text-white"
-                            >
-                                <Home className="size-3.5 shrink-0" />
-                                Inicio
-                            </Link>
-                            {equipo?.categoria_slug && equipo.categoria ? (
-                                <>
-                                    <span aria-hidden="true">›</span>
-                                    <Link
-                                        href={equiposIndex.url(
-                                            equipo.categoria_slug,
-                                        )}
-                                        className="max-w-[9rem] truncate transition hover:text-white"
-                                    >
-                                        {equipo.categoria}
-                                    </Link>
-                                </>
-                            ) : null}
-                            {equipo ? (
-                                <>
-                                    <span aria-hidden="true">›</span>
-                                    <Link
-                                        href={moduloShow.url(equipo.slug)}
-                                        className="max-w-[11rem] truncate transition hover:text-white"
-                                    >
-                                        {equipo.nombre}
-                                    </Link>
-                                </>
-                            ) : null}
-                            <span aria-hidden="true">›</span>
-                            <span
-                                className="font-semibold text-white"
-                                aria-current="page"
-                            >
-                                Contacto
-                            </span>
-                        </nav>
+                        <SiteBreadcrumb
+                            items={[
+                                { label: 'Inicio', href: home.url(), icon: Home },
+                                ...(equipo?.categoria_slug && equipo.categoria
+                                    ? [
+                                          {
+                                              label: equipo.categoria,
+                                              href: equiposIndex.url(
+                                                  equipo.categoria_slug,
+                                              ),
+                                              icon: Layers,
+                                          },
+                                      ]
+                                    : []),
+                                ...(equipo
+                                    ? [
+                                          {
+                                              label: equipo.nombre,
+                                              href: moduloShow.url(equipo.slug),
+                                              icon: Monitor,
+                                          },
+                                      ]
+                                    : []),
+                                { label: 'Contacto', icon: Mail },
+                            ]}
+                        />
 
                         <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.25rem] lg:leading-tight">
                             Contacto

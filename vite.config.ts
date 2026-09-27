@@ -15,7 +15,7 @@ export default defineConfig({
                 bunny('Montserrat', {
                     weights: [400, 500, 600, 700],
                     subsets: ['latin'],
-                    preload: [{ weight: 400 }],
+                    preload: false,
                 }),
             ],
         }),

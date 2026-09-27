@@ -2,15 +2,10 @@ import { Head, Link } from '@inertiajs/react';
 import {
     ArrowRight,
     CalendarDays,
-    Check,
-    Clock3,
     Headphones,
 } from 'lucide-react';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
-import {
-    maintenanceServices,
-    type MaintenanceService,
-} from '@/data/maintenance-services';
+import { type MaintenanceService } from '@/data/maintenance-services';
 import { contacto } from '@/routes';
 import { soporte } from '@/routes/mantenimiento';
 
@@ -31,53 +26,20 @@ function maintenanceImage(filename: string): string {
 
 function ServiceCard({ service }: { service: MaintenanceService }) {
     return (
-        <article className="flex h-full min-h-[280px] flex-col rounded-2xl border border-white/10 bg-neutral-950 p-5 shadow-sm dark:bg-black sm:min-h-[300px]">
+        <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-neutral-950 p-5 shadow-sm dark:bg-black">
             <h2 className="text-lg font-bold tracking-tight text-white">
                 {service.title}
             </h2>
 
-            <p className="mt-2 text-sm leading-relaxed text-white/75">
+            <p className="mt-2 flex-1 text-sm leading-relaxed text-white/75">
                 {service.description}
             </p>
-
-            <ul className="mt-3.5 space-y-1.5">
-                {service.features.map((feature) => (
-                    <li
-                        key={feature}
-                        className="flex items-start gap-2 text-sm text-white"
-                    >
-                        <span
-                            className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full text-white"
-                            style={{ backgroundColor: BRAND_COLOR }}
-                        >
-                            <Check className="size-2.5" strokeWidth={3} />
-                        </span>
-                        {feature}
-                    </li>
-                ))}
-            </ul>
-
-            <div className="mt-4 flex items-start gap-2">
-                <Clock3
-                    className="mt-0.5 size-4 shrink-0"
-                    style={{ color: BRAND_COLOR }}
-                    strokeWidth={1.75}
-                />
-                <div>
-                    <p className="text-[11px] text-white/65">
-                        Tiempo estimado de respuesta
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold text-white">
-                        {service.responseTime}
-                    </p>
-                </div>
-            </div>
 
             <Link
                 href={soporte.url({
                     query: { servicio: service.slug },
                 })}
-                className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
                 style={{ backgroundColor: BRAND_COLOR }}
             >
                 <CalendarDays className="size-3.5" strokeWidth={1.75} />
@@ -88,7 +50,11 @@ function ServiceCard({ service }: { service: MaintenanceService }) {
     );
 }
 
-export default function Mantenimiento() {
+export default function Mantenimiento({
+    servicios,
+}: {
+    servicios: MaintenanceService[];
+}) {
     return (
         <>
             <Head title="Mantenimiento" />
@@ -198,7 +164,7 @@ export default function Mantenimiento() {
                 className={`mx-auto ${CONTENT_WIDTH} py-10 sm:py-12 lg:py-14`}
             >
                 <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-2 lg:grid-cols-3">
-                    {maintenanceServices.map((service) => (
+                    {servicios.map((service) => (
                         <ServiceCard key={service.slug} service={service} />
                     ))}
                 </div>

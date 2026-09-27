@@ -1,15 +1,18 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Activity,
     Box,
     Headphones,
     Layers,
     Moon,
-    Plus,
+    Power,
     Sun,
     Wrench,
 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { BRAND_COLOR } from '@/data/equipment';
 import { useAppearance } from '@/hooks/use-appearance';
 import {
@@ -18,6 +21,7 @@ import {
 } from '@/routes/admin';
 import { index as adminCotizaciones } from '@/routes/admin/cotizaciones';
 import { create as adminEquipos } from '@/routes/admin/equipos';
+import { update as updateMantenimientoSitio } from '@/routes/admin/mantenimiento-sitio';
 import { index as adminServicios } from '@/routes/admin/servicios';
 import type { AdminUser } from '@/types';
 
@@ -50,21 +54,22 @@ type ResumenMensual = {
     }>;
 };
 
+type MantenimientoSitio = {
+    enabled: boolean;
+    hours: number;
+    minutes: number;
+    until: string | null;
+};
+
 type PageProps = {
     stats: StatItem[];
     acciones: AccionItem[];
     actividad: ActividadItem[];
     resumenMensual: ResumenMensual | null;
+    mantenimientoSitio: MantenimientoSitio | null;
 };
 
 const statIcons = {
-    equipos: Box,
-    modelos: Layers,
-    servicios: Wrench,
-    cotizaciones: Headphones,
-} as const;
-
-const accionIcons = {
     equipos: Box,
     modelos: Layers,
     servicios: Wrench,
@@ -78,13 +83,203 @@ const statHrefs = {
     cotizaciones: adminCotizaciones(),
 } as const;
 
-const accionHrefs = statHrefs;
+function remainingFromUntil(until: string | null): {
+    hours: number;
+    minutes: number;
+    seconds: number;
+    totalSeconds: number;
+} {
+    if (!until) {
+        return { hours: 0, minutes: 0, seconds: 0, totalSeconds: 0 };
+    }
+
+    const totalSeconds = Math.max(
+        0,
+        Math.floor((new Date(until).getTime() - Date.now()) / 1000),
+    );
+
+    return {
+        hours: Math.floor(totalSeconds / 3600),
+        minutes: Math.floor((totalSeconds % 3600) / 60),
+        seconds: totalSeconds % 60,
+        totalSeconds,
+    };
+}
+
+function padTime(value: number): string {
+    return String(value).padStart(2, '0');
+}
+
+function ModoMantenimientoCard({
+    mantenimientoSitio,
+}: {
+    mantenimientoSitio: MantenimientoSitio;
+}) {
+    const [hours, setHours] = useState(String(mantenimientoSitio.hours));
+    const [minutes, setMinutes] = useState(String(mantenimientoSitio.minutes));
+    const [processing, setProcessing] = useState(false);
+    const [remaining, setRemaining] = useState(() =>
+        remainingFromUntil(mantenimientoSitio.until),
+    );
+    const expiredReload = useRef(false);
+
+    useEffect(() => {
+        setHours(String(mantenimientoSitio.hours));
+        setMinutes(String(mantenimientoSitio.minutes));
+        expiredReload.current = false;
+        setRemaining(remainingFromUntil(mantenimientoSitio.until));
+    }, [
+        mantenimientoSitio.enabled,
+        mantenimientoSitio.hours,
+        mantenimientoSitio.minutes,
+        mantenimientoSitio.until,
+    ]);
+
+    useEffect(() => {
+        if (!mantenimientoSitio.enabled || !mantenimientoSitio.until) {
+            return;
+        }
+
+        const tick = () => {
+            const next = remainingFromUntil(mantenimientoSitio.until);
+            setRemaining(next);
+
+            if (next.totalSeconds <= 0 && !expiredReload.current) {
+                expiredReload.current = true;
+                router.reload({ only: ['mantenimientoSitio'] });
+            }
+        };
+
+        tick();
+        const interval = window.setInterval(tick, 1000);
+
+        return () => window.clearInterval(interval);
+    }, [mantenimientoSitio.enabled, mantenimientoSitio.until]);
+
+    const toggle = () => {
+        setProcessing(true);
+        router.put(
+            updateMantenimientoSitio.url(),
+            {
+                enabled: !mantenimientoSitio.enabled,
+                hours: Number(hours) || 0,
+                minutes: Number(minutes) || 0,
+            },
+            {
+                preserveScroll: true,
+                onFinish: () => setProcessing(false),
+            },
+        );
+    };
+
+    return (
+        <div className="rounded-xl border border-[#0a7c4a]/25 bg-[#0a7c4a]/5 p-3">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-foreground">
+                        Modo mantenimiento
+                    </h3>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        Configura el temporizador y enciende el anuncio público.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    aria-label={
+                        mantenimientoSitio.enabled
+                            ? 'Apagar modo mantenimiento'
+                            : 'Encender modo mantenimiento'
+                    }
+                    disabled={processing}
+                    onClick={toggle}
+                    className={`flex size-11 shrink-0 items-center justify-center rounded-full border transition ${
+                        mantenimientoSitio.enabled
+                            ? 'border-[#0a7c4a] bg-[#0a7c4a] text-white'
+                            : 'border-[#0a7c4a]/40 bg-background text-[#0a7c4a] hover:bg-[#0a7c4a]/10'
+                    }`}
+                >
+                    <Power className="size-5" strokeWidth={1.75} />
+                </button>
+            </div>
+
+            {mantenimientoSitio.enabled ? (
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                    <div className="grid gap-1.5">
+                        <p className="text-xs text-muted-foreground">Horas</p>
+                        <p className="rounded-md border border-border bg-background px-2 py-2 text-center text-lg font-semibold tabular-nums text-foreground">
+                            {padTime(remaining.hours)}
+                        </p>
+                    </div>
+                    <div className="grid gap-1.5">
+                        <p className="text-xs text-muted-foreground">Minutos</p>
+                        <p className="rounded-md border border-border bg-background px-2 py-2 text-center text-lg font-semibold tabular-nums text-foreground">
+                            {padTime(remaining.minutes)}
+                        </p>
+                    </div>
+                    <div className="grid gap-1.5">
+                        <p className="text-xs text-muted-foreground">
+                            Segundos
+                        </p>
+                        <p className="rounded-md border border-border bg-background px-2 py-2 text-center text-lg font-semibold tabular-nums text-foreground">
+                            {padTime(remaining.seconds)}
+                        </p>
+                    </div>
+                </div>
+            ) : (
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="mantenimiento-horas" className="text-xs">
+                            Horas
+                        </Label>
+                        <Input
+                            id="mantenimiento-horas"
+                            type="number"
+                            min={0}
+                            max={72}
+                            value={hours}
+                            disabled={processing}
+                            onChange={(event) => setHours(event.target.value)}
+                            className="h-9"
+                        />
+                    </div>
+                    <div className="grid gap-1.5">
+                        <Label
+                            htmlFor="mantenimiento-minutos"
+                            className="text-xs"
+                        >
+                            Minutos
+                        </Label>
+                        <Input
+                            id="mantenimiento-minutos"
+                            type="number"
+                            min={0}
+                            max={59}
+                            value={minutes}
+                            disabled={processing}
+                            onChange={(event) =>
+                                setMinutes(event.target.value)
+                            }
+                            className="h-9"
+                        />
+                    </div>
+                </div>
+            )}
+
+            <p className="mt-3 text-xs text-muted-foreground">
+                Estado:{' '}
+                <span className="font-medium text-foreground">
+                    {mantenimientoSitio.enabled ? 'Encendido' : 'Apagado'}
+                </span>
+            </p>
+        </div>
+    );
+}
 
 export default function DashboardAdmin({
     stats,
-    acciones,
     actividad,
     resumenMensual,
+    mantenimientoSitio,
 }: PageProps) {
     const { auth } = usePage().props;
     const admin = auth.admin as AdminUser | null | undefined;
@@ -100,7 +295,7 @@ export default function DashboardAdmin({
 
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4 md:p-6">
                 <div
-                    className={`grid gap-4 ${acciones.length > 0 ? 'lg:grid-cols-[minmax(0,1fr)_18rem]' : ''}`}
+                    className={`grid gap-4 ${mantenimientoSitio ? 'lg:grid-cols-[minmax(0,1fr)_20rem]' : ''}`}
                 >
                     <section className="relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-sm">
                         <div className="absolute top-4 right-4">
@@ -164,38 +359,15 @@ export default function DashboardAdmin({
                         </div>
                     </section>
 
-                    {acciones.length > 0 ? (
+                    {mantenimientoSitio ? (
                         <aside className="rounded-xl border border-border bg-card p-4 shadow-sm">
                             <h2 className="text-sm font-semibold text-foreground">
                                 Acciones rápidas
                             </h2>
-                            <div className="mt-3 space-y-2">
-                                {acciones.map((accion) => {
-                                    const Icon =
-                                        accionIcons[
-                                            accion.key as keyof typeof accionIcons
-                                        ] ?? Box;
-
-                                    return (
-                                        <Link
-                                            key={accion.key}
-                                            href={
-                                                accionHrefs[
-                                                    accion.key as keyof typeof accionHrefs
-                                                ]
-                                            }
-                                            prefetch
-                                            className="flex w-full items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-left text-sm font-medium text-foreground transition hover:border-[#0a7c4a]/40 hover:bg-[#0a7c4a]/5"
-                                        >
-                                            <Icon
-                                                className="size-4 text-[#0a7c4a]"
-                                                strokeWidth={1.75}
-                                            />
-                                            {accion.title}
-                                            <Plus className="ml-auto size-3.5 text-muted-foreground" />
-                                        </Link>
-                                    );
-                                })}
+                            <div className="mt-3">
+                                <ModoMantenimientoCard
+                                    mantenimientoSitio={mantenimientoSitio}
+                                />
                             </div>
                         </aside>
                     ) : null}

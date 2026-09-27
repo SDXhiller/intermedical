@@ -5,6 +5,7 @@ import { initializeTheme } from '@/hooks/use-appearance';
 import AdminLayout from '@/layouts/admin-layout';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
+import BlankLayout from '@/layouts/blank-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import SiteLayout from '@/layouts/site-layout';
 
@@ -14,6 +15,8 @@ createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
+            case name === 'Maintenance':
+                return BlankLayout;
             case name === 'welcome':
             case name.startsWith('Mantenimiento/'):
             case name.startsWith('Empresa/'):
@@ -39,6 +42,7 @@ createInertiaApp({
             case name.startsWith('Users/'):
             case name.startsWith('Admins/'):
             case name === 'settings/monitoreo':
+            case name === 'settings/equipos-ajustes':
                 return AdminLayout;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];

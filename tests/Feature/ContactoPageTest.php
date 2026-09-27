@@ -18,7 +18,7 @@ test('the general contacto page shows the redesigned hero with the brain image',
     expect($page)->not->toBeFalse();
     expect($page)
         ->toContain('Estamos listos para atender tus necesidades')
-        ->toContain('Tecnología y servicio al servicio de la vida')
+        ->toContain('SiteBreadcrumb')
         ->toContain('ChatGPT Image 20 sept 2026, 01_19_34 p.m..png')
         ->toContain('Atención especializada')
         ->toContain('Respuesta oportuna')

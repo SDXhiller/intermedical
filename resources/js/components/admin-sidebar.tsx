@@ -29,6 +29,7 @@ import { UserInfo } from '@/components/user-info';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import {
     dashboard as adminDashboard,
+    configuracion as adminConfiguracion,
     logout as adminLogout,
     modelosEquipos as adminModelosEquipos,
     monitoreo as adminMonitoreo,
@@ -109,7 +110,7 @@ const supportItems: NavItem[] = [
     },
     {
         title: 'Configuración',
-        href: adminDashboard(),
+        href: adminConfiguracion(),
         icon: Settings,
         area: 'configuracion',
     },
@@ -160,7 +161,7 @@ function AdminNavGroup({
                             isActive={isCurrentUrl(item.href)}
                             tooltip={{ children: item.title }}
                         >
-                            <Link href={item.href} prefetch>
+                            <Link href={item.href} prefetch="hover">
                                 {item.icon && <item.icon />}
                                 <span>{item.title}</span>
                             </Link>
@@ -217,7 +218,7 @@ export function AdminSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={adminDashboard()} prefetch>
+                            <Link href={adminDashboard()} prefetch="hover">
                                 <AppLogoIcon className="size-8 shrink-0 object-contain" />
                                 <div className="ml-1 grid flex-1 text-left text-sm">
                                     <span className="truncate text-xs font-semibold tracking-wide text-[#0a7c4a]">

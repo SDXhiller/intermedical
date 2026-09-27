@@ -2,112 +2,26 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
     Building2,
-    CircleCheck,
-    Clock,
-    Cog,
-    Drill,
     Headphones,
-    MonitorSmartphone,
-    PackageMinus,
-    ScanSearch,
+    Layers,
+    Monitor,
     Settings,
-    Settings2,
-    ShieldCheck,
     Target,
     Users,
     Wrench,
     type LucideIcon,
 } from 'lucide-react';
-import { useMemo, type CSSProperties, type ReactNode } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import {
     BRAND_COLOR,
     CONTENT_WIDTH,
-    type EquipmentItem,
     type ManufacturerItem,
 } from '@/data/equipment';
-import { maintenanceServices } from '@/data/maintenance-services';
 import { contacto, mantenimiento, sobreNosotros } from '@/routes';
-import { index as equiposIndex } from '@/routes/equipos';
+import { equipos as bibliotecaEquipos } from '@/routes/biblioteca';
 
-function CorrectiveMaintenanceIcon({
-    className,
-    style,
-}: {
-    className?: string;
-    style?: CSSProperties;
-}) {
-    return (
-        <span
-            className={`relative inline-flex shrink-0 items-center justify-center ${className ?? 'size-[18px]'}`}
-        >
-            <Wrench
-                className="absolute size-4 -rotate-45"
-                style={style}
-                strokeWidth={1.75}
-            />
-            <Drill
-                className="absolute size-4 rotate-45"
-                style={style}
-                strokeWidth={1.75}
-            />
-        </span>
-    );
-}
-
-type PopularService = {
-    title: string;
-    slug: string;
-    icon?: LucideIcon;
-    customIcon?: ReactNode;
-    features: string[];
-};
-
-const serviceVisuals: Record<
-    string,
-    { icon?: LucideIcon; customIcon?: ReactNode }
-> = {
-    'mantenimiento-preventivo': {
-        icon: Cog,
-    },
-    'mantenimiento-correctivo': {
-        customIcon: (
-            <CorrectiveMaintenanceIcon
-                className="size-5"
-                style={{ color: 'white' }}
-            />
-        ),
-    },
-    diagnostico: {
-        icon: ScanSearch,
-    },
-    'renta-de-equipos-medicos': {
-        icon: MonitorSmartphone,
-    },
-    instalacion: {
-        icon: Settings2,
-    },
-    desinstalacion: {
-        icon: PackageMinus,
-    },
-    'puesta-en-marcha': {
-        icon: ShieldCheck,
-    },
-};
-
-const popularServices: PopularService[] = maintenanceServices.map((service) => {
-    const visual = serviceVisuals[service.slug] ?? {
-        icon: Cog,
-    };
-
-    return {
-        title: service.title,
-        slug: service.slug,
-        features: service.features,
-        ...visual,
-    };
-});
-
-const HERO_BANNER = `/Imagen/Body/${encodeURIComponent('banner principal.jpg')}`;
+const HERO_BANNER = '/Imagen/Body/2149341486.jpg';
+const SERVICIOS_CARD_IMAGE = `/Imagen/Servicios/${encodeURIComponent('Imagen de ChatGPT 27 sept 2026, 04_37_57 p.m..png')}`;
 const NOSOTROS_IMAGE = '/Imagen/Body/Body.png';
 const MISION_IMAGE = `/Imagen/empresa/${encodeURIComponent('ChatGPT Image 20 sept 2026, 01_19_34 p.m..png')}`;
 
@@ -119,6 +33,41 @@ const heroHighlights: {
     { title: 'Instalación y puesta en marcha', icon: Settings },
     { title: 'Capacitación', icon: Users },
     { title: 'Soporte técnico', icon: Headphones },
+];
+
+const exploreCards: {
+    title: string;
+    description: string;
+    href: string;
+    action: string;
+    icon: LucideIcon;
+    image?: string;
+}[] = [
+    {
+        title: 'SERVICIOS',
+        description:
+            'Conoce nuestras soluciones de mantenimiento y soporte técnico.',
+        href: mantenimiento.url(),
+        action: 'Ver servicios',
+        icon: Wrench,
+        image: SERVICIOS_CARD_IMAGE,
+    },
+    {
+        title: 'MODALIDADES',
+        description:
+            'Consulta las modalidades para las que ofrecemos soluciones técnicas.',
+        href: bibliotecaEquipos.url(),
+        action: 'Ver modalidades',
+        icon: Layers,
+    },
+    {
+        title: 'EQUIPOS DISPONIBLES',
+        description:
+            'Explora los equipos que ofrecemos y consulta sus características y condiciones comerciales.',
+        href: '#',
+        action: 'Ver equipos',
+        icon: Monitor,
+    },
 ];
 
 function HomeSpotlightCard({
@@ -137,7 +86,15 @@ function HomeSpotlightCard({
     icon: LucideIcon;
 }) {
     return (
-        <article className="relative isolate min-h-[168px] overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 sm:min-h-[188px]">
+        <article className="relative isolate overflow-hidden rounded-2xl border border-white/10 bg-neutral-900">
+            <div className="relative h-40 overflow-hidden sm:hidden">
+                <img
+                    src={image}
+                    alt=""
+                    className="size-full object-cover object-center"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-neutral-900/35 to-transparent" />
+            </div>
             <div
                 className="pointer-events-none absolute inset-0 hidden sm:block"
                 aria-hidden="true"
@@ -154,7 +111,7 @@ function HomeSpotlightCard({
                 />
                 <div className="absolute inset-y-0 left-0 w-[68%] bg-gradient-to-r from-neutral-900 from-42% via-neutral-900/80 via-72% to-transparent" />
             </div>
-            <div className="relative z-10 flex min-w-0 max-w-[62%] items-start gap-3 p-5 sm:gap-4 sm:p-6">
+            <div className="relative z-10 flex min-h-0 min-w-0 items-start gap-3 p-5 sm:min-h-[188px] sm:max-w-[62%] sm:gap-4 sm:p-6">
                 <span
                     className="flex size-11 shrink-0 items-center justify-center rounded-full text-white"
                     style={{ backgroundColor: BRAND_COLOR }}
@@ -184,80 +141,73 @@ function HomeSpotlightCard({
     );
 }
 
-function FeatureItem({ feature }: { feature: string }) {
-    return (
-        <div className="flex min-w-0 items-start gap-2 text-xs leading-snug text-muted-foreground sm:text-sm">
-            <CircleCheck
-                className="mt-0.5 size-4 shrink-0"
-                style={{ color: BRAND_COLOR }}
-                strokeWidth={2}
-            />
-            <span>{feature}</span>
-        </div>
-    );
-}
-
-function PopularServiceCard({
+function HomeExploreCard({
     title,
-    slug,
+    description,
+    href,
+    action,
     icon: Icon,
-    customIcon,
-    features,
-}: PopularService) {
-    const [firstFeature, secondFeature, thirdFeature] = features;
+    image,
+}: {
+    title: string;
+    description: string;
+    href: string;
+    action: string;
+    icon: LucideIcon;
+    image?: string;
+}) {
+    const buttonClassName = `mt-6 mt-auto inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 ${image ? 'w-fit whitespace-nowrap' : 'w-full sm:w-fit'}`;
+    const buttonStyle = { backgroundColor: BRAND_COLOR };
+    const label = (
+        <>
+            {action}
+            <ArrowRight className="size-4" />
+        </>
+    );
 
     return (
-        <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-4 opacity-75 transition-opacity hover:opacity-100 focus-within:opacity-100 active:opacity-100 dark:border-neutral-800 dark:bg-neutral-900 sm:p-5">
-            <div className="flex items-center gap-2.5">
-                <div
-                    className="flex size-10 shrink-0 items-center justify-center rounded-full text-white shadow-md"
-                    style={{ backgroundColor: BRAND_COLOR }}
-                >
-                    {customIcon ??
-                        (Icon && (
-                            <Icon className="size-5" strokeWidth={1.75} />
-                        ))}
-                </div>
-                <span
-                    className="shrink-0 text-sm font-semibold"
-                    style={{ color: BRAND_COLOR }}
-                    aria-hidden="true"
-                >
-                    -
-                </span>
-                <h3 className="min-w-0 text-base font-bold leading-snug text-gray-900 dark:text-white sm:text-lg">
-                    {title}
-                </h3>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3">
-                {firstFeature && <FeatureItem feature={firstFeature} />}
-                {secondFeature && <FeatureItem feature={secondFeature} />}
-                {thirdFeature && <FeatureItem feature={thirdFeature} />}
-                <div>
-                    <p className="text-xs text-muted-foreground">
-                        Tiempo de respuesta
-                    </p>
-                    <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
-                        <Clock
-                            className="size-4 shrink-0"
-                            style={{ color: BRAND_COLOR }}
-                            strokeWidth={1.75}
-                        />
-                        -
-                    </p>
-                </div>
-            </div>
-
-            <Link
-                href={contacto.url({ query: { tipo: slug } })}
-                className="mt-auto inline-flex w-full items-center justify-center gap-1 rounded-lg border-2 px-4 py-2.5 text-sm font-semibold transition hover:bg-[#0a7c4a]/5"
-                style={{ borderColor: BRAND_COLOR, color: BRAND_COLOR }}
+        <article
+            className={`relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 ${image ? '' : 'p-6'}`}
+        >
+            {image ? (
+                <img
+                    src={image}
+                    alt=""
+                    className="pointer-events-none absolute top-1/2 right-0 h-auto w-auto max-h-full max-w-[86%] -translate-y-1/2 object-contain object-right"
+                />
+            ) : null}
+            <div
+                className={`relative z-10 flex flex-1 flex-col ${image ? 'max-w-[54%] py-6 pr-2 pl-6' : ''}`}
             >
-                Solicitar servicio
-                <ArrowRight className="size-4" />
-            </Link>
-        </div>
+                <div className="flex items-center gap-3">
+                    <span
+                        className="flex size-12 shrink-0 items-center justify-center rounded-full text-white"
+                        style={{ backgroundColor: BRAND_COLOR }}
+                    >
+                        <Icon className="size-5" strokeWidth={1.75} />
+                    </span>
+                    <h3 className="text-sm font-bold tracking-wide text-white sm:text-base">
+                        {title}
+                    </h3>
+                </div>
+                <p className="mt-4 text-sm leading-relaxed text-white/75">
+                    {description}
+                </p>
+                {href === '#' ? (
+                    <a href="#" className={buttonClassName} style={buttonStyle}>
+                        {label}
+                    </a>
+                ) : (
+                    <Link
+                        href={href}
+                        className={buttonClassName}
+                        style={buttonStyle}
+                    >
+                        {label}
+                    </Link>
+                )}
+            </div>
+        </article>
     );
 }
 
@@ -288,100 +238,6 @@ function DigitalLinesBackdrop({ className = '' }: { className?: string }) {
                     className="digital-pulse-beam absolute top-[82%] left-0 h-px w-[38%] motion-safe:animate-digital-pulse-sweep"
                     style={{ animationDelay: '3.1s' }}
                 />
-            </div>
-        </div>
-    );
-}
-
-function EquipmentCard({
-    name,
-    slug,
-    image,
-}: {
-    name: string;
-    slug: string;
-    image: string | null;
-}) {
-    return (
-        <Link
-            href={equiposIndex.url(slug)}
-            className="group flex h-full flex-col gap-2 overflow-hidden rounded-lg border border-gray-200 bg-white p-2 text-gray-900 opacity-75 transition-[opacity,box-shadow,border-color] hover:border-[#0a7c4a]/30 hover:opacity-100 hover:shadow-sm focus-visible:opacity-100 active:opacity-100 dark:border-neutral-800 dark:bg-neutral-900 dark:text-white lg:gap-3 lg:p-4"
-        >
-            <div className="h-36 w-full overflow-hidden rounded-md bg-gray-100 dark:bg-neutral-800 sm:h-40 lg:h-52 xl:h-56">
-                {image ? (
-                    <img
-                        src={image}
-                        alt={name}
-                        className="size-full object-cover object-center transition-transform duration-300 ease-out group-hover:scale-105"
-                    />
-                ) : (
-                    <div className="flex size-full items-center justify-center text-xs text-muted-foreground">
-                        Sin imagen
-                    </div>
-                )}
-            </div>
-            <div className="px-1 lg:px-2">
-                <p className="text-sm font-semibold leading-snug text-gray-900 group-hover:text-gray-900 dark:text-white dark:group-hover:text-white lg:text-base">
-                    {name}
-                </p>
-                <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-[#0a7c4a] group-hover:underline lg:text-sm">
-                    Ver equipos
-                    <ArrowRight className="size-3 lg:size-3.5" />
-                </span>
-            </div>
-        </Link>
-    );
-}
-
-function buildCarouselSequence(items: EquipmentItem[]): EquipmentItem[] {
-    if (items.length === 0) {
-        return [];
-    }
-
-    const copies = Math.max(2, Math.ceil(4 / items.length));
-
-    return Array.from({ length: copies }, () => items).flat();
-}
-
-function EquipmentCarousel({ items }: { items: EquipmentItem[] }) {
-    const sequence = useMemo(() => buildCarouselSequence(items), [items]);
-    const loop = useMemo(() => [...sequence, ...sequence], [sequence]);
-    const durationSeconds = Math.max(28, sequence.length * 6);
-
-    if (items.length === 0) {
-        return (
-            <div className="rounded-lg border border-dashed border-gray-300 px-4 py-10 text-center text-sm text-muted-foreground dark:border-neutral-700">
-                Pronto publicaremos los equipos disponibles.
-            </div>
-        );
-    }
-
-    return (
-        <div
-            className="@container group/carousel relative overflow-hidden"
-            style={
-                {
-                    '--equipment-marquee-duration': `${durationSeconds}s`,
-                } as CSSProperties
-            }
-        >
-            <div
-                className="flex w-max gap-4 motion-safe:animate-equipment-marquee group-hover/carousel:[animation-play-state:paused] md:gap-7"
-                aria-label="Carrusel de equipos médicos"
-            >
-                {loop.map((item, index) => (
-                    <div
-                        key={`${item.slug}-${index}`}
-                        className="w-[calc((100cqw-1rem)/2)] shrink-0 sm:w-[calc((100cqw-2rem)/3)] md:w-[calc((100cqw-5.25rem)/4)]"
-                        aria-hidden={index >= sequence.length}
-                    >
-                        <EquipmentCard
-                            name={item.name}
-                            slug={item.slug}
-                            image={item.image}
-                        />
-                    </div>
-                ))}
             </div>
         </div>
     );
@@ -470,8 +326,7 @@ function ManufacturerCarousel({ items }: { items: ManufacturerItem[] }) {
 }
 
 export default function Welcome() {
-    const { equipmentItems, manufacturerItems } = usePage<{
-        equipmentItems: EquipmentItem[];
+    const { manufacturerItems } = usePage<{
         manufacturerItems: ManufacturerItem[];
     }>().props;
 
@@ -482,7 +337,7 @@ export default function Welcome() {
             {/* Hero */}
             <section className="relative overflow-hidden bg-neutral-950">
                 <div
-                    className="pointer-events-none absolute inset-0"
+                    className="pointer-events-none absolute inset-0 hidden lg:block"
                     aria-hidden="true"
                 >
                     <img
@@ -501,22 +356,31 @@ export default function Welcome() {
                 </div>
 
                 <div
-                    className={`relative z-10 mx-auto grid items-center gap-8 py-12 sm:py-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)] lg:gap-6 lg:py-16 ${CONTENT_WIDTH}`}
+                    className={`relative z-10 mx-auto grid items-center gap-6 py-6 sm:gap-8 sm:py-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)] lg:gap-6 lg:py-16 ${CONTENT_WIDTH}`}
                 >
                     <div className="relative z-10">
                         <div className="max-w-xl">
-                            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
-                                Tecnología que impulsa la salud
+                            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
+                            Ingeniería especializada para equipos de diagnóstico por imagen
                             </h1>
                             <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/80 sm:text-base">
-                                En Medical Imaging Group ofrecemos soluciones
-                                integrales en equipamiento médico, mantenimiento,
-                                instalación y soporte especializado en
-                                imagenología.
+                            En Medical Imaging Group (MIG) somos un equipo de ingenieros 
+                            especializados en tecnología de diagnóstico por imagen. Ofrecemos 
+                            mantenimiento, diagnóstico técnico, refacciones y otras soluciones 
+                            para hospitales, clínicas y gabinetes de imagenología.
                             </p>
                         </div>
 
-                        <ul className="mt-8 grid grid-cols-4 items-start gap-3 sm:gap-4">
+                        <div className="relative mt-6 overflow-hidden rounded-2xl lg:hidden">
+                            <img
+                                src={HERO_BANNER}
+                                alt="Equipo de imagenología médica"
+                                className="h-52 w-full object-cover object-center sm:h-72"
+                            />
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-950/40 to-transparent" />
+                        </div>
+
+                        <ul className="mt-8 grid grid-cols-2 items-start gap-4 sm:grid-cols-4 sm:gap-4">
                             {heroHighlights.map(({ title, icon: Icon }) => (
                                 <li
                                     key={title}
@@ -531,43 +395,39 @@ export default function Welcome() {
                                             strokeWidth={1.75}
                                         />
                                     </span>
-                                    <span className="text-[11px] font-medium leading-snug text-white sm:text-xs">
+                                    <span className="text-xs font-medium leading-snug text-white sm:text-xs">
                                         {title}
                                     </span>
                                 </li>
                             ))}
                         </ul>
 
-                        <Link
-                            href={mantenimiento()}
-                            className="mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-                            style={{ backgroundColor: BRAND_COLOR }}
-                        >
-                            Conocer nuestros servicios
-                            <ArrowRight className="size-4" />
-                        </Link>
+                        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                            <Link
+                                href={mantenimiento()}
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 sm:w-auto"
+                                style={{ backgroundColor: BRAND_COLOR }}
+                            >
+                                Conocer servicios
+                                <ArrowRight className="size-4" />
+                            </Link>
+                            <Link
+                                href={contacto()}
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 sm:w-auto"
+                                style={{ backgroundColor: BRAND_COLOR }}
+                            >
+                                Contactar a MIG
+                                <ArrowRight className="size-4" />
+                            </Link>
+                        </div>
                     </div>
 
-                    <div className="relative z-10 flex min-h-[220px] items-end justify-end sm:min-h-[280px] lg:min-h-[420px] lg:items-center">
+                    <div className="relative z-10 hidden min-h-[420px] items-center justify-end lg:flex">
                         <img
                             src={HERO_BANNER}
                             alt="Equipo de imagenología médica"
                             className="sr-only"
                         />
-                        <div className="w-full max-w-[15.5rem] pb-2 lg:pb-0 xl:max-w-[17rem]">
-                            <h2 className="text-2xl font-bold leading-tight text-white sm:text-[1.7rem]">
-                                Soluciones en Imagenología Médica
-                            </h2>
-                            <p
-                                className="mt-3 text-sm font-medium"
-                                style={{ color: BRAND_COLOR }}
-                            >
-                                Equipos · Servicios · Soporte
-                            </p>
-                            <p className="mt-4 text-sm italic leading-relaxed text-white/85">
-                                “Comprometidos con el diagnóstico y la vida”
-                            </p>
-                        </div>
                     </div>
                 </div>
             </section>
@@ -595,23 +455,12 @@ export default function Welcome() {
                 </div>
             </section>
 
-            {/* Carrusel de productos */}
-            <section className="relative w-full overflow-hidden bg-white py-12 dark:bg-neutral-950 lg:py-16">
-                <DigitalLinesBackdrop />
-                <div className={`relative z-10 mx-auto ${CONTENT_WIDTH}`}>
-                    <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white lg:mb-8 lg:text-3xl">
-                        Equipos disponibles
-                    </h2>
-                    <EquipmentCarousel items={equipmentItems} />
-                </div>
-            </section>
-
             {/* Presentación */}
             <section className="bg-[#05070a] text-white">
                 <div className={`mx-auto ${CONTENT_WIDTH}`}>
                     <div className="h-px w-full bg-white/10" />
 
-                    <div className="grid items-center gap-10 overflow-visible py-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-8 lg:overflow-hidden lg:py-16 xl:gap-10">
+                    <div className="grid items-center gap-8 overflow-visible py-10 sm:gap-10 sm:py-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-8 lg:overflow-hidden lg:py-16 xl:gap-10">
                         <div className="max-w-2xl">
                             <p
                                 className="text-xs font-bold tracking-[0.14em] uppercase sm:text-sm"
@@ -657,7 +506,7 @@ export default function Welcome() {
                             </Link>
                         </div>
 
-                        <div className="relative mx-auto aspect-square w-full max-w-lg lg:max-w-none lg:translate-x-4 lg:scale-105 xl:translate-x-6">
+                        <div className="relative mx-auto aspect-square w-full max-w-[17rem] sm:max-w-lg lg:max-w-none lg:translate-x-4 lg:scale-105 xl:translate-x-6">
                             {/* Glow suave de fondo */}
                             <div
                                 className="pointer-events-none absolute inset-[18%] rounded-full bg-[#0a7c4a]/15 blur-[60px]"
@@ -767,7 +616,7 @@ export default function Welcome() {
             </section>
 
             {/* Servicios más solicitados */}
-            <section className="relative w-full overflow-hidden bg-white py-12 dark:bg-neutral-950 lg:py-16">
+            <section className="relative w-full overflow-hidden bg-white py-10 dark:bg-neutral-950 sm:py-12 lg:py-16">
                 <DigitalLinesBackdrop />
                 <div className={`relative z-10 mx-auto ${CONTENT_WIDTH}`}>
                     <p className="text-xs font-bold tracking-wider text-[#0a7c4a]">
@@ -782,18 +631,15 @@ export default function Welcome() {
                     />
 
                     <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-                        {popularServices.map((service) => (
-                            <PopularServiceCard
-                                key={service.slug}
-                                {...service}
-                            />
+                        {exploreCards.map((card) => (
+                            <HomeExploreCard key={card.title} {...card} />
                         ))}
                     </div>
                 </div>
             </section>
 
             {/* Carrusel de fabricantes */}
-            <section className="relative w-full overflow-hidden bg-white py-12 dark:bg-neutral-950 lg:py-16">
+            <section className="relative w-full overflow-hidden bg-white py-10 dark:bg-neutral-950 sm:py-12 lg:py-16">
                 <DigitalLinesBackdrop />
                 <div className="relative z-10">
                     <div className={`mx-auto ${CONTENT_WIDTH}`}>

@@ -21,6 +21,7 @@ class TipoServicioMantenimientoFactory extends Factory
         return [
             'nombre' => $nombre,
             'slug' => Str::slug($nombre),
+            'descripcion' => fake()->paragraph(),
             'activo' => true,
         ];
     }

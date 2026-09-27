@@ -5,11 +5,12 @@ use App\Models\EquipoModulo;
 use App\Models\Modulo;
 use App\Models\Servicio;
 use App\Models\UserAdmin;
+use Database\Seeders\StatusSeeder;
 use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\StatusSeeder::class);
+    $this->seed(StatusSeeder::class);
     $this->travelTo(Carbon::parse('2026-09-10 12:00:00', 'America/Mexico_City'));
 });
 
@@ -48,6 +49,7 @@ test('admins can view live dashboard counts for equipment models services and in
             ->where('stats.3.trend', '8 esta semana')
             ->missing('stats.4')
             ->has('acciones', 4)
+            ->where('mantenimientoSitio.enabled', false)
             ->where('resumenMensual.total', 8)
             ->where('resumenMensual.dias.9.dia', 10)
             ->where('resumenMensual.dias.9.total', 5)
@@ -105,6 +107,7 @@ test('sales managers only see incoming quotes on the dashboard', function () {
             ->where('stats.0.value', 2)
             ->has('acciones', 1)
             ->where('acciones.0.key', 'cotizaciones')
+            ->where('mantenimientoSitio', null)
             ->has('actividad', 0)
             ->where('resumenMensual.total', 2)
         );

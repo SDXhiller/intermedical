@@ -73,6 +73,7 @@ class ContactoController extends Controller
                 'id' => $tipo->id,
                 'nombre' => $tipo->nombre,
                 'slug' => $tipo->slug,
+                'descripcion' => $tipo->descripcion ?? '',
             ],
         ]);
     }

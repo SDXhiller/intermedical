@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\EquipoModulo;
 use App\Models\Modulo;
+use App\Models\TipoServicioMantenimiento;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class SoporteController extends Controller
 {
@@ -18,35 +18,36 @@ class SoporteController extends Controller
     {
         $servicios = $this->servicios();
         $servicioSlug = $request->string('servicio')->toString();
-        $servicio = collect($servicios)->firstWhere('slug', $servicioSlug)
-            ?? collect($servicios)->firstWhere('slug', 'mantenimiento-correctivo')
-            ?? $servicios[0];
+        $servicio = $servicioSlug !== ''
+            ? collect($servicios)->firstWhere('slug', $servicioSlug)
+            : null;
+
+        $modulos = Modulo::query()
+            ->activos()
+            ->orderBy('modulo')
+            ->get(['id', 'modulo', 'slug', 'imagen']);
 
         $modalidadSlug = $request->string('modalidad')->toString();
-        $moduloQuery = Modulo::query()
-            ->activos()
-            ->with('estatus:id,nombre');
-
         $modulo = $modalidadSlug !== ''
-            ? $moduloQuery->clone()->where('slug', $modalidadSlug)->first()
-            : $moduloQuery->clone()->orderBy('modulo')->first();
+            ? $modulos->firstWhere('slug', $modalidadSlug)
+            : null;
 
-        if ($modulo === null) {
-            throw new NotFoundHttpException;
+        $equipos = collect();
+
+        if ($modulo !== null) {
+            $equipos = $modulo->equipos()
+                ->where('activo', true)
+                ->with('fabricante:id,nombre')
+                ->orderBy('modelo')
+                ->get()
+                ->map(fn (EquipoModulo $equipo): array => [
+                    'slug' => $equipo->publicSlug(),
+                    'nombre' => $equipo->modelo,
+                    'marca' => $equipo->fabricante?->nombre ?? 'Sin fabricante',
+                    'imagen' => $equipo->imageUrl() ?? '',
+                ])
+                ->values();
         }
-
-        $equipos = $modulo->equipos()
-            ->where('activo', true)
-            ->with('fabricante:id,nombre')
-            ->orderBy('modelo')
-            ->get()
-            ->map(fn (EquipoModulo $equipo): array => [
-                'slug' => $equipo->publicSlug(),
-                'nombre' => $equipo->modelo,
-                'marca' => $equipo->fabricante?->nombre ?? 'Sin fabricante',
-                'imagen' => $equipo->imageUrl() ?? '',
-            ])
-            ->values();
 
         $equipoSlug = $request->string('equipo')->toString();
         $equipoSeleccionado = $equipoSlug !== ''
@@ -56,11 +57,19 @@ class SoporteController extends Controller
         return Inertia::render('Mantenimiento/ViewSoporte', [
             'servicio' => $servicio,
             'servicios' => $servicios,
-            'modalidad' => [
+            'modalidad' => $modulo === null ? null : [
                 'slug' => $modulo->slug,
                 'nombre' => $modulo->modulo,
                 'imagen' => $modulo->imageUrl() ?? '',
             ],
+            'modalidades' => $modulos
+                ->map(fn (Modulo $item): array => [
+                    'slug' => $item->slug,
+                    'nombre' => $item->modulo,
+                    'imagen' => $item->imageUrl() ?? '',
+                ])
+                ->values()
+                ->all(),
             'equipos' => $equipos,
             'equipo' => $equipoSeleccionado,
         ]);
@@ -73,14 +82,12 @@ class SoporteController extends Controller
      */
     private function servicios(): array
     {
-        return [
-            ['slug' => 'mantenimiento-preventivo', 'title' => 'Mantenimiento preventivo'],
-            ['slug' => 'mantenimiento-correctivo', 'title' => 'Mantenimiento correctivo'],
-            ['slug' => 'diagnostico', 'title' => 'Diagnóstico'],
-            ['slug' => 'renta-de-equipos-medicos', 'title' => 'Renta de equipos médicos'],
-            ['slug' => 'instalacion', 'title' => 'Instalación'],
-            ['slug' => 'desinstalacion', 'title' => 'Desinstalación'],
-            ['slug' => 'puesta-en-marcha', 'title' => 'Puesta en marcha'],
-        ];
+        return collect(TipoServicioMantenimiento::catalogItems())
+            ->map(fn (array $item): array => [
+                'slug' => $item['slug'],
+                'title' => $item['title'],
+            ])
+            ->values()
+            ->all();
     }
 }

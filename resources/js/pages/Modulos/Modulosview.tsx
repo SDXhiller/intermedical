@@ -1,15 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
-import {
-    ArrowLeft,
-    Calendar,
-    MapPin,
-    Wrench,
-} from 'lucide-react';
+import { Calendar, Home, Layers, MapPin, Monitor } from 'lucide-react';
 import { useState } from 'react';
+import { SiteBreadcrumb } from '@/components/site-breadcrumb';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { home } from '@/routes';
 import { create as clienteCotisacionCreate } from '@/routes/cliente-cotisacion';
 import { index as equiposIndex } from '@/routes/equipos';
+import { soporte } from '@/routes/mantenimiento';
 
 /**
  * Flags espejo de App\Support\EquipoFieldFlags.
@@ -53,15 +50,7 @@ type ModuleProps = {
     };
 };
 
-type TabId = 'documentacion' | 'soporte';
-
-const tabs: { id: TabId; label: string }[] = [
-    { id: 'documentacion', label: 'Descripción del equipo' },
-    { id: 'soporte', label: 'Soporte' },
-];
-
 export default function Modulosview({ module }: ModuleProps) {
-    const [activeTab, setActiveTab] = useState<TabId>('documentacion');
     const gallery = module.imagenes_360 ?? [];
     const [activeImageId, setActiveImageId] = useState<number | null>(
         gallery.find((image) => image.es_principal)?.id ??
@@ -117,19 +106,21 @@ export default function Modulosview({ module }: ModuleProps) {
             <Head title={module.name} />
 
             <div className={`mx-auto ${CONTENT_WIDTH} py-6 lg:py-8`}>
-                <Link
-                    href={
-                        module.category
-                            ? equiposIndex.url(module.category)
-                            : home()
-                    }
-                    className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-[#0a7c4a]"
-                >
-                    <ArrowLeft className="size-4" />
-                    {module.category_name
-                        ? `Volver a ${module.category_name}`
-                        : 'Volver a equipos'}
-                </Link>
+                <SiteBreadcrumb
+                    items={[
+                        { label: 'Inicio', href: home.url(), icon: Home },
+                        ...(module.category && module.category_name
+                            ? [
+                                  {
+                                      label: module.category_name,
+                                      href: equiposIndex.url(module.category),
+                                      icon: Layers,
+                                  },
+                              ]
+                            : []),
+                        { label: module.name, icon: Monitor },
+                    ]}
+                />
 
                 {/* Hero del producto */}
                 <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_17rem] lg:gap-6 xl:gap-8">
@@ -209,25 +200,13 @@ export default function Modulosview({ module }: ModuleProps) {
                                 </div>
                             ))}
                         </dl>
-
-                        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                            <Link
-                                href={clienteCotisacionCreate.url({
-                                    query: { equipo: module.slug },
-                                })}
-                                className="inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-                                style={{ backgroundColor: BRAND_COLOR }}
-                            >
-                                Solicitar cotización
-                            </Link>
-                        </div>
                     </div>
 
                     {/* Sidebar derecho */}
                     <aside className="space-y-4">
                         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-neutral-800 dark:bg-neutral-900">
                             <h2 className="text-sm font-bold text-gray-900 dark:text-white">
-                                Información rápida
+                                Año del Equipo
                             </h2>
                             <ul className="mt-4 space-y-3 text-sm">
                                 <li className="flex items-start gap-2 text-muted-foreground">
@@ -252,62 +231,64 @@ export default function Modulosview({ module }: ModuleProps) {
                                 ) : null}
                             </ul>
                         </div>
+
+                        <div className="flex flex-col gap-3">
+                            <Link
+                                href={clienteCotisacionCreate.url({
+                                    query: { equipo: module.slug },
+                                })}
+                                className="inline-flex w-full items-center justify-center rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                                style={{ backgroundColor: BRAND_COLOR }}
+                            >
+                                Solicitar cotización
+                            </Link>
+                            <Link
+                                href={soporte.url({
+                                    query: {
+                                        ...(module.category
+                                            ? { modalidad: module.category }
+                                            : {}),
+                                        equipo: module.slug,
+                                    },
+                                })}
+                                className="inline-flex w-full items-center justify-center rounded-lg border-2 px-5 py-2.5 text-sm font-semibold transition hover:bg-[#0a7c4a]/10"
+                                style={{
+                                    borderColor: BRAND_COLOR,
+                                    color: BRAND_COLOR,
+                                }}
+                            >
+                                Solicitar servicio
+                            </Link>
+                        </div>
                     </aside>
                 </div>
 
-                {/* Tabs */}
                 <div className="mt-10 border-b border-gray-200 dark:border-neutral-800">
                     <nav className="-mb-px flex gap-6 overflow-x-auto">
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                type="button"
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`shrink-0 border-b-2 pb-3 text-sm font-semibold transition ${
-                                    activeTab === tab.id
-                                        ? 'border-[#0a7c4a] text-[#0a7c4a]'
-                                        : 'border-transparent text-muted-foreground hover:text-gray-900 dark:hover:text-white'
-                                }`}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
+                        <span className="shrink-0 border-b-2 border-[#0a7c4a] pb-3 text-sm font-semibold text-[#0a7c4a]">
+                            Descripción del equipo
+                        </span>
                     </nav>
                 </div>
 
-                {activeTab === 'documentacion' && (
-                    <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 sm:p-8">
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                            Descripción del equipo
-                        </h2>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Información del modelo {module.name}.
+                <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 sm:p-8">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                        Descripción del equipo
+                    </h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Información del modelo {module.name}.
+                    </p>
+                    {module.description?.trim() ? (
+                        <p className="mt-5 whitespace-pre-line text-sm leading-relaxed text-gray-700 dark:text-gray-300 sm:text-base">
+                            {module.description}
                         </p>
-                        {module.description?.trim() ? (
-                            <p className="mt-5 whitespace-pre-line text-sm leading-relaxed text-gray-700 dark:text-gray-300 sm:text-base">
-                                {module.description}
-                            </p>
-                        ) : (
-                            <p className="mt-5 text-sm text-muted-foreground">
-                                Este equipo aún no tiene una descripción
-                                registrada.
-                            </p>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'soporte' && (
-                    <div className="mt-8 rounded-xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center dark:border-neutral-800 dark:bg-neutral-900">
-                        <Wrench className="mx-auto size-8 text-[#0a7c4a]" />
-                        <p className="mt-3 text-sm font-semibold text-gray-900 dark:text-white">
-                            Sección en construcción
+                    ) : (
+                        <p className="mt-5 text-sm text-muted-foreground">
+                            Este equipo aún no tiene una descripción
+                            registrada.
                         </p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Próximamente podrá consultar más información de
-                            Soporte.
-                        </p>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </>
     );

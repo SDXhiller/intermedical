@@ -6,14 +6,26 @@ use App\Models\Fabricante;
 use App\Models\Modulo;
 use App\Models\Status;
 use App\Models\TipoEquipo;
+use Database\Seeders\DisponibilidadSeeder;
+use Database\Seeders\StatusSeeder;
+use Database\Seeders\TipoEquipoSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     $this->seed([
-        \Database\Seeders\StatusSeeder::class,
-        \Database\Seeders\DisponibilidadSeeder::class,
-        \Database\Seeders\TipoEquipoSeeder::class,
+        StatusSeeder::class,
+        DisponibilidadSeeder::class,
+        TipoEquipoSeeder::class,
     ]);
+});
+
+test('the equipment listing stacks category stats on mobile', function () {
+    $page = file_get_contents(resource_path('js/pages/Modulos/ListadoView.tsx'));
+
+    expect($page)
+        ->toContain('grid-cols-1 sm:grid-cols-3')
+        ->toContain('object-contain object-center lg:object-cover')
+        ->toContain('flex-col gap-2');
 });
 
 test('listing shows equipos_modulos from the database for the category', function () {
@@ -102,6 +114,20 @@ test('equipment detail page resolves database equipos_modulos by public slug', f
             ->where('module.category_name', 'Ultrasonido')
             ->where('module.description', 'Resumen del equipo EPIQ')
         );
+});
+
+test('the equipment detail page links to services and no longer shows a support tab', function () {
+    $page = file_get_contents(resource_path('js/pages/Modulos/Modulosview.tsx'));
+
+    expect($page)
+        ->toContain('Solicitar servicio')
+        ->toContain('soporte.url')
+        ->not->toContain("label: 'Soporte'")
+        ->not->toContain('Sección en construcción');
+
+    expect(strpos($page, 'Solicitar cotización'))->toBeGreaterThan(
+        strpos($page, 'Año:'),
+    );
 });
 
 test('legacy em-id equipment urls redirect to the model name slug', function () {

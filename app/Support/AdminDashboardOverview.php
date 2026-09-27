@@ -25,7 +25,8 @@ final class AdminDashboardOverview
      *     stats: list<array{key: string, title: string, value: int, status: string, trend: string}>,
      *     acciones: list<array{key: string, title: string}>,
      *     actividad: list<array{id: string, title: string, time: string}>,
-     *     resumenMensual: array{mes: string, total: int, dias: list<array{dia: int, total: int, esHoy: bool}>}|null
+     *     resumenMensual: array{mes: string, total: int, dias: list<array{dia: int, total: int, esHoy: bool}>}|null,
+     *     mantenimientoSitio: array{enabled: bool, hours: int, minutes: int, until: string|null}|null
      * }
      */
     public function toArray(): array
@@ -36,6 +37,9 @@ final class AdminDashboardOverview
             'actividad' => $this->actividad(),
             'resumenMensual' => $this->admin->canAccess(Cargo::AREA_COTIZACIONES)
                 ? $this->resumenMensual()
+                : null,
+            'mantenimientoSitio' => $this->admin->activo && $this->admin->canAccess(Cargo::AREA_CONFIGURACION)
+                ? app(SiteMaintenance::class)->status()
                 : null,
         ];
     }

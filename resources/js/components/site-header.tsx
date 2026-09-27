@@ -10,26 +10,36 @@ import {
     Home,
     Layers,
     Mail,
+    Menu,
     Monitor,
     MonitorSmartphone,
     PackageMinus,
     ScanSearch,
+    Search,
     Settings,
     Settings2,
     ShieldCheck,
     Target,
     Users,
     Wrench,
+    X,
     type LucideIcon,
 } from 'lucide-react';
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type CSSProperties,
+    type ReactNode,
+} from 'react';
 import { GlobalSearchBar } from '@/components/global-search-bar';
 import {
     BRAND_COLOR,
     CONTENT_WIDTH,
     type EquipmentItem,
 } from '@/data/equipment';
-import { getMaintenanceServiceBySlug } from '@/data/maintenance-services';
+import { type MaintenanceService } from '@/data/maintenance-services';
 import { contacto, home, mantenimiento, sobreNosotros } from '@/routes';
 import { equipos as bibliotecaEquipos } from '@/routes/biblioteca';
 import { index as equiposIndex } from '@/routes/equipos';
@@ -148,62 +158,46 @@ type ServiceFeature = {
     customIcon?: ReactNode;
 };
 
-type ServiceCategory = {
-    title: string;
-    items: ServiceFeature[];
-};
-
-function specializedServiceItem(
+function specializedServiceExtras(
     slug: string,
-    extras: Pick<ServiceFeature, 'icon' | 'customIcon'>,
-): ServiceFeature {
-    const service = getMaintenanceServiceBySlug(slug);
-
-    if (!service) {
-        throw new Error(`Servicio de mantenimiento no encontrado: ${slug}`);
-    }
-
-    return {
-        title: service.title,
-        description: service.description,
-        href: contacto.url({ query: { tipo: service.slug } }),
-        ...extras,
-    };
-}
-
-const specializedServiceCategories: ServiceCategory[] = [
-    {
-        title: 'MANTENIMIENTO',
-        items: [
-            specializedServiceItem('mantenimiento-preventivo', { icon: Cog }),
-            specializedServiceItem('mantenimiento-correctivo', {
+): Pick<ServiceFeature, 'icon' | 'customIcon'> {
+    switch (slug) {
+        case 'mantenimiento-preventivo':
+            return { icon: Cog };
+        case 'mantenimiento-correctivo':
+            return {
                 customIcon: (
                     <CorrectiveMaintenanceIcon
                         className="size-5"
                         style={{ color: BRAND_COLOR }}
                     />
                 ),
-            }),
-            specializedServiceItem('diagnostico', { icon: ScanSearch }),
-        ],
-    },
-    {
-        title: 'INSTALACIÓN Y PUESTA EN MARCHA',
-        items: [
-            specializedServiceItem('instalacion', { icon: Settings2 }),
-            specializedServiceItem('desinstalacion', { icon: PackageMinus }),
-            specializedServiceItem('puesta-en-marcha', { icon: ShieldCheck }),
-        ],
-    },
-    {
-        title: 'RENTA',
-        items: [
-            specializedServiceItem('renta-de-equipos-medicos', {
-                icon: MonitorSmartphone,
-            }),
-        ],
-    },
-];
+            };
+        case 'diagnostico':
+            return { icon: ScanSearch };
+        case 'instalacion':
+            return { icon: Settings2 };
+        case 'desinstalacion':
+            return { icon: PackageMinus };
+        case 'puesta-en-marcha':
+            return { icon: ShieldCheck };
+        case 'renta-de-equipos-medicos':
+            return { icon: MonitorSmartphone };
+        default:
+            return { icon: Wrench };
+    }
+}
+
+function buildSpecializedServices(
+    services: MaintenanceService[],
+): ServiceFeature[] {
+    return services.map((service) => ({
+        title: service.title,
+        description: service.description,
+        href: contacto.url({ query: { tipo: service.slug } }),
+        ...specializedServiceExtras(service.slug),
+    }));
+}
 
 function MegaMenuEquipmentCard({
     name,
@@ -271,7 +265,7 @@ function ServiceFeatureCard({
         <Link
             href={href}
             onClick={onNavigate}
-            className="group flex gap-3 rounded-lg p-1 -m-1 transition hover:bg-[#0a7c4a]/5"
+            className="group flex min-w-0 gap-3 rounded-lg p-1 -m-1 transition hover:bg-[#0a7c4a]/5"
         >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#0a7c4a]/25 bg-[#0a7c4a]/10 dark:bg-[#0a7c4a]/20">
                 {customIcon ??
@@ -284,7 +278,7 @@ function ServiceFeatureCard({
                     ))}
             </div>
             <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900 transition group-hover:text-[#0a7c4a] dark:text-white">
+                <p className="truncate text-sm font-semibold text-gray-900 transition group-hover:text-[#0a7c4a] dark:text-white">
                     {title}
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground sm:text-sm">
@@ -292,33 +286,6 @@ function ServiceFeatureCard({
                 </p>
             </div>
         </Link>
-    );
-}
-
-function ServiceCategoryColumn({
-    title,
-    items,
-    onNavigate,
-}: ServiceCategory & { onNavigate?: () => void }) {
-    return (
-        <div className="flex flex-col">
-            <h3 className="text-xs font-bold tracking-wider text-gray-900 dark:text-white">
-                {title}
-            </h3>
-            <div
-                className="mt-2 h-0.5 w-8 rounded-full"
-                style={{ backgroundColor: BRAND_COLOR }}
-            />
-            <div className="mt-5 flex flex-1 flex-col gap-5">
-                {items.map((item) => (
-                    <ServiceFeatureCard
-                        key={item.title}
-                        {...item}
-                        onNavigate={onNavigate}
-                    />
-                ))}
-            </div>
-        </div>
     );
 }
 
@@ -434,10 +401,17 @@ function SubEquipmentCarousel({
 }
 
 function SpecializedServicesMegaMenu({
+    services,
     onNavigate,
 }: {
+    services: MaintenanceService[];
     onNavigate?: () => void;
 }) {
+    const specializedServices = useMemo(
+        () => buildSpecializedServices(services),
+        [services],
+    );
+
     return (
         <div>
             <div className="grid gap-8 lg:grid-cols-5 lg:gap-6 xl:gap-8">
@@ -462,11 +436,11 @@ function SpecializedServicesMegaMenu({
                     </div>
                 </div>
 
-                <div className="grid gap-8 sm:grid-cols-2 lg:col-span-4 lg:grid-cols-3 lg:gap-5 xl:gap-6">
-                    {specializedServiceCategories.map((category) => (
-                        <ServiceCategoryColumn
-                            key={category.title}
-                            {...category}
+                <div className="grid gap-5 sm:grid-cols-2 lg:col-span-4 lg:grid-cols-3 lg:gap-5 xl:gap-6">
+                    {specializedServices.map((item) => (
+                        <ServiceFeatureCard
+                            key={item.title}
+                            {...item}
                             onNavigate={onNavigate}
                         />
                     ))}
@@ -476,15 +450,62 @@ function SpecializedServicesMegaMenu({
     );
 }
 
+const iconButtonClassName =
+    'flex size-10 shrink-0 items-center justify-center rounded-full text-white/85 transition hover:bg-white/10 hover:text-white';
+
 export default function SiteHeader() {
-    const { equipmentItems, subEquipmentItems } = usePage<{
-        equipmentItems: EquipmentItem[];
-        subEquipmentItems: EquipmentItem[];
-    }>().props;
+    const { equipmentItems, subEquipmentItems, maintenanceServiceItems } =
+        usePage<{
+            equipmentItems: EquipmentItem[];
+            subEquipmentItems: EquipmentItem[];
+            maintenanceServiceItems: MaintenanceService[];
+        }>().props;
     const [activeMegaMenu, setActiveMegaMenu] = useState<MegaMenuKey | null>(
         null,
     );
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const closeMegaMenu = () => setActiveMegaMenu(null);
+
+    useEffect(() => {
+        if (!searchOpen) {
+            return;
+        }
+
+        const frame = window.requestAnimationFrame(() => {
+            searchInputRef.current?.focus();
+        });
+
+        return () => window.cancelAnimationFrame(frame);
+    }, [searchOpen]);
+
+    useEffect(() => {
+        const closeMobileOverlays = () => {
+            setSearchOpen(false);
+            setMenuOpen(false);
+        };
+
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                closeMobileOverlays();
+            }
+        };
+
+        const onResize = () => {
+            if (window.matchMedia('(min-width: 1024px)').matches) {
+                closeMobileOverlays();
+            }
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('resize', onResize);
+
+        return () => {
+            window.removeEventListener('keydown', onKeyDown);
+            window.removeEventListener('resize', onResize);
+        };
+    }, []);
 
     return (
         <div className="sticky top-0 z-[100] isolate overflow-visible">
@@ -493,11 +514,11 @@ export default function SiteHeader() {
                 onMouseLeave={() => setActiveMegaMenu(null)}
             >
                 <div
-                    className={`mx-auto flex ${CONTENT_WIDTH} items-center justify-between gap-4 overflow-visible py-4`}
+                    className={`mx-auto flex ${CONTENT_WIDTH} items-center gap-3 overflow-visible py-4 lg:justify-between lg:gap-4`}
                 >
                     <Link
                         href={home()}
-                        className="flex shrink-0 items-center"
+                        className={`shrink-0 items-center ${searchOpen ? 'hidden lg:flex' : 'flex'}`}
                         aria-label="Medical Imaging Group"
                     >
                         <img
@@ -550,17 +571,147 @@ export default function SiteHeader() {
                         })}
                     </nav>
 
-                    <div className="flex min-w-0 items-center justify-end overflow-visible">
+                    <div className="hidden min-w-0 items-center justify-end overflow-visible lg:flex">
                         <GlobalSearchBar
                             variant="compact"
-                            className="w-48 sm:w-56 lg:w-64 xl:w-80"
+                            className="w-64 xl:w-80"
                             placeholder="Buscar equipo, refacción o servicio..."
                         />
                     </div>
+
+                    <div
+                        className={`flex min-w-0 items-center justify-end gap-1 lg:hidden ${searchOpen ? 'flex-1' : 'ml-auto'}`}
+                    >
+                        {searchOpen ? (
+                            <>
+                                <GlobalSearchBar
+                                    variant="compact"
+                                    className="min-w-0 flex-1"
+                                    placeholder="Buscar equipo, refacción o servicio..."
+                                    inputRef={searchInputRef}
+                                    onAfterNavigate={() => setSearchOpen(false)}
+                                />
+                                <button
+                                    type="button"
+                                    className={iconButtonClassName}
+                                    aria-label="Cerrar búsqueda"
+                                    onClick={() => setSearchOpen(false)}
+                                >
+                                    <X className="size-5" strokeWidth={1.75} />
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    type="button"
+                                    className={iconButtonClassName}
+                                    aria-label="Abrir búsqueda"
+                                    onClick={() => {
+                                        setMenuOpen(false);
+                                        setSearchOpen(true);
+                                    }}
+                                >
+                                    <Search
+                                        className="size-5"
+                                        strokeWidth={1.75}
+                                    />
+                                </button>
+                                <button
+                                    type="button"
+                                    className={iconButtonClassName}
+                                    aria-label={
+                                        menuOpen ? 'Cerrar menú' : 'Abrir menú'
+                                    }
+                                    aria-expanded={menuOpen}
+                                    aria-controls="mobile-primary-nav"
+                                    onClick={() =>
+                                        setMenuOpen((open) => !open)
+                                    }
+                                >
+                                    <span className="relative size-5">
+                                        <Menu
+                                            className={`absolute inset-0 size-5 transition-all duration-300 ease-out ${
+                                                menuOpen
+                                                    ? 'rotate-90 scale-75 opacity-0'
+                                                    : 'rotate-0 scale-100 opacity-100'
+                                            }`}
+                                            strokeWidth={1.75}
+                                        />
+                                        <X
+                                            className={`absolute inset-0 size-5 transition-all duration-300 ease-out ${
+                                                menuOpen
+                                                    ? 'rotate-0 scale-100 opacity-100'
+                                                    : '-rotate-90 scale-75 opacity-0'
+                                            }`}
+                                            strokeWidth={1.75}
+                                        />
+                                    </span>
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
 
+                <nav
+                    id="mobile-primary-nav"
+                    className={`grid overflow-hidden bg-neutral-950 transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none lg:hidden ${
+                        menuOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                    }`}
+                    aria-label="Menú principal"
+                    aria-hidden={!menuOpen}
+                    inert={!menuOpen}
+                >
+                    <div className="min-h-0 overflow-hidden">
+                        <div
+                            className={`mx-auto flex flex-col border-t border-white/10 py-2 transition-opacity duration-300 ease-out ${CONTENT_WIDTH} ${
+                                menuOpen ? 'opacity-100' : 'opacity-0'
+                            }`}
+                        >
+                            {navItems.map((item) => {
+                                const Icon = item.icon;
+                                const className =
+                                    'inline-flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium text-white/90 transition hover:bg-white/5 hover:text-[#0a7c4a]';
+                                const onClick = () => setMenuOpen(false);
+                                const label = (
+                                    <>
+                                        <Icon
+                                            className="size-4 shrink-0"
+                                            strokeWidth={1.75}
+                                        />
+                                        {item.label}
+                                    </>
+                                );
+
+                                if (item.href === '#') {
+                                    return (
+                                        <a
+                                            key={item.label}
+                                            href="#"
+                                            className={className}
+                                            onClick={onClick}
+                                        >
+                                            {label}
+                                        </a>
+                                    );
+                                }
+
+                                return (
+                                    <Link
+                                        key={item.label}
+                                        href={item.href}
+                                        className={className}
+                                        onClick={onClick}
+                                    >
+                                        {label}
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </nav>
+
                 {activeMegaMenu === 'modalidades' && (
-                    <div className="absolute inset-x-0 top-full border-b border-border bg-background shadow-lg">
+                    <div className="absolute inset-x-0 top-full hidden border-b border-border bg-background shadow-lg lg:block">
                         <div className={`mx-auto ${CONTENT_WIDTH} py-8`}>
                             <div className="min-w-0">
                                 <h3 className="mb-4 text-xs font-bold tracking-wider text-muted-foreground">
@@ -602,7 +753,7 @@ export default function SiteHeader() {
                 )}
 
                 {activeMegaMenu === 'productos' && (
-                    <div className="absolute inset-x-0 top-full border-b border-border bg-background shadow-lg">
+                    <div className="absolute inset-x-0 top-full hidden border-b border-border bg-background shadow-lg lg:block">
                         <div className={`mx-auto ${CONTENT_WIDTH} py-8`}>
                             <div className="min-w-0">
                                 <h3 className="mb-4 text-xs font-bold tracking-wider text-muted-foreground">
@@ -618,9 +769,10 @@ export default function SiteHeader() {
                 )}
 
                 {activeMegaMenu === 'servicios' && (
-                    <div className="absolute inset-x-0 top-full border-b border-border bg-background shadow-lg">
+                    <div className="absolute inset-x-0 top-full hidden border-b border-border bg-background shadow-lg lg:block">
                         <div className={`mx-auto ${CONTENT_WIDTH} py-8`}>
                             <SpecializedServicesMegaMenu
+                                services={maintenanceServiceItems}
                                 onNavigate={closeMegaMenu}
                             />
                         </div>
@@ -628,7 +780,7 @@ export default function SiteHeader() {
                 )}
 
                 {activeMegaMenu === 'empresa' && (
-                    <div className="absolute inset-x-0 top-full border-b border-border bg-background shadow-lg">
+                    <div className="absolute inset-x-0 top-full hidden border-b border-border bg-background shadow-lg lg:block">
                         <div className={`mx-auto ${CONTENT_WIDTH} py-8`}>
                             <EmpresaMegaMenu
                                 onNavigate={closeMegaMenu}

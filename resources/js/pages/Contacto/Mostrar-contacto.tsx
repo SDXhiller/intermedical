@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import {
     Clock3,
     Headphones,
@@ -8,8 +8,10 @@ import {
     Phone,
     ShieldCheck,
     UserRoundCog,
+    Wrench,
     type LucideIcon,
 } from 'lucide-react';
+import { SiteBreadcrumb } from '@/components/site-breadcrumb';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { getMaintenanceServiceBySlug } from '@/data/maintenance-services';
 import { home, mantenimiento } from '@/routes';
@@ -268,6 +270,7 @@ type TipoServicio = {
     id: number;
     nombre: string;
     slug: string;
+    descripcion?: string;
 };
 
 export default function MostrarContacto({
@@ -284,8 +287,9 @@ export default function MostrarContacto({
 
     const heroDescription =
         tipoServicio !== null
-            ? (getMaintenanceServiceBySlug(tipoServicio.slug)?.description ??
-              'Consulte nuestros canales de atención y contáctenos directamente. Nuestro equipo le responderá a la brevedad.')
+            ? (tipoServicio.descripcion ||
+                  getMaintenanceServiceBySlug(tipoServicio.slug)?.description ||
+                  'Consulte nuestros canales de atención y contáctenos directamente. Nuestro equipo le responderá a la brevedad.')
             : 'Consulte nuestros canales de atención y contáctenos directamente. Nuestro equipo le responderá a la brevedad.';
 
     return (
@@ -326,37 +330,22 @@ export default function MostrarContacto({
                 </div>
             </section>
 
-            <nav
-                aria-label="Breadcrumb"
-                className="border-b border-gray-200 bg-gray-100 dark:border-neutral-800 dark:bg-neutral-900"
-            >
-                <div
-                    className={`mx-auto flex ${CONTENT_WIDTH} max-w-6xl flex-wrap items-center gap-1.5 py-3 text-xs text-muted-foreground sm:text-sm`}
-                >
-                    <Link
-                        href={home()}
-                        className="inline-flex items-center gap-1.5 transition hover:text-[#0a7c4a]"
-                    >
-                        <Home className="size-3.5 shrink-0" />
-                        Inicio
-                    </Link>
-                    <span aria-hidden="true">›</span>
-                    <Link
-                        href={mantenimiento()}
-                        className="transition hover:text-[#0a7c4a]"
-                    >
-                        Mantenimiento
-                    </Link>
-                    <span aria-hidden="true">›</span>
-                    <span
-                        className="font-semibold"
-                        style={{ color: BRAND_COLOR }}
-                        aria-current="page"
-                    >
-                        {tipoServicio?.nombre ?? 'Contacto'}
-                    </span>
-                </div>
-            </nav>
+            <div className={`mx-auto ${CONTENT_WIDTH} max-w-6xl py-4`}>
+                <SiteBreadcrumb
+                    items={[
+                        { label: 'Inicio', href: home.url(), icon: Home },
+                        {
+                            label: 'Mantenimiento',
+                            href: mantenimiento.url(),
+                            icon: Wrench,
+                        },
+                        {
+                            label: tipoServicio?.nombre ?? 'Contacto',
+                            icon: Mail,
+                        },
+                    ]}
+                />
+            </div>
 
             <section className="bg-gray-50 py-12 dark:bg-neutral-950 sm:py-14 lg:py-16">
                 <div className={`mx-auto ${CONTENT_WIDTH} max-w-6xl`}>
