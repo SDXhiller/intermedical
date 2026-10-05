@@ -160,6 +160,14 @@ class EquipoModulo extends Model
     }
 
     /**
+     * @return HasMany<SolicitudSoporte, $this>
+     */
+    public function solicitudesSoporte(): HasMany
+    {
+        return $this->hasMany(SolicitudSoporte::class, 'equipo_modulo_id');
+    }
+
+    /**
      * Public slug used in listing and detail routes.
      */
     public function publicSlug(): string

@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use App\Models\EquipoModulo;
 use App\Models\Fabricante;
 use App\Models\Modulo;
-use App\Models\TipoServicioMantenimiento;
 use App\Models\UserAdmin;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -61,6 +60,8 @@ class HandleInertiaRequests extends Middleware
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
                 'cotizacion_enviada' => $request->session()->get('cotizacion_enviada'),
+                'soporte_enviado' => $request->session()->get('soporte_enviado'),
+                'solicitud_atendida' => $request->session()->get('solicitud_atendida'),
                 'cotizacion_cliente' => $request->session()->get('cotizacion_cliente'),
                 'open_360_equipo_id' => $request->session()->get('open_360_equipo_id'),
                 'nueva_imagen_360_id' => $request->session()->get('nueva_imagen_360_id'),
@@ -68,7 +69,6 @@ class HandleInertiaRequests extends Middleware
             'equipmentItems' => fn () => Modulo::catalogItems(),
             'subEquipmentItems' => fn () => EquipoModulo::catalogItems(),
             'manufacturerItems' => fn () => Fabricante::catalogItems(),
-            'maintenanceServiceItems' => fn () => TipoServicioMantenimiento::catalogItems(),
         ];
     }
 }

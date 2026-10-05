@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreSolicitudSoporteRequest;
 use App\Models\EquipoModulo;
 use App\Models\Modulo;
+use App\Models\SolicitudSoporte;
 use App\Models\TipoServicioMantenimiento;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class SoporteController extends Controller
 {
+    private const EQUIPO_NOMBRE_MAX_LENGTH = 120;
+
     /**
      * Public technical support request page.
      */
@@ -53,6 +59,10 @@ class SoporteController extends Controller
         $equipoSeleccionado = $equipoSlug !== ''
             ? $equipos->firstWhere('slug', $equipoSlug)
             : null;
+        $equipoNombre = $this->equipoNombreEscrito(
+            $request->string('equipo_nombre')->toString(),
+            $equipoSeleccionado !== null,
+        );
 
         return Inertia::render('Mantenimiento/ViewSoporte', [
             'servicio' => $servicio,
@@ -72,7 +82,79 @@ class SoporteController extends Controller
                 ->all(),
             'equipos' => $equipos,
             'equipo' => $equipoSeleccionado,
+            'equipoNombre' => $equipoNombre,
         ]);
+    }
+
+    /**
+     * Store a public technical support request.
+     */
+    public function store(StoreSolicitudSoporteRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+        $servicio = TipoServicioMantenimiento::query()
+            ->where('activo', true)
+            ->where('slug', $validated['servicio'])
+            ->firstOrFail();
+        $modulo = Modulo::query()->activos()->where('slug', $validated['modalidad'])->firstOrFail();
+        $equipo = $request->equipoSeleccionado();
+
+        $imagenes = [];
+        $directorio = $this->directorioImagenes($servicio);
+
+        foreach ($validated['imagenes'] ?? [] as $imagen) {
+            $imagenes[] = $imagen->store($directorio, 'public');
+        }
+
+        SolicitudSoporte::query()->create([
+            'tipo_servicio_mantenimiento_id' => $servicio->id,
+            'modulo_id' => $modulo->id,
+            'equipo_modulo_id' => $equipo?->id,
+            'equipo_nombre' => $equipo === null ? $validated['equipo_nombre'] : null,
+            'marca' => $equipo === null ? $validated['marca'] : null,
+            'nombre' => $validated['nombre'],
+            'empresa' => $validated['empresa'] ?? null,
+            'codigo_pais' => $validated['codigo_pais'],
+            'telefono' => $validated['telefono'],
+            'correo' => $validated['correo'],
+            'estado' => $validated['estado'] ?? null,
+            'latitud' => $validated['latitud'] ?? null,
+            'longitud' => $validated['longitud'] ?? null,
+            'descripcion' => $validated['descripcion'],
+            'imagenes' => $imagenes,
+        ]);
+
+        return redirect()
+            ->route('mantenimiento.soporte')
+            ->with('soporte_enviado', true);
+    }
+
+    /**
+     * Store uploaded photos as Soporte/{tipo}/{año}/{mes}/{archivo}.
+     */
+    private function directorioImagenes(TipoServicioMantenimiento $servicio): string
+    {
+        $tipo = $servicio->slug !== '' ? $servicio->slug : 'general';
+
+        return sprintf('Soporte/%s/%s/%s', $tipo, now()->format('Y'), now()->format('m'));
+    }
+
+    /**
+     * Name typed by the visitor when the equipment is not in the catalog.
+     */
+    private function equipoNombreEscrito(string $nombre, bool $catalogoSeleccionado): ?string
+    {
+        if ($catalogoSeleccionado) {
+            return null;
+        }
+
+        $nombre = Str::squish($nombre);
+
+        if ($nombre === '' || mb_strlen($nombre) > self::EQUIPO_NOMBRE_MAX_LENGTH) {
+            return null;
+        }
+
+        return $nombre;
     }
 
     /**

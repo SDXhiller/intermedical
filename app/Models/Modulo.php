@@ -165,4 +165,12 @@ class Modulo extends Model
     {
         return $this->hasMany(EquipoModulo::class, 'modulo_id');
     }
+
+    /**
+     * @return HasMany<SolicitudSoporte, $this>
+     */
+    public function solicitudesSoporte(): HasMany
+    {
+        return $this->hasMany(SolicitudSoporte::class, 'modulo_id');
+    }
 }

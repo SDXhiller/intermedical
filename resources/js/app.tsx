@@ -39,6 +39,7 @@ createInertiaApp({
             case name === 'Contacto/Cargar-datos-contactos':
             case name === 'Contacto/Cargar-contacto':
             case name.startsWith('Cotizaciones/'):
+            case name.startsWith('Servcios/'):
             case name.startsWith('Users/'):
             case name.startsWith('Admins/'):
             case name === 'settings/monitoreo':

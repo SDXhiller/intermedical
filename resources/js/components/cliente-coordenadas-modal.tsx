@@ -28,7 +28,7 @@ export type Coordenadas = {
 };
 
 const DEFAULT_CENTER: [number, number] = [19.4326, -99.1332];
-const MAP_HEIGHT = 420;
+const MAP_HEIGHT = 320;
 
 const locationIcon = L.icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -106,10 +106,12 @@ function MapClickHandler({
 function CoordenadasMap({
     open,
     value,
+    focus,
     onChange,
 }: {
     open: boolean;
     value: Coordenadas | null;
+    focus?: MapaEnfoque | null;
     onChange: (coords: Coordenadas) => void;
 }) {
     const [ready, setReady] = useState(false);
@@ -131,16 +133,19 @@ function CoordenadasMap({
 
     const center: [number, number] = value
         ? [value.latitud, value.longitud]
-        : DEFAULT_CENTER;
+        : focus
+          ? [focus.latitud, focus.longitud]
+          : DEFAULT_CENTER;
+    const zoom = value ? 16 : (focus?.zoom ?? 5);
 
     return (
         <div
-            className="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-neutral-800"
+            className="relative w-full overflow-hidden rounded-xl border border-gray-200 dark:border-neutral-800"
             style={{ height: MAP_HEIGHT }}
         >
             <MapContainer
                 center={center}
-                zoom={value ? 16 : 5}
+                zoom={zoom}
                 scrollWheelZoom
                 style={{ height: MAP_HEIGHT, width: '100%' }}
                 className="z-0"
@@ -159,6 +164,11 @@ function CoordenadasMap({
                     />
                 )}
             </MapContainer>
+            {value ? null : (
+                <p className="pointer-events-none absolute inset-x-3 bottom-3 z-10 rounded-lg bg-black/80 px-3 py-2 text-center text-sm font-semibold text-white">
+                    Haga clic en el mapa para marcar el lugar
+                </p>
+            )}
         </div>
     );
 }
@@ -214,11 +224,16 @@ function geolocationErrorMessage(error: GeolocationPositionError): string {
     }
 }
 
+export type MapaEnfoque = Coordenadas & {
+    zoom: number;
+};
+
 type ClienteCoordenadasModalProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     value: Coordenadas | null;
     onConfirm: (coords: Coordenadas) => void;
+    focus?: MapaEnfoque | null;
 };
 
 export default function ClienteCoordenadasModal({
@@ -226,6 +241,7 @@ export default function ClienteCoordenadasModal({
     onOpenChange,
     value,
     onConfirm,
+    focus = null,
 }: ClienteCoordenadasModalProps) {
     const [draft, setDraft] = useState<Coordenadas | null>(value);
     const [coordenadasInput, setCoordenadasInput] = useState('');
@@ -338,21 +354,37 @@ export default function ClienteCoordenadasModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="gap-5 sm:max-w-4xl">
+            <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto sm:max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>Ingresar coordenadas</DialogTitle>
                     <DialogDescription>
-                        Haga clic en el mapa, use su ubicación actual o pegue
-                        las coordenadas juntas, por ejemplo: 20.125455,
-                        -98.792666.
+                        Marque el lugar del equipo. Puede hacerlo de tres
+                        formas:
                     </DialogDescription>
                 </DialogHeader>
+
+                <ol className="list-decimal space-y-1 pl-5 text-sm text-foreground">
+                    <li>Haga clic en el mapa, justo sobre el lugar.</li>
+                    <li>
+                        Pulse{' '}
+                        <span className="font-semibold">Usar mi ubicación</span>{' '}
+                        si usted está en ese lugar.
+                    </li>
+                    <li>
+                        Pegue la latitud y la longitud separadas por una coma.
+                        Ejemplo: 20.125455, -98.792666.
+                    </li>
+                </ol>
+                <p className="text-sm font-semibold text-foreground">
+                    Cuando el punto sea el correcto, pulse Confirmar ubicación.
+                </p>
 
                 <div className="space-y-4">
                     {open && (
                         <CoordenadasMap
                             open={open}
                             value={draft}
+                            focus={focus}
                             onChange={(coords) => {
                                 updateDraft(coords);
                                 setLocationError(null);
@@ -406,7 +438,7 @@ export default function ClienteCoordenadasModal({
                                 placeholder="20.125455078576326, -98.7926666117937"
                             />
                             <p className="text-xs text-muted-foreground">
-                                Pegue latitud y longitud separadas por coma.
+                                Ejemplo: 20.125455, -98.792666.
                             </p>
                         </div>
                     </div>

@@ -3,7 +3,7 @@
 use App\Models\ClienteCotisacion;
 use App\Models\EquipoModulo;
 use App\Models\Modulo;
-use App\Models\Servicio;
+use App\Models\SolicitudSoporte;
 use App\Models\UserAdmin;
 use Database\Seeders\StatusSeeder;
 use Illuminate\Support\Carbon;
@@ -19,12 +19,25 @@ test('guests cannot access the admin dashboard', function () {
         ->assertRedirect(route('admin.login'));
 });
 
-test('admins can view live dashboard counts for equipment models services and incoming quotes', function () {
+test('admins can view live dashboard counts for equipment models support and incoming quotes', function () {
     $admin = UserAdmin::factory()->create();
 
-    Modulo::factory()->count(2)->create();
+    $modulos = Modulo::factory()->count(2)->create();
     EquipoModulo::factory()->count(3)->create();
-    Servicio::factory()->count(2)->create();
+    SolicitudSoporte::factory()->count(2)->create([
+        'modulo_id' => $modulos->first()->id,
+    ]);
+    SolicitudSoporte::factory()->create([
+        'modulo_id' => $modulos->first()->id,
+        'created_at' => now()->subDay(),
+        'updated_at' => now()->subDay(),
+        'atendida_at' => now()->subDay(),
+    ]);
+    SolicitudSoporte::factory()->create([
+        'modulo_id' => $modulos->first()->id,
+        'created_at' => now()->subMonth(),
+        'updated_at' => now()->subMonth(),
+    ]);
     ClienteCotisacion::factory()->count(5)->create();
     ClienteCotisacion::factory()->count(3)->create([
         'created_at' => now()->subDay(),
@@ -38,11 +51,16 @@ test('admins can view live dashboard counts for equipment models services and in
             ->component('Admins/dashboard-admin')
             ->has('stats', 4)
             ->where('stats.0.key', 'equipos')
+            ->where('stats.0.title', 'Módulos')
             ->where('stats.0.value', 5)
             ->where('stats.1.key', 'modelos')
+            ->where('stats.1.title', 'Equipos')
             ->where('stats.1.value', 3)
-            ->where('stats.2.key', 'servicios')
-            ->where('stats.2.value', 2)
+            ->where('stats.2.key', 'soporte')
+            ->where('stats.2.title', 'Soporte')
+            ->where('stats.2.value', 4)
+            ->where('stats.2.status', '3 pendientes')
+            ->where('stats.2.trend', '3 nuevas este mes')
             ->where('stats.3.key', 'cotizaciones')
             ->where('stats.3.value', 5)
             ->where('stats.3.status', 'Recibidas hoy')
@@ -59,7 +77,7 @@ test('admins can view live dashboard counts for equipment models services and in
         );
 });
 
-test('recent activity lists registered equipment models and services', function () {
+test('recent activity lists registered equipment models and support requests', function () {
     $admin = UserAdmin::factory()->create();
     $modulo = Modulo::factory()->create([
         'modulo' => 'Ultrasonido',
@@ -72,8 +90,9 @@ test('recent activity lists registered equipment models and services', function 
         'created_at' => now()->subHour(),
         'updated_at' => now()->subHour(),
     ]);
-    Servicio::factory()->create([
-        'nombre' => 'Mantenimiento preventivo',
+    SolicitudSoporte::factory()->create([
+        'modulo_id' => $modulo->id,
+        'nombre' => 'Ana López',
         'created_at' => now(),
         'updated_at' => now(),
     ]);
@@ -84,17 +103,19 @@ test('recent activity lists registered equipment models and services', function 
         ->assertInertia(fn (Assert $page) => $page
             ->component('Admins/dashboard-admin')
             ->has('actividad', 3)
-            ->where('actividad.0.title', 'Se registró el servicio Mantenimiento preventivo')
-            ->where('actividad.1.title', 'Se registró el modelo Acuson NX3')
-            ->where('actividad.2.title', 'Se registró el equipo Ultrasonido')
+            ->where('actividad.0.title', 'Se registró la solicitud de soporte de Ana López')
+            ->where('actividad.1.title', 'Se registró el equipo Acuson NX3')
+            ->where('actividad.2.title', 'Se registró el módulo Ultrasonido')
         );
 });
 
-test('sales managers only see incoming quotes on the dashboard', function () {
+test('sales managers see support requests and incoming quotes on the dashboard', function () {
     $admin = UserAdmin::factory()->gerenteVentas()->create();
 
     Modulo::factory()->create();
-    Servicio::factory()->create();
+    SolicitudSoporte::factory()->create([
+        'nombre' => 'Ana López',
+    ]);
     ClienteCotisacion::factory()->count(2)->create();
 
     $this->actingAs($admin, 'admin')
@@ -102,13 +123,17 @@ test('sales managers only see incoming quotes on the dashboard', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Admins/dashboard-admin')
-            ->has('stats', 1)
-            ->where('stats.0.key', 'cotizaciones')
-            ->where('stats.0.value', 2)
-            ->has('acciones', 1)
-            ->where('acciones.0.key', 'cotizaciones')
+            ->has('stats', 2)
+            ->where('stats.0.key', 'soporte')
+            ->where('stats.0.value', 1)
+            ->where('stats.1.key', 'cotizaciones')
+            ->where('stats.1.value', 2)
+            ->has('acciones', 2)
+            ->where('acciones.0.key', 'soporte')
+            ->where('acciones.1.key', 'cotizaciones')
             ->where('mantenimientoSitio', null)
-            ->has('actividad', 0)
+            ->has('actividad', 1)
+            ->where('actividad.0.title', 'Se registró la solicitud de soporte de Ana López')
             ->where('resumenMensual.total', 2)
         );
 });

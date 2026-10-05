@@ -1,10 +1,6 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import {
-    ArrowRight,
-    BookOpen,
-    Cog,
     Compass,
-    Drill,
     Eye,
     Gem,
     Home,
@@ -12,42 +8,22 @@ import {
     Mail,
     Menu,
     Monitor,
-    MonitorSmartphone,
-    PackageMinus,
-    ScanSearch,
     Search,
     Settings,
-    Settings2,
-    ShieldCheck,
     Target,
     Users,
-    Wrench,
     X,
     type LucideIcon,
 } from 'lucide-react';
-import {
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-    type CSSProperties,
-    type ReactNode,
-} from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { GlobalSearchBar } from '@/components/global-search-bar';
-import {
-    BRAND_COLOR,
-    CONTENT_WIDTH,
-    type EquipmentItem,
-} from '@/data/equipment';
-import { type MaintenanceService } from '@/data/maintenance-services';
+import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { contacto, home, mantenimiento, sobreNosotros } from '@/routes';
-import { equipos as bibliotecaEquipos } from '@/routes/biblioteca';
-import { index as equiposIndex } from '@/routes/equipos';
-import { show as moduloShow } from '@/routes/modulos';
+import { equipos as bibliotecaEquipos, equiposDisponibles } from '@/routes/biblioteca';
 
 const MIG_HORIZONTAL_WHITE = '/Imagen/Logos/MIG-horizontal-blanco.png';
 
-type MegaMenuKey = 'productos' | 'modalidades' | 'servicios' | 'empresa';
+type MegaMenuKey = 'empresa';
 
 type NavItem = {
     label: string;
@@ -62,14 +38,12 @@ const navItems: NavItem[] = [
         label: 'Servicios',
         href: mantenimiento.url(),
         icon: Settings,
-        megaMenu: 'servicios',
     },
-    { label: 'Modalidades', href: bibliotecaEquipos.url(), icon: Layers, megaMenu: 'modalidades' },
+    { label: 'Modalidades', href: bibliotecaEquipos.url(), icon: Layers },
     {
         label: 'Equipos disponibles',
-        href: '#',
+        href: equiposDisponibles.url(),
         icon: Monitor,
-        megaMenu: 'productos',
     },
     {
         label: 'Nosotros',
@@ -125,170 +99,6 @@ const empresaSubtitles: {
     },
 ];
 
-function CorrectiveMaintenanceIcon({
-    className,
-    style,
-}: {
-    className?: string;
-    style?: CSSProperties;
-}) {
-    return (
-        <span
-            className={`relative inline-flex shrink-0 items-center justify-center ${className ?? 'size-[18px]'}`}
-        >
-            <Wrench
-                className="absolute size-4 -rotate-45"
-                style={style}
-                strokeWidth={1.75}
-            />
-            <Drill
-                className="absolute size-4 rotate-45"
-                style={style}
-                strokeWidth={1.75}
-            />
-        </span>
-    );
-}
-
-type ServiceFeature = {
-    title: string;
-    description: string;
-    href: string;
-    icon?: LucideIcon;
-    customIcon?: ReactNode;
-};
-
-function specializedServiceExtras(
-    slug: string,
-): Pick<ServiceFeature, 'icon' | 'customIcon'> {
-    switch (slug) {
-        case 'mantenimiento-preventivo':
-            return { icon: Cog };
-        case 'mantenimiento-correctivo':
-            return {
-                customIcon: (
-                    <CorrectiveMaintenanceIcon
-                        className="size-5"
-                        style={{ color: BRAND_COLOR }}
-                    />
-                ),
-            };
-        case 'diagnostico':
-            return { icon: ScanSearch };
-        case 'instalacion':
-            return { icon: Settings2 };
-        case 'desinstalacion':
-            return { icon: PackageMinus };
-        case 'puesta-en-marcha':
-            return { icon: ShieldCheck };
-        case 'renta-de-equipos-medicos':
-            return { icon: MonitorSmartphone };
-        default:
-            return { icon: Wrench };
-    }
-}
-
-function buildSpecializedServices(
-    services: MaintenanceService[],
-): ServiceFeature[] {
-    return services.map((service) => ({
-        title: service.title,
-        description: service.description,
-        href: contacto.url({ query: { tipo: service.slug } }),
-        ...specializedServiceExtras(service.slug),
-    }));
-}
-
-function MegaMenuEquipmentCard({
-    name,
-    href,
-    image,
-    cta,
-    onNavigate,
-}: {
-    name: string;
-    href: string;
-    image: string | null;
-    cta: string;
-    onNavigate?: () => void;
-}) {
-    const isLongName = name.length > 22 || name.includes('/');
-
-    return (
-        <Link
-            href={href}
-            onClick={onNavigate}
-            className="group relative block h-28 overflow-hidden rounded-lg border border-border shadow-sm transition-shadow hover:shadow-md sm:h-32 lg:h-36"
-        >
-            {image ? (
-                <img
-                    src={image}
-                    alt={name}
-                    className="size-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-110"
-                />
-            ) : (
-                <div className="flex size-full items-center justify-center bg-muted text-xs text-muted-foreground">
-                    Sin imagen
-                </div>
-            )}
-            <div
-                className="absolute inset-0 flex flex-col items-center justify-center px-3 text-center opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
-                style={{ backgroundColor: `${BRAND_COLOR}e6` }}
-            >
-                <p
-                    className={`translate-y-3 line-clamp-3 font-bold leading-tight text-white transition-all duration-300 ease-out group-hover:translate-y-0 ${
-                        isLongName
-                            ? 'text-xs sm:text-sm'
-                            : 'text-sm sm:text-base lg:text-lg'
-                    }`}
-                >
-                    {name}
-                </p>
-                <span className="mt-2 inline-flex translate-y-3 items-center gap-1 text-xs font-medium text-white/95 opacity-0 transition-all delay-100 duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 sm:text-sm">
-                    {cta}
-                    <ArrowRight className="size-3.5" />
-                </span>
-            </div>
-        </Link>
-    );
-}
-
-function ServiceFeatureCard({
-    title,
-    description,
-    href,
-    icon: Icon,
-    customIcon,
-    onNavigate,
-}: ServiceFeature & { onNavigate?: () => void }) {
-    return (
-        <Link
-            href={href}
-            onClick={onNavigate}
-            className="group flex min-w-0 gap-3 rounded-lg p-1 -m-1 transition hover:bg-[#0a7c4a]/5"
-        >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#0a7c4a]/25 bg-[#0a7c4a]/10 dark:bg-[#0a7c4a]/20">
-                {customIcon ??
-                    (Icon && (
-                        <Icon
-                            className="size-5"
-                            style={{ color: BRAND_COLOR }}
-                            strokeWidth={1.75}
-                        />
-                    ))}
-            </div>
-            <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-gray-900 transition group-hover:text-[#0a7c4a] dark:text-white">
-                    {title}
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                    {description}
-                </p>
-            </div>
-        </Link>
-    );
-}
-
 function EmpresaMegaMenu({ onNavigate }: { onNavigate?: () => void }) {
     return (
         <div>
@@ -338,128 +148,10 @@ function EmpresaMegaMenu({ onNavigate }: { onNavigate?: () => void }) {
     );
 }
 
-function buildCarouselSequence(items: EquipmentItem[]): EquipmentItem[] {
-    if (items.length === 0) {
-        return [];
-    }
-
-    const copies = Math.max(2, Math.ceil(4 / items.length));
-
-    return Array.from({ length: copies }, () => items).flat();
-}
-
-function SubEquipmentCarousel({
-    items,
-    onNavigate,
-}: {
-    items: EquipmentItem[];
-    onNavigate?: () => void;
-}) {
-    const sequence = useMemo(() => buildCarouselSequence(items), [items]);
-    const loop = useMemo(() => [...sequence, ...sequence], [sequence]);
-    const durationSeconds = Math.max(28, sequence.length * 6);
-
-    if (items.length === 0) {
-        return (
-            <p className="text-sm text-muted-foreground">
-                Aún no hay sub equipos publicados.
-            </p>
-        );
-    }
-
-    return (
-        <div
-            className="@container group/carousel relative overflow-hidden"
-            style={
-                {
-                    '--equipment-marquee-duration': `${durationSeconds}s`,
-                } as CSSProperties
-            }
-        >
-            <div
-                className="flex w-max gap-4 motion-safe:animate-equipment-marquee group-hover/carousel:[animation-play-state:paused] md:gap-7"
-                aria-label="Carrusel de equipos disponibles"
-            >
-                {loop.map((item, index) => (
-                    <div
-                        key={`${item.slug}-${index}`}
-                        className="w-[calc((100cqw-1rem)/2)] shrink-0 sm:w-[calc((100cqw-2rem)/3)] md:w-[calc((100cqw-5.25rem)/4)]"
-                        aria-hidden={index >= sequence.length}
-                    >
-                        <MegaMenuEquipmentCard
-                            name={item.name}
-                            href={moduloShow.url(item.slug)}
-                            image={item.image}
-                            cta="Ver equipo"
-                            onNavigate={onNavigate}
-                        />
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-function SpecializedServicesMegaMenu({
-    services,
-    onNavigate,
-}: {
-    services: MaintenanceService[];
-    onNavigate?: () => void;
-}) {
-    const specializedServices = useMemo(
-        () => buildSpecializedServices(services),
-        [services],
-    );
-
-    return (
-        <div>
-            <div className="grid gap-8 lg:grid-cols-5 lg:gap-6 xl:gap-8">
-                <div className="lg:col-span-1">
-                    <p className="text-xs font-bold tracking-wider text-[#0a7c4a]">
-                        SERVICIOS ESPECIALIZADOS
-                    </p>
-                    <h2 className="mt-2 text-xl font-bold leading-tight text-gray-900 dark:text-white lg:text-2xl">
-                        Soluciones integrales para sus equipos médicos
-                    </h2>
-                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                        Nuestro equipo de ingenieros especializados está listo
-                        para ayudarle en cada etapa del ciclo de vida de su
-                        equipo.
-                    </p>
-                    <div className="mt-4 overflow-hidden rounded-xl">
-                        <img
-                            src="/Imagen/Mantenimiento/Mantenimeinto.png"
-                            alt="Técnico especializado realizando mantenimiento a equipo de imagen médica"
-                            className="aspect-[4/3] w-full object-cover object-center"
-                        />
-                    </div>
-                </div>
-
-                <div className="grid gap-5 sm:grid-cols-2 lg:col-span-4 lg:grid-cols-3 lg:gap-5 xl:gap-6">
-                    {specializedServices.map((item) => (
-                        <ServiceFeatureCard
-                            key={item.title}
-                            {...item}
-                            onNavigate={onNavigate}
-                        />
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
 const iconButtonClassName =
     'flex size-10 shrink-0 items-center justify-center rounded-full text-white/85 transition hover:bg-white/10 hover:text-white';
 
 export default function SiteHeader() {
-    const { equipmentItems, subEquipmentItems, maintenanceServiceItems } =
-        usePage<{
-            equipmentItems: EquipmentItem[];
-            subEquipmentItems: EquipmentItem[];
-            maintenanceServiceItems: MaintenanceService[];
-        }>().props;
     const [activeMegaMenu, setActiveMegaMenu] = useState<MegaMenuKey | null>(
         null,
     );
@@ -552,6 +244,9 @@ export default function SiteHeader() {
                                         href="#"
                                         className={className}
                                         onMouseEnter={onMouseEnter}
+                                        onClick={(event) =>
+                                            event.preventDefault()
+                                        }
                                     >
                                         {label}
                                     </a>
@@ -688,7 +383,10 @@ export default function SiteHeader() {
                                             key={item.label}
                                             href="#"
                                             className={className}
-                                            onClick={onClick}
+                                            onClick={(event) => {
+                                                event.preventDefault();
+                                                onClick();
+                                            }}
                                         >
                                             {label}
                                         </a>
@@ -709,75 +407,6 @@ export default function SiteHeader() {
                         </div>
                     </div>
                 </nav>
-
-                {activeMegaMenu === 'modalidades' && (
-                    <div className="absolute inset-x-0 top-full hidden border-b border-border bg-background shadow-lg lg:block">
-                        <div className={`mx-auto ${CONTENT_WIDTH} py-8`}>
-                            <div className="min-w-0">
-                                <h3 className="mb-4 text-xs font-bold tracking-wider text-muted-foreground">
-                                    MODALIDADES
-                                </h3>
-                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
-                                    {equipmentItems.map((item) => (
-                                        <MegaMenuEquipmentCard
-                                            key={item.slug}
-                                            name={item.name}
-                                            href={equiposIndex.url(item.slug)}
-                                            image={item.image}
-                                            cta="Ver equipos"
-                                            onNavigate={closeMegaMenu}
-                                        />
-                                    ))}
-                                    <Link
-                                        href={bibliotecaEquipos()}
-                                        onClick={closeMegaMenu}
-                                        className="flex flex-col justify-center gap-2 rounded-lg border border-dashed border-[#0a7c4a]/25 bg-[#0a7c4a]/10 p-3 dark:bg-[#0a7c4a]/20"
-                                    >
-                                        <BookOpen
-                                            className="size-5"
-                                            style={{ color: BRAND_COLOR }}
-                                        />
-                                        <div>
-                                            <p className="text-sm font-semibold text-foreground">
-                                                Ver todas
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                Tipos de equipos
-                                            </p>
-                                        </div>
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {activeMegaMenu === 'productos' && (
-                    <div className="absolute inset-x-0 top-full hidden border-b border-border bg-background shadow-lg lg:block">
-                        <div className={`mx-auto ${CONTENT_WIDTH} py-8`}>
-                            <div className="min-w-0">
-                                <h3 className="mb-4 text-xs font-bold tracking-wider text-muted-foreground">
-                                    EQUIPOS DISPONIBLES
-                                </h3>
-                                <SubEquipmentCarousel
-                                    items={subEquipmentItems}
-                                    onNavigate={closeMegaMenu}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {activeMegaMenu === 'servicios' && (
-                    <div className="absolute inset-x-0 top-full hidden border-b border-border bg-background shadow-lg lg:block">
-                        <div className={`mx-auto ${CONTENT_WIDTH} py-8`}>
-                            <SpecializedServicesMegaMenu
-                                services={maintenanceServiceItems}
-                                onNavigate={closeMegaMenu}
-                            />
-                        </div>
-                    </div>
-                )}
 
                 {activeMegaMenu === 'empresa' && (
                     <div className="absolute inset-x-0 top-full hidden border-b border-border bg-background shadow-lg lg:block">

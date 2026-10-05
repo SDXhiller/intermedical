@@ -9,6 +9,8 @@ import { type MaintenanceService } from '@/data/maintenance-services';
 import { contacto } from '@/routes';
 import { soporte } from '@/routes/mantenimiento';
 
+const HERO_IMAGE = `/Imagen/Servicios/${encodeURIComponent('Imagen de ChatGPT 27 sept 2026, 05_07_19 p.m..png')}`;
+
 const attendedModalities = [
     'Ultrasonido',
     'Rayos X',
@@ -19,10 +21,6 @@ const attendedModalities = [
     'Tomografía',
     'Medicina Nuclear e Imagen Molecular',
 ] as const;
-
-function maintenanceImage(filename: string): string {
-    return `/Imagen/Mantenimiento/${encodeURIComponent(filename)}`;
-}
 
 function ServiceCard({ service }: { service: MaintenanceService }) {
     return (
@@ -59,69 +57,56 @@ export default function Mantenimiento({
         <>
             <Head title="Mantenimiento" />
 
-            <section className="relative min-h-[480px] overflow-hidden sm:min-h-[540px] lg:min-h-[620px]">
+            <section className="relative overflow-hidden bg-neutral-950">
                 <img
-                    src={maintenanceImage('Mantenimeinto.png')}
+                    src={HERO_IMAGE}
                     alt=""
-                    className="absolute inset-0 size-full object-cover object-center"
+                    className="pointer-events-none absolute top-1/2 right-0 hidden h-auto w-auto max-h-full max-w-[72%] -translate-y-1/2 object-contain object-right md:block"
                     aria-hidden="true"
                 />
-                <div className="absolute inset-0 bg-slate-950/75" />
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/60 to-slate-950/30" />
 
                 <div
-                    className={`relative mx-auto flex min-h-[inherit] ${CONTENT_WIDTH} items-center py-14 sm:py-16 lg:py-20`}
+                    className={`relative z-10 mx-auto ${CONTENT_WIDTH} py-8 sm:py-10 lg:py-12`}
                 >
-                    <div className="w-[90%] max-w-none animate-[fade-up_0.7s_ease-out]">
+                    <div className="max-w-3xl animate-[fade-up_0.7s_ease-out] md:max-w-[62%]">
                         <p
                             className="text-xs font-bold tracking-[0.14em] uppercase sm:text-sm"
                             style={{ color: BRAND_COLOR }}
                         >
                             Nuestros servicios más solicitados
                         </p>
-                        <h1 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
-                            Soporte técnico para equipos de diagnóstico por imagen
+                        <h1 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
+                            Soporte técnico para equipos de diagnóstico por
+                            imagen
                         </h1>
-                        <h2>
-                        Contamos con ingenieros especializados y capacitados por marcas líderes a nivel mundial.
-                        </h2>
+                        <p className="mt-3 text-sm leading-relaxed text-white/80 sm:text-base">
+                            Contamos con ingenieros especializados y
+                            capacitados por marcas líderes a nivel mundial.
+                        </p>
                         <div
                             className="mt-4 h-1 w-14 rounded-full"
                             style={{ backgroundColor: BRAND_COLOR }}
                         />
-                        <p className="mt-5 text-sm leading-relaxed text-white/90 sm:text-base">
-                        Brindamos diagnóstico, mantenimiento preventivo y correctivo, renta, instalación, desinstalación y puesta en marcha de equipos.
-                        Acompañamos a hospitales, clínicas y gabinetes de imagenología con atención especializada y soluciones acordes con sus necesidades.
+                        <p className="mt-4 text-sm leading-relaxed text-white/90 sm:text-base">
+                            Brindamos diagnóstico, mantenimiento preventivo y
+                            correctivo, renta, instalación, desinstalación y
+                            puesta en marcha de equipos. Acompañamos a
+                            hospitales, clínicas y gabinetes de imagenología
+                            con atención especializada y soluciones acordes con
+                            sus necesidades.
                         </p>
 
-                        <h2 className="mt-7 text-lg font-bold tracking-tight text-white sm:text-xl">
+                        <h2 className="mt-5 text-lg font-bold tracking-tight text-white sm:text-xl">
                             Soporte especializado para sus equipos médicos
                         </h2>
-                        <div className="mt-3 space-y-3 text-sm leading-relaxed text-white/85 sm:text-[15px]">
-                            <p>
-                                Todos nuestros servicios de{' '}
-                                <strong className="font-semibold text-white">
-                                    mantenimiento preventivo y correctivo,
-                                    instalación, puesta en marcha y capacitación
-                                    técnica
-                                </strong>{' '}
-                                son realizados y supervisados por personal
-                                profesional e ingenieros capacitados en equipos
-                                médicos. Cada procedimiento se lleva a cabo con
-                                atención a los requerimientos técnicos de cada
-                                sistema, buscando garantizar un funcionamiento
-                                seguro, confiable y eficiente.
-                            </p>
-                            <p>
-                                Nuestro equipo brinda acompañamiento durante
-                                cada etapa del servicio, desde la evaluación
-                                inicial y el diagnóstico hasta la instalación,
-                                verificación y capacitación del personal,
-                                ofreciendo atención especializada y soluciones
-                                adecuadas a las necesidades de cada equipo e
-                                institución médica.
-                            </p>
-                        </div>
+                        <p className="mt-2 text-sm leading-relaxed text-white/85 sm:text-[15px]">
+                            Nuestro equipo brinda acompañamiento durante cada
+                            etapa del servicio, desde la evaluación inicial y
+                            el diagnóstico hasta la instalación, verificación y
+                            capacitación del personal, ofreciendo atención
+                            especializada y soluciones adecuadas a las
+                            necesidades de cada equipo e institución médica.
+                        </p>
                     </div>
                 </div>
             </section>

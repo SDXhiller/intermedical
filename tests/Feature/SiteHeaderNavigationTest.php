@@ -29,37 +29,32 @@ test('the site header uses the corresponding navigation icons', function () {
         ->toContain('icon: Mail');
 });
 
-test('the site header points modalidades to the modalidades page', function () {
+test('modalidades and equipos open only from their links', function () {
     $header = file_get_contents(resource_path('js/components/site-header.tsx'));
 
     expect($header)
         ->toContain("label: 'Modalidades'")
         ->toContain('href: bibliotecaEquipos.url()')
-        ->toContain("megaMenu: 'modalidades'")
         ->toContain("label: 'Equipos disponibles'")
-        ->toContain("href: '#'")
-        ->toContain("megaMenu: 'productos'")
+        ->toContain('href: equiposDisponibles.url()')
         ->toContain('icon: Monitor')
-        ->toContain('subEquipmentItems')
-        ->toContain('MODALIDADES')
-        ->toContain('EQUIPOS DISPONIBLES')
-        ->toContain('cta="Ver equipo"')
-        ->toContain('animate-equipment-marquee')
-        ->toContain('md:w-[calc((100cqw-5.25rem)/4)]')
-        ->toContain('Carrusel de equipos disponibles');
+        ->not->toContain("megaMenu: 'modalidades'")
+        ->not->toContain("megaMenu: 'productos'")
+        ->not->toContain('MODALIDADES')
+        ->not->toContain('EQUIPOS DISPONIBLES')
+        ->not->toContain('Carrusel de equipos disponibles');
 });
 
-test('the servicios mega menu lists items in three columns without group titles', function () {
+test('the servicios navigation link does not open a hover menu', function () {
     $header = file_get_contents(resource_path('js/components/site-header.tsx'));
 
     expect($header)
-        ->toContain('lg:grid-cols-3')
-        ->toContain('truncate text-sm font-semibold')
-        ->toContain('buildSpecializedServices')
-        ->not->toContain('OTROS SERVICIOS')
-        ->not->toContain('INSTALACIÓN Y PUESTA EN MARCHA')
-        ->not->toContain("title: 'MANTENIMIENTO'")
-        ->not->toContain('ServiceCategoryColumn');
+        ->toContain("label: 'Servicios'")
+        ->toContain('href: mantenimiento.url()')
+        ->not->toContain("megaMenu: 'servicios'")
+        ->not->toContain('SERVICIOS ESPECIALIZADOS')
+        ->not->toContain('Soluciones integrales para sus equipos médicos')
+        ->not->toContain('SpecializedServicesMegaMenu');
 });
 
 test('the site header collapses search and navigation behind buttons on mobile', function () {
@@ -85,4 +80,5 @@ test('existing public pages linked from the site header remain available', funct
     'sobre-nosotros',
     'contacto',
     'biblioteca.equipos',
+    'biblioteca.equipos-disponibles',
 ]);

@@ -7,6 +7,7 @@ import {
     Headphones,
     Layers,
     LayoutGrid,
+    LifeBuoy,
     LogOut,
     Phone,
     Settings,
@@ -37,6 +38,7 @@ import {
 import { index as adminDatosContacto } from '@/routes/admin/datos-contacto';
 import { create as adminEquipos } from '@/routes/admin/equipos';
 import { index as adminCotizaciones } from '@/routes/admin/cotizaciones';
+import { index as adminSoporte } from '@/routes/admin/soporte';
 import { index as adminFabricantes } from '@/routes/admin/fabricantes';
 import { index as adminServicios } from '@/routes/admin/servicios';
 import {
@@ -55,7 +57,7 @@ const principalItems: NavItem[] = [
 
 const contentItems: NavItem[] = [
     {
-        title: 'Equipos',
+        title: 'Módulos',
         href: adminEquipos(),
         icon: Box,
         area: 'equipos',
@@ -106,6 +108,12 @@ const supportItems: NavItem[] = [
         title: 'Cotizaciones',
         href: adminCotizaciones(),
         icon: Headphones,
+        area: 'cotizaciones',
+    },
+    {
+        title: 'Soporte',
+        href: adminSoporte(),
+        icon: LifeBuoy,
         area: 'cotizaciones',
     },
     {

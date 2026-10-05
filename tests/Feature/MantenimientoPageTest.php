@@ -69,6 +69,17 @@ test('the mantenimiento page uses the configured card description', function () 
         );
 });
 
+test('the mantenimiento hero uses the equipment image without a tall cover', function () {
+    $page = file_get_contents(resource_path('js/pages/Mantenimiento/Mantenimiento.tsx'));
+
+    expect($page)->not->toBeFalse();
+    expect($page)
+        ->toContain('05_07_19 p.m..png')
+        ->toContain('object-contain object-right')
+        ->not->toContain('min-h-[620px]')
+        ->not->toContain('Mantenimeinto.png');
+});
+
 test('the mantenimiento cards only render name description and request button', function () {
     $page = file_get_contents(resource_path('js/pages/Mantenimiento/Mantenimiento.tsx'));
 

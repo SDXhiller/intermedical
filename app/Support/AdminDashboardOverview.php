@@ -6,7 +6,7 @@ use App\Models\Cargo;
 use App\Models\ClienteCotisacion;
 use App\Models\EquipoModulo;
 use App\Models\Modulo;
-use App\Models\Servicio;
+use App\Models\SolicitudSoporte;
 use App\Models\UserAdmin;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
@@ -62,7 +62,7 @@ final class AdminDashboardOverview
 
             $stats[] = [
                 'key' => 'equipos',
-                'title' => 'Equipos',
+                'title' => 'Módulos',
                 'value' => $equiposTotal,
                 'status' => $this->counted($equiposPublicados, '1 publicado', ':count publicados'),
                 'trend' => $this->counted($equiposNuevosMes, '1 nuevo este mes', ':count nuevos este mes'),
@@ -76,26 +76,26 @@ final class AdminDashboardOverview
 
             $stats[] = [
                 'key' => 'modelos',
-                'title' => 'Modelos de equipos',
+                'title' => 'Equipos',
                 'value' => $modelosTotal,
                 'status' => $this->counted($modelosActivos, '1 activo', ':count activos'),
                 'trend' => $this->counted($modelosNuevosSemana, '1 nuevo esta semana', ':count nuevos esta semana'),
             ];
         }
 
-        if ($this->admin->canAccess(Cargo::AREA_SERVICIOS)) {
-            $serviciosTotal = Servicio::query()->count();
-            $serviciosActivos = Servicio::query()->where('activo', true)->count();
-            $serviciosActualizadosMes = Servicio::query()
-                ->where('updated_at', '>=', $startOfMonth)
+        if ($this->admin->canAccess(Cargo::AREA_COTIZACIONES)) {
+            $soporteTotal = SolicitudSoporte::query()->count();
+            $soportePendientes = SolicitudSoporte::query()->whereNull('atendida_at')->count();
+            $soporteNuevasMes = SolicitudSoporte::query()
+                ->where('created_at', '>=', $startOfMonth)
                 ->count();
 
             $stats[] = [
-                'key' => 'servicios',
-                'title' => 'Servicios',
-                'value' => $serviciosTotal,
-                'status' => $this->counted($serviciosActivos, '1 disponible', ':count disponibles'),
-                'trend' => $this->counted($serviciosActualizadosMes, '1 actualizado este mes', ':count actualizados este mes'),
+                'key' => 'soporte',
+                'title' => 'Soporte',
+                'value' => $soporteTotal,
+                'status' => $this->counted($soportePendientes, '1 pendiente', ':count pendientes'),
+                'trend' => $this->counted($soporteNuevasMes, '1 nueva este mes', ':count nuevas este mes'),
             ];
         }
 
@@ -121,9 +121,9 @@ final class AdminDashboardOverview
     private function acciones(): array
     {
         $acciones = [
-            ['key' => 'equipos', 'title' => 'Nuevo equipo', 'area' => Cargo::AREA_EQUIPOS],
-            ['key' => 'modelos', 'title' => 'Modelos de equipos', 'area' => Cargo::AREA_MODELOS_EQUIPOS],
-            ['key' => 'servicios', 'title' => 'Nuevo servicio', 'area' => Cargo::AREA_SERVICIOS],
+            ['key' => 'equipos', 'title' => 'Nuevo módulo', 'area' => Cargo::AREA_EQUIPOS],
+            ['key' => 'modelos', 'title' => 'Equipos', 'area' => Cargo::AREA_MODELOS_EQUIPOS],
+            ['key' => 'soporte', 'title' => 'Ver soporte', 'area' => Cargo::AREA_COTIZACIONES],
             ['key' => 'cotizaciones', 'title' => 'Ver cotizaciones', 'area' => Cargo::AREA_COTIZACIONES],
         ];
 
@@ -154,8 +154,8 @@ final class AdminDashboardOverview
                     ->map(fn (Modulo $modulo): array => $this->activityItem(
                         'equipo-'.$modulo->id,
                         $this->isNew($modulo->created_at, $modulo->updated_at)
-                            ? "Se registró el equipo {$modulo->modulo}"
-                            : "Se actualizó el equipo {$modulo->modulo}",
+                            ? "Se registró el módulo {$modulo->modulo}"
+                            : "Se actualizó el módulo {$modulo->modulo}",
                         $modulo->updated_at,
                     )),
             );
@@ -170,25 +170,25 @@ final class AdminDashboardOverview
                     ->map(fn (EquipoModulo $modelo): array => $this->activityItem(
                         'modelo-'.$modelo->id,
                         $this->isNew($modelo->created_at, $modelo->updated_at)
-                            ? "Se registró el modelo {$modelo->modelo}"
-                            : "Se actualizó el modelo {$modelo->modelo}",
+                            ? "Se registró el equipo {$modelo->modelo}"
+                            : "Se actualizó el equipo {$modelo->modelo}",
                         $modelo->updated_at,
                     )),
             );
         }
 
-        if ($this->admin->canAccess(Cargo::AREA_SERVICIOS)) {
+        if ($this->admin->canAccess(Cargo::AREA_COTIZACIONES)) {
             $items = $items->concat(
-                Servicio::query()
+                SolicitudSoporte::query()
                     ->latest('updated_at')
                     ->limit(8)
                     ->get(['id', 'nombre', 'created_at', 'updated_at'])
-                    ->map(fn (Servicio $servicio): array => $this->activityItem(
-                        'servicio-'.$servicio->id,
-                        $this->isNew($servicio->created_at, $servicio->updated_at)
-                            ? "Se registró el servicio {$servicio->nombre}"
-                            : "Se actualizó el servicio {$servicio->nombre}",
-                        $servicio->updated_at,
+                    ->map(fn (SolicitudSoporte $solicitud): array => $this->activityItem(
+                        'soporte-'.$solicitud->id,
+                        $this->isNew($solicitud->created_at, $solicitud->updated_at)
+                            ? "Se registró la solicitud de soporte de {$solicitud->nombre}"
+                            : "Se actualizó la solicitud de soporte de {$solicitud->nombre}",
+                        $solicitud->updated_at,
                     )),
             );
         }

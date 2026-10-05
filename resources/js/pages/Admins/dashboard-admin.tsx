@@ -4,10 +4,10 @@ import {
     Box,
     Headphones,
     Layers,
+    LifeBuoy,
     Moon,
     Power,
     Sun,
-    Wrench,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ import {
 import { index as adminCotizaciones } from '@/routes/admin/cotizaciones';
 import { create as adminEquipos } from '@/routes/admin/equipos';
 import { update as updateMantenimientoSitio } from '@/routes/admin/mantenimiento-sitio';
-import { index as adminServicios } from '@/routes/admin/servicios';
+import { index as adminSoporte } from '@/routes/admin/soporte';
 import type { AdminUser } from '@/types';
 
 type StatItem = {
@@ -72,14 +72,14 @@ type PageProps = {
 const statIcons = {
     equipos: Box,
     modelos: Layers,
-    servicios: Wrench,
+    soporte: LifeBuoy,
     cotizaciones: Headphones,
 } as const;
 
 const statHrefs = {
     equipos: adminEquipos(),
     modelos: adminModelosEquipos(),
-    servicios: adminServicios(),
+    soporte: adminSoporte(),
     cotizaciones: adminCotizaciones(),
 } as const;
 
@@ -335,8 +335,8 @@ export default function DashboardAdmin({
                                 {admin?.name ? `, ${admin.name}` : ''}
                             </h1>
                             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                                Consulte el estado de equipos, modelos y
-                                servicios registrados, y el ingreso diario de
+                                Consulte el estado de módulos, equipos y
+                                solicitudes de soporte, y el ingreso diario de
                                 cotizaciones.
                             </p>
                         </div>
@@ -426,8 +426,8 @@ export default function DashboardAdmin({
                         </div>
                         {actividad.length === 0 ? (
                             <p className="mt-4 text-sm text-muted-foreground">
-                                Aún no hay actividad reciente en equipos,
-                                modelos o servicios.
+                                Aún no hay actividad reciente en módulos,
+                                equipos o soporte.
                             </p>
                         ) : (
                             <ul className="mt-4 space-y-3">

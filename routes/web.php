@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ModuloController as AdminModuloController;
 use App\Http\Controllers\Admin\MonitoreoController as AdminMonitoreoController;
 use App\Http\Controllers\Admin\ServicioController as AdminServicioController;
 use App\Http\Controllers\Admin\SiteMaintenanceController as AdminSiteMaintenanceController;
+use App\Http\Controllers\Admin\SolicitudSoporteController as AdminSolicitudSoporteController;
 use App\Http\Controllers\Admin\TipoServicioMantenimientoController as AdminTipoServicioMantenimientoController;
 use App\Http\Controllers\Admin\UsuarioController as AdminUsuarioController;
 use App\Http\Controllers\Auth\AdminAuthenticatedSessionController;
@@ -29,9 +30,14 @@ Route::inertia('/', 'welcome')->name('home');
 Route::get('mantenimiento', [MantenimientoController::class, 'index'])->name('mantenimiento');
 Route::get('mantenimiento/soporte', [SoporteController::class, 'show'])
     ->name('mantenimiento.soporte');
+Route::post('mantenimiento/soporte', [SoporteController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('mantenimiento.soporte.store');
 Route::inertia('sobre-nosotros', 'Empresa/Sobrenosotros')->name('sobre-nosotros');
 Route::get('biblioteca/equipos', [BibliotecaEquipoController::class, 'index'])
     ->name('biblioteca.equipos');
+Route::get('biblioteca/equipos-disponibles', [BibliotecaEquipoController::class, 'disponibles'])
+    ->name('biblioteca.equipos-disponibles');
 Route::get('contacto', [ContactoController::class, 'show'])->name('contacto');
 Route::get('sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('robots.txt', RobotsController::class)->name('robots');
@@ -128,6 +134,12 @@ Route::middleware(EnsureUserIsAdmin::class)->prefix('admin')->name('admin.')->gr
             ->name('cotizaciones.index');
         Route::delete('cotizaciones/{clienteCotisacion}', [AdminClienteCotisacionController::class, 'destroy'])
             ->name('cotizaciones.destroy');
+        Route::get('soporte', [AdminSolicitudSoporteController::class, 'index'])
+            ->name('soporte.index');
+        Route::patch('soporte/{solicitudSoporte}/atendida', [AdminSolicitudSoporteController::class, 'atender'])
+            ->name('soporte.atender');
+        Route::delete('soporte/{solicitudSoporte}', [AdminSolicitudSoporteController::class, 'destroy'])
+            ->name('soporte.destroy');
     });
 
     Route::middleware('admin.area:servicios')->group(function () {

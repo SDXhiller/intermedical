@@ -65,25 +65,25 @@ function EquipoCard({ equipo }: { equipo: BibliotecaEquipo }) {
             : 'Consulta el soporte y los equipos disponibles para esta modalidad.';
 
     return (
-        <article className="flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/70 bg-white shadow-[0_10px_28px_rgba(0,0,0,0.16)]">
+        <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-neutral-900 shadow-none transition-[border-color,box-shadow] duration-300 hover:border-white/30 hover:shadow-[0_10px_28px_rgba(255,255,255,0.16)]">
             <div
-                className="flex h-36 items-center justify-center px-6 pt-4"
+                className="flex h-32 items-center justify-center overflow-hidden rounded-t-2xl bg-neutral-950/50 px-5"
                 style={hasImage ? undefined : { backgroundColor: color }}
             >
                 {hasImage ? (
                     <img
                         src={equipo.image}
                         alt={equipo.name}
-                        className="h-28 w-auto max-w-[78%] object-contain object-center"
+                        className="h-24 w-auto max-w-[78%] object-contain object-center"
                     />
                 ) : null}
             </div>
 
-            <div className="flex flex-1 flex-col gap-2 px-5 pb-5 pt-3">
-                <h2 className="text-lg font-bold leading-snug text-neutral-900">
+            <div className="flex flex-1 flex-col gap-1.5 px-4 pt-3 pb-4">
+                <h2 className="text-base font-bold leading-snug text-white">
                     {equipo.name}
                 </h2>
-                <p className="text-sm leading-relaxed text-neutral-500">
+                <p className="text-sm leading-relaxed text-white/60">
                     {description}
                 </p>
                 <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
@@ -91,14 +91,14 @@ function EquipoCard({ equipo }: { equipo: BibliotecaEquipo }) {
                         href={soporte.url({
                             query: { modalidad: equipo.slug },
                         })}
-                        className="inline-flex items-center rounded-full px-3.5 py-2 text-xs font-semibold text-white transition hover:opacity-90"
+                        className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition hover:opacity-90"
                         style={{ backgroundColor: BRAND_COLOR }}
                     >
-                        Ver soporte →
+                        solicitar soporte
                     </Link>
                     <Link
                         href={equiposIndex.url(equipo.slug)}
-                        className="inline-flex items-center rounded-full border border-neutral-300 bg-white px-3.5 py-2 text-xs font-semibold text-neutral-800 transition hover:bg-neutral-50"
+                        className="inline-flex items-center rounded-full border border-white/25 px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition hover:bg-white/10"
                     >
                         Ver equipos
                     </Link>
@@ -182,14 +182,6 @@ export default function ListaBibliotecaequipos({
                             <div className="absolute inset-y-0 left-0 w-[42%] bg-gradient-to-r from-neutral-950 from-20% via-neutral-950/75 via-70% to-transparent" />
                         </div>
 
-                        <div className="relative z-10 max-w-[16rem] pt-10 sm:pt-14 lg:pt-16">
-                            <p className="text-xl font-semibold leading-snug text-white sm:text-2xl">
-                                “Equipos que cuidan más vidas”
-                            </p>
-                            <p className="mt-2 text-sm leading-relaxed text-white/75">
-                                Tecnología, soporte y confianza médica
-                            </p>
-                        </div>
                     </div>
                 </div>
             </section>

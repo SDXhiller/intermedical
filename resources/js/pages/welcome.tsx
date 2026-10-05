@@ -18,10 +18,15 @@ import {
     type ManufacturerItem,
 } from '@/data/equipment';
 import { contacto, mantenimiento, sobreNosotros } from '@/routes';
-import { equipos as bibliotecaEquipos } from '@/routes/biblioteca';
+import {
+    equipos as bibliotecaEquipos,
+    equiposDisponibles,
+} from '@/routes/biblioteca';
 
 const HERO_BANNER = '/Imagen/Body/2149341486.jpg';
 const SERVICIOS_CARD_IMAGE = `/Imagen/Servicios/${encodeURIComponent('Imagen de ChatGPT 27 sept 2026, 04_37_57 p.m..png')}`;
+const MODALIDADES_CARD_IMAGE = `/Imagen/Servicios/${encodeURIComponent('Imagen de ChatGPT 27 sept 2026, 04_57_16 p.m..png')}`;
+const EQUIPOS_CARD_IMAGE = `/Imagen/Servicios/${encodeURIComponent('Imagen de ChatGPT 27 sept 2026, 05_07_19 p.m..png')}`;
 const NOSOTROS_IMAGE = '/Imagen/Body/Body.png';
 const MISION_IMAGE = `/Imagen/empresa/${encodeURIComponent('ChatGPT Image 20 sept 2026, 01_19_34 p.m..png')}`;
 
@@ -42,6 +47,8 @@ const exploreCards: {
     action: string;
     icon: LucideIcon;
     image?: string;
+    imageMaxWidthClass?: string;
+    contentMaxWidthClass?: string;
 }[] = [
     {
         title: 'SERVICIOS',
@@ -59,14 +66,18 @@ const exploreCards: {
         href: bibliotecaEquipos.url(),
         action: 'Ver modalidades',
         icon: Layers,
+        image: MODALIDADES_CARD_IMAGE,
+        imageMaxWidthClass: 'max-w-[58%]',
     },
     {
         title: 'EQUIPOS DISPONIBLES',
         description:
             'Explora los equipos que ofrecemos y consulta sus características y condiciones comerciales.',
-        href: '#',
+        href: equiposDisponibles.url(),
         action: 'Ver equipos',
         icon: Monitor,
+        image: EQUIPOS_CARD_IMAGE,
+        contentMaxWidthClass: 'max-w-[66%]',
     },
 ];
 
@@ -148,6 +159,8 @@ function HomeExploreCard({
     action,
     icon: Icon,
     image,
+    imageMaxWidthClass = 'max-w-[86%]',
+    contentMaxWidthClass = 'max-w-[54%]',
 }: {
     title: string;
     description: string;
@@ -155,6 +168,8 @@ function HomeExploreCard({
     action: string;
     icon: LucideIcon;
     image?: string;
+    imageMaxWidthClass?: string;
+    contentMaxWidthClass?: string;
 }) {
     const buttonClassName = `mt-6 mt-auto inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 ${image ? 'w-fit whitespace-nowrap' : 'w-full sm:w-fit'}`;
     const buttonStyle = { backgroundColor: BRAND_COLOR };
@@ -173,11 +188,11 @@ function HomeExploreCard({
                 <img
                     src={image}
                     alt=""
-                    className="pointer-events-none absolute top-1/2 right-0 h-auto w-auto max-h-full max-w-[86%] -translate-y-1/2 object-contain object-right"
+                    className={`pointer-events-none absolute top-1/2 right-0 h-auto w-auto max-h-full -translate-y-1/2 object-contain object-right ${imageMaxWidthClass}`}
                 />
             ) : null}
             <div
-                className={`relative z-10 flex flex-1 flex-col ${image ? 'max-w-[54%] py-6 pr-2 pl-6' : ''}`}
+                className={`relative z-10 flex flex-1 flex-col ${image ? `${contentMaxWidthClass} py-6 pr-2 pl-6` : ''}`}
             >
                 <div className="flex items-center gap-3">
                     <span

@@ -55,6 +55,14 @@ class TipoServicioMantenimiento extends Model
     }
 
     /**
+     * @return HasMany<SolicitudSoporte, $this>
+     */
+    public function solicitudesSoporte(): HasMany
+    {
+        return $this->hasMany(SolicitudSoporte::class, 'tipo_servicio_mantenimiento_id');
+    }
+
+    /**
      * Active service types formatted for public pages and menus.
      *
      * @return list<array{title: string, slug: string, description: string, group: string}>
