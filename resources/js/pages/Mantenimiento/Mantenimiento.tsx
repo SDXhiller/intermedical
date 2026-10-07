@@ -3,10 +3,11 @@ import {
     ArrowRight,
     CalendarDays,
     Headphones,
+    Package,
 } from 'lucide-react';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { type MaintenanceService } from '@/data/maintenance-services';
-import { contacto } from '@/routes';
+import { contacto, refacciones } from '@/routes';
 import { soporte } from '@/routes/mantenimiento';
 
 const HERO_IMAGE = `/Imagen/Servicios/${encodeURIComponent('Imagen de ChatGPT 27 sept 2026, 05_07_19 p.m..png')}`;
@@ -21,6 +22,15 @@ const attendedModalities = [
     'Tomografía',
     'Medicina Nuclear e Imagen Molecular',
 ] as const;
+
+const REFACCION_SLUG = 'suministro-y-venta-de-refacciones';
+
+const refaccionService: MaintenanceService = {
+    title: 'Servicio de suministro y venta de refacciones',
+    slug: REFACCION_SLUG,
+    description:
+        'Suministramos y comercializamos refacciones para equipos de diagnóstico por imagen, de acuerdo con la modalidad y las necesidades de cada institución.',
+};
 
 function ServiceCard({ service }: { service: MaintenanceService }) {
     return (
@@ -132,9 +142,34 @@ export default function Mantenimiento({
                 className={`mx-auto ${CONTENT_WIDTH} py-10 sm:py-12 lg:py-14`}
             >
                 <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-2 lg:grid-cols-3">
-                    {servicios.map((service) => (
-                        <ServiceCard key={service.slug} service={service} />
-                    ))}
+                    <article className="flex flex-col gap-5 rounded-2xl border border-white/10 bg-neutral-950 p-6 shadow-sm sm:col-span-2 sm:flex-row sm:items-center sm:justify-between sm:p-8 lg:col-span-3 dark:bg-black">
+                        <div className="max-w-3xl">
+                            <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                                {refaccionService.title}
+                            </h2>
+                            <p className="mt-3 text-sm leading-relaxed text-white/75 sm:text-base">
+                                {refaccionService.description}
+                            </p>
+                        </div>
+
+                        <Link
+                            href={refacciones.url()}
+                            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+                            style={{ backgroundColor: BRAND_COLOR }}
+                        >
+                            <Package className="size-4" strokeWidth={1.75} />
+                            Solicitar refacción
+                            <ArrowRight className="size-4" />
+                        </Link>
+                    </article>
+                    {servicios
+                        .filter((service) => service.slug !== REFACCION_SLUG)
+                        .map((service) => (
+                            <ServiceCard
+                                key={service.slug}
+                                service={service}
+                            />
+                        ))}
                 </div>
             </section>
 

@@ -19,6 +19,7 @@ use App\Http\Controllers\ClienteCotisacionController;
 use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\MantenimientoController;
 use App\Http\Controllers\ModuloController;
+use App\Http\Controllers\RefaccionController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SitemapController;
@@ -28,6 +29,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 Route::get('mantenimiento', [MantenimientoController::class, 'index'])->name('mantenimiento');
+Route::get('refacciones', [RefaccionController::class, 'index'])->name('refacciones');
 Route::get('mantenimiento/soporte', [SoporteController::class, 'show'])
     ->name('mantenimiento.soporte');
 Route::post('mantenimiento/soporte', [SoporteController::class, 'store'])

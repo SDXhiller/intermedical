@@ -88,6 +88,10 @@ test('the mantenimiento cards only render name description and request button', 
         ->toContain('service.title')
         ->toContain('service.description')
         ->toContain('Solicitar servicio')
+        ->toContain('Servicio de suministro y venta de refacciones')
+        ->toContain('Solicitar refacción')
+        ->toContain('lg:col-span-3')
+        ->toContain('refacciones.url()')
         ->not->toContain('Tiempo estimado de respuesta')
         ->not->toContain('service.features')
         ->not->toContain('service.responseTime');

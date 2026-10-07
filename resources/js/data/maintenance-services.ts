@@ -7,6 +7,12 @@ export type MaintenanceService = {
 
 export const maintenanceServices: MaintenanceService[] = [
     {
+        title: 'Servicio de suministro y venta de refacciones',
+        slug: 'suministro-y-venta-de-refacciones',
+        description:
+            'Suministramos y comercializamos refacciones para equipos de diagnóstico por imagen, de acuerdo con la modalidad y las necesidades de cada institución.',
+    },
+    {
         title: 'Mantenimiento preventivo',
         slug: 'mantenimiento-preventivo',
         description:

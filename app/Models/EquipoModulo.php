@@ -35,6 +35,7 @@ use Illuminate\Support\Str;
  * @property-read TipoEquipo $tipoEquipo
  * @property-read Disponibilidad|null $disponibilidad
  * @property-read Collection<int, Imagen360> $imagenes360
+ * @property-read Collection<int, Mibrafaccion> $mibrafacciones
  */
 #[Fillable([
     'modulo_id',
@@ -165,6 +166,14 @@ class EquipoModulo extends Model
     public function solicitudesSoporte(): HasMany
     {
         return $this->hasMany(SolicitudSoporte::class, 'equipo_modulo_id');
+    }
+
+    /**
+     * @return HasMany<Mibrafaccion, $this>
+     */
+    public function mibrafacciones(): HasMany
+    {
+        return $this->hasMany(Mibrafaccion::class, 'equipo_modulo_id');
     }
 
     /**

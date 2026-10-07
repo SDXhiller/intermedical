@@ -44,6 +44,14 @@ class Fabricante extends Model
     }
 
     /**
+     * @return HasMany<Mibrafaccion, $this>
+     */
+    public function mibrafacciones(): HasMany
+    {
+        return $this->hasMany(Mibrafaccion::class, 'fabricante_id');
+    }
+
+    /**
      * Public logo URL for this manufacturer.
      */
     public function logoUrl(): ?string

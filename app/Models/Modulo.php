@@ -173,4 +173,12 @@ class Modulo extends Model
     {
         return $this->hasMany(SolicitudSoporte::class, 'modulo_id');
     }
+
+    /**
+     * @return HasMany<Mibrafaccion, $this>
+     */
+    public function mibrafacciones(): HasMany
+    {
+        return $this->hasMany(Mibrafaccion::class, 'modulo_id');
+    }
 }

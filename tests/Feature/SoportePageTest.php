@@ -54,6 +54,18 @@ test('guests can view the support page with registered equipment for a modality'
         );
 });
 
+test('the support page resolves the refacciones service from the maintenance card', function () {
+    $this->get(route('mantenimiento.soporte', [
+        'servicio' => 'suministro-y-venta-de-refacciones',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Mantenimiento/ViewSoporte')
+            ->where('servicio.slug', 'suministro-y-venta-de-refacciones')
+            ->where('servicio.title', 'Suministro y venta de refacciones')
+        );
+});
+
 test('the support page leaves the service and modality empty until they are chosen', function () {
     $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
     Modulo::factory()->create([

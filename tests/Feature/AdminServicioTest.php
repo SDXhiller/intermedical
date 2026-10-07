@@ -82,7 +82,7 @@ test('admins can store a servicio with whatsapp icon', function () {
         ->icono->toBe(ServicioIcono::Whatsapp);
 });
 
-test('tipo_servicio_mantenimiento seeds the seven specialized service types', function () {
+test('tipo_servicio_mantenimiento seeds the specialized service types', function () {
     $nombres = TipoServicioMantenimiento::query()
         ->orderBy('id')
         ->pluck('nombre')
@@ -96,5 +96,6 @@ test('tipo_servicio_mantenimiento seeds the seven specialized service types', fu
         'Instalación',
         'Desinstalación',
         'Puesta en marcha',
+        'Suministro y venta de refacciones',
     ]);
 });

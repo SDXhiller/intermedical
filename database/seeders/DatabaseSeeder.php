@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             StatusSeeder::class,
             DisponibilidadSeeder::class,
             TipoEquipoSeeder::class,
+            MibrafaccionSeeder::class,
         ]);
     }
 }

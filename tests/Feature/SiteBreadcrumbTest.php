@@ -19,6 +19,7 @@ test('the public mini navigation uses capsule buttons with brand color and icons
         'js/pages/Empresa/Sobrenosotros.tsx',
         'js/pages/Cliente.tsx',
         'js/pages/Contacto/Mostrar-contacto.tsx',
+        'js/pages/Refacciones/ViewPiesasReffaciones.tsx',
     ];
 
     foreach ($pages as $page) {
