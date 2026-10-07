@@ -32,9 +32,18 @@ test('the public quote form uses the same contact hero visualization', function 
         ->not->toContain('Formulario público')
         ->not->toContain('ChatGPT Image 28 ago 2026, 02_20_15 p.m..png')
         ->toContain('Tu solicitud')
+        ->toContain('Modalidad:')
+        ->toContain('equipo?.nombre')
         ->toContain('¿Cómo deseas contactarnos?')
+        ->not->toContain("Modelo:{' '}")
         ->toContain('Contáctanos por WhatsApp')
-        ->toContain('WhatsApp no está habilitado por el momento')
+        ->not->toContain('shareWhatsAppWithImage')
+        ->not->toContain('navigator.share')
+        ->toContain('Imagen:')
+        ->toContain('equipo.imagen')
+        ->toContain('WhatsApp no está habilitado por el')
+        ->toContain('whatsappChatUrl')
+        ->toContain('whatsappNumber')
         ->toContain('contacto@medicalimaging.com.mx')
         ->toContain('disabled')
         ->not->toContain('Regresar')
@@ -49,6 +58,7 @@ test('public quote form page resolves equipment from slug query string', functio
         'modulo_id' => $modulo->id,
         'modelo' => 'Ultrasonido GBP',
         'slug' => 'ultrasonido-gbp',
+        'imagen' => 'Imagen/Maquinas/ultrasonido-gbp.webp',
         'activo' => true,
     ]);
 
@@ -61,6 +71,7 @@ test('public quote form page resolves equipment from slug query string', functio
             ->where('equipo.nombre', 'Ultrasonido GBP')
             ->where('equipo.categoria', $modulo->modulo)
             ->where('equipo.categoria_slug', $modulo->slug)
+            ->where('equipo.imagen', '/Imagen/Maquinas/ultrasonido-gbp.webp')
         );
 });
 

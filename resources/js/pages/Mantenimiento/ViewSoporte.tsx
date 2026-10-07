@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/select';
 import { store as storeSoporte } from '@/actions/App/Http/Controllers/SoporteController';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
+import { whatsappChatUrl } from '@/lib/whatsapp';
 import {
     phoneCountries,
     phoneCountryFlagUrl,
@@ -462,8 +463,9 @@ export default function ViewSoporte({
     const [paso, setPaso] = useState<1 | 2 | 3>(1);
     const [pasoError, setPasoError] = useState<string | null>(null);
     const [enviando, setEnviando] = useState(false);
-    const { flash } = usePage<{
+    const { flash, whatsappNumber } = usePage<{
         flash?: { soporte_enviado?: boolean | null };
+        whatsappNumber?: string | null;
     }>().props;
     const [confirmacionAbierta, setConfirmacionAbierta] = useState(
         Boolean(flash?.soporte_enviado),
@@ -1340,19 +1342,36 @@ export default function ViewSoporte({
                                         ))}
                                 </div>
 
-                                <button
-                                    type="button"
-                                    disabled
-                                    aria-disabled="true"
-                                    title="WhatsApp no está disponible por el momento"
-                                    className="mt-5 inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-semibold text-white opacity-50"
-                                >
-                                    <MessageCircle className="size-4" />
-                                    Abrir WhatsApp
-                                </button>
-                                <p className="mt-2 text-center text-xs text-muted-foreground">
-                                    WhatsApp no está habilitado por el momento.
-                                </p>
+                                {whatsappNumber ? (
+                                    <a
+                                        href={whatsappChatUrl(
+                                            whatsappNumber,
+                                            whatsappPreview,
+                                        )}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+                                    >
+                                        <MessageCircle className="size-4" />
+                                        Abrir WhatsApp
+                                    </a>
+                                ) : (
+                                    <>
+                                        <button
+                                            type="button"
+                                            disabled
+                                            aria-disabled="true"
+                                            title="WhatsApp no está disponible por el momento"
+                                            className="mt-5 inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-semibold text-white opacity-50"
+                                        >
+                                            <MessageCircle className="size-4" />
+                                            Abrir WhatsApp
+                                        </button>
+                                        <p className="mt-2 text-center text-xs text-muted-foreground">
+                                            WhatsApp no está habilitado por el momento.
+                                        </p>
+                                    </>
+                                )}
                             </article>
 
                             <article className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-7">

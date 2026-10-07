@@ -379,7 +379,7 @@ export default function Welcome() {
                             Ingeniería especializada para equipos de diagnóstico por imagen
                             </h1>
                             <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/80 sm:text-base">
-                            En Medical Imaging Group (MIG) somos un equipo de ingenieros 
+                            Somos un equipo de ingenieros
                             especializados en tecnología de diagnóstico por imagen. Ofrecemos 
                             mantenimiento, diagnóstico técnico, refacciones y otras soluciones 
                             para hospitales, clínicas y gabinetes de imagenología.

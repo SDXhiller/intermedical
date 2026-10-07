@@ -88,24 +88,7 @@ export default function Mantenimiento({
                             style={{ backgroundColor: BRAND_COLOR }}
                         />
                         <p className="mt-4 text-sm leading-relaxed text-white/90 sm:text-base">
-                            Brindamos diagnóstico, mantenimiento preventivo y
-                            correctivo, renta, instalación, desinstalación y
-                            puesta en marcha de equipos. Acompañamos a
-                            hospitales, clínicas y gabinetes de imagenología
-                            con atención especializada y soluciones acordes con
-                            sus necesidades.
-                        </p>
-
-                        <h2 className="mt-5 text-lg font-bold tracking-tight text-white sm:text-xl">
-                            Soporte especializado para sus equipos médicos
-                        </h2>
-                        <p className="mt-2 text-sm leading-relaxed text-white/85 sm:text-[15px]">
-                            Nuestro equipo brinda acompañamiento durante cada
-                            etapa del servicio, desde la evaluación inicial y
-                            el diagnóstico hasta la instalación, verificación y
-                            capacitación del personal, ofreciendo atención
-                            especializada y soluciones adecuadas a las
-                            necesidades de cada equipo e institución médica.
+                        Nuestro equipo brinda acompañamiento durante cada etapa del servicio…
                         </p>
                     </div>
                 </div>

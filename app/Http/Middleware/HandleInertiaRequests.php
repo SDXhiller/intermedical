@@ -6,6 +6,7 @@ use App\Models\EquipoModulo;
 use App\Models\Fabricante;
 use App\Models\Modulo;
 use App\Models\UserAdmin;
+use App\Support\WhatsAppContact;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -69,6 +70,7 @@ class HandleInertiaRequests extends Middleware
             'equipmentItems' => fn () => Modulo::catalogItems(),
             'subEquipmentItems' => fn () => EquipoModulo::catalogItems(),
             'manufacturerItems' => fn () => Fabricante::catalogItems(),
+            'whatsappNumber' => fn () => WhatsAppContact::digits(),
         ];
     }
 }

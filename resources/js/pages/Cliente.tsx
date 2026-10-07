@@ -34,6 +34,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SiteBreadcrumb } from '@/components/site-breadcrumb';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
+import { absoluteAssetUrl, whatsappChatUrl } from '@/lib/whatsapp';
 import { useClipboard } from '@/hooks/use-clipboard';
 import { home } from '@/routes';
 import { store as clienteCotisacionStore } from '@/routes/cliente-cotisacion';
@@ -49,6 +50,7 @@ type PageProps = {
         categoria_slug: string | null;
         imagen: string | null;
     } | null;
+    whatsappNumber?: string | null;
     flash?: {
         success?: string | null;
         cotizacion_enviada?: boolean;
@@ -69,14 +71,22 @@ const heroHighlights: {
 ];
 
 export default function Cliente() {
-    const { equipo, flash } = usePage<PageProps>().props;
+    const { equipo, flash, whatsappNumber } = usePage<PageProps>().props;
     const [copiedEmail, copyEmail] = useClipboard();
     const cambiarSeleccionHref = equipo?.categoria_slug
         ? equiposIndex.url(equipo.categoria_slug)
         : home();
     const regresarHref = equipo ? moduloShow.url(equipo.slug) : home();
+    const equipoImagenUrl = absoluteAssetUrl(equipo?.imagen);
     const whatsappPreview = equipo
-        ? `Hola, me interesa solicitar una cotización del siguiente equipo:\nEquipo: ${equipo.categoria ?? 'Equipo médico'}\nModelo: ${equipo.nombre}\nMotivo: Cotización de equipo\n¿Podrían brindarme más información?`
+        ? [
+              'Hola, me interesa solicitar una cotización del siguiente equipo:',
+              `Modalidad: ${equipo.categoria ?? 'Por seleccionar'}`,
+              `Equipo: ${equipo.nombre}`,
+              ...(equipoImagenUrl ? [`Imagen: ${equipoImagenUrl}`] : []),
+              'Motivo: Cotización de equipo',
+              '¿Podrían brindarme más información?',
+          ].join('\n')
         : 'Hola, me interesa solicitar una cotización.\nMotivo: Cotización de equipo\n¿Podrían brindarme más información?';
     const [coordenadas, setCoordenadas] = useState<Coordenadas | null>(null);
     const [mapOpen, setMapOpen] = useState(false);
@@ -236,13 +246,13 @@ export default function Cliente() {
                                         )}
                                         <div className="min-w-0">
                                             <p className="font-semibold text-gray-900 dark:text-white">
-                                                {equipo?.categoria ??
-                                                    'Equipo médico'}
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Modelo:{' '}
                                                 {equipo?.nombre ??
                                                     'Sin equipo seleccionado'}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Modalidad:{' '}
+                                                {equipo?.categoria ??
+                                                    'Equipo médico'}
                                             </p>
                                             <p
                                                 className="text-sm font-medium"
@@ -584,24 +594,53 @@ export default function Cliente() {
                             </p>
 
                             <div className="mt-4 rounded-xl border border-white/10 bg-white p-4 text-sm leading-relaxed text-gray-700 dark:bg-neutral-950 dark:text-white/80">
+                                {equipo?.imagen ? (
+                                    <img
+                                        src={equipo.imagen}
+                                        alt={equipo.nombre}
+                                        className="mb-3 h-36 w-full rounded-lg object-contain bg-neutral-100 dark:bg-neutral-900"
+                                    />
+                                ) : null}
                                 {whatsappPreview.split('\n').map((line, index) => (
-                                    <p key={`${index}-${line}`}>{line}</p>
+                                    <p
+                                        key={`${index}-${line}`}
+                                        className="break-all"
+                                    >
+                                        {line}
+                                    </p>
                                 ))}
                             </div>
 
-                            <button
-                                type="button"
-                                disabled
-                                aria-disabled="true"
-                                title="WhatsApp no está disponible por el momento"
-                                className="mt-5 inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-semibold text-white opacity-50"
-                            >
-                                <MessageCircle className="size-4" />
-                                Abrir WhatsApp
-                            </button>
-                            <p className="mt-2 text-center text-xs text-muted-foreground">
-                                WhatsApp no está habilitado por el momento.
-                            </p>
+                            {whatsappNumber ? (
+                                <a
+                                    href={whatsappChatUrl(
+                                        whatsappNumber,
+                                        whatsappPreview,
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+                                >
+                                    <MessageCircle className="size-4" />
+                                    Abrir WhatsApp
+                                </a>
+                            ) : (
+                                <>
+                                    <button
+                                        type="button"
+                                        disabled
+                                        aria-disabled="true"
+                                        title="WhatsApp no está disponible por el momento"
+                                        className="mt-5 inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-semibold text-white opacity-50"
+                                    >
+                                        <MessageCircle className="size-4" />
+                                        Abrir WhatsApp
+                                    </button>
+                                    <p className="mt-2 text-center text-xs text-muted-foreground">
+                                        WhatsApp no está habilitado por el momento.
+                                    </p>
+                                </>
+                            )}
                         </article>
 
                         <article className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-7">
