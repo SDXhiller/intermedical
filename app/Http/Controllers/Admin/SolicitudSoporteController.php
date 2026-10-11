@@ -7,7 +7,6 @@ use App\Models\SolicitudSoporte;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -185,10 +184,7 @@ class SolicitudSoporteController extends Controller
                 'estado' => $solicitud->estado,
             ],
             'descripcion' => $solicitud->descripcion,
-            'imagenes' => collect($solicitud->imagenes ?? [])
-                ->map(fn (string $path): string => Storage::disk('public')->url($path))
-                ->values()
-                ->all(),
+            'imagenes' => $solicitud->urlsImagenes(),
             'created_at' => $solicitud->created_at?->toIso8601String(),
             'created_at_formatted' => $solicitud->created_at?->format('d/m/Y H:i'),
             'atendida' => $solicitud->atendida_at !== null,

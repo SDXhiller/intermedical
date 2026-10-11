@@ -100,10 +100,14 @@ class SoporteController extends Controller
         $equipo = $request->equipoSeleccionado();
 
         $imagenes = [];
-        $directorio = $this->directorioImagenes($servicio);
+        $directorio = $this->directorioImagenes($modulo, $servicio);
 
         foreach ($validated['imagenes'] ?? [] as $imagen) {
-            $imagenes[] = $imagen->store($directorio, 'public');
+            $guardada = $imagen->store($directorio, 'soporte');
+
+            if (is_string($guardada) && $guardada !== '') {
+                $imagenes[] = SolicitudSoporte::DIRECTORIO_PUBLICO.'/'.$guardada;
+            }
         }
 
         SolicitudSoporte::query()->create([
@@ -130,13 +134,27 @@ class SoporteController extends Controller
     }
 
     /**
-     * Store uploaded photos as Soporte/{tipo}/{año}/{mes}/{archivo}.
+     * Store uploaded photos as public/Imagen/Soporte/{año}/{mes}/{módulo}/{servicio}/{archivo}.
      */
-    private function directorioImagenes(TipoServicioMantenimiento $servicio): string
+    private function directorioImagenes(Modulo $modulo, TipoServicioMantenimiento $servicio): string
     {
-        $tipo = $servicio->slug !== '' ? $servicio->slug : 'general';
+        return sprintf(
+            '%s/%s/%s/%s',
+            now()->format('Y'),
+            now()->format('m'),
+            $this->segmentoCarpeta($modulo->slug, 'modulo'),
+            $this->segmentoCarpeta($servicio->slug, 'general'),
+        );
+    }
 
-        return sprintf('Soporte/%s/%s/%s', $tipo, now()->format('Y'), now()->format('m'));
+    /**
+     * Filesystem-safe folder name for a module or service.
+     */
+    private function segmentoCarpeta(string $valor, string $respaldo): string
+    {
+        $segmento = Str::slug($valor);
+
+        return $segmento !== '' ? $segmento : $respaldo;
     }
 
     /**

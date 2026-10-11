@@ -172,21 +172,24 @@ test('the support list labels each field and offers an attended action', functio
 
 test('admins can delete a support request and its uploaded images', function () {
     Storage::fake('public');
+    Storage::fake('soporte');
     $admin = UserAdmin::factory()->create();
-    $primera = UploadedFile::fake()->image('falla-1.jpg')->store('soporte', 'public');
-    $segunda = UploadedFile::fake()->image('falla-2.jpg')->store('soporte', 'public');
+    $nueva = UploadedFile::fake()->image('falla-1.jpg')->store('2026/10/ultrasonido/mantenimiento-correctivo', 'soporte');
+    $anterior = UploadedFile::fake()->image('falla-2.jpg')->store('soporte', 'public');
     $solicitud = SolicitudSoporte::factory()->create([
-        'imagenes' => [$primera, $segunda],
+        'imagenes' => ['Imagen/Soporte/'.$nueva, $anterior],
     ]);
 
-    Storage::disk('public')->assertExists([$primera, $segunda]);
+    Storage::disk('soporte')->assertExists($nueva);
+    Storage::disk('public')->assertExists($anterior);
 
     $this->actingAs($admin, 'admin')
         ->delete(route('admin.soporte.destroy', $solicitud))
         ->assertRedirect(route('admin.soporte.index'));
 
     $this->assertModelMissing($solicitud);
-    Storage::disk('public')->assertMissing([$primera, $segunda]);
+    Storage::disk('soporte')->assertMissing($nueva);
+    Storage::disk('public')->assertMissing($anterior);
 });
 
 test('equipment managers cannot access support requests', function () {

@@ -83,6 +83,15 @@ return [
             'report' => false,
         ],
 
+        'soporte' => [
+            'driver' => 'local',
+            'root' => public_path('Imagen/Soporte'),
+            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/Imagen/Soporte',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

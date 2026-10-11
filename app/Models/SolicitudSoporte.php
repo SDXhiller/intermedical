@@ -54,6 +54,8 @@ use Illuminate\Support\Facades\Storage;
 ])]
 class SolicitudSoporte extends Model
 {
+    public const DIRECTORIO_PUBLICO = 'Imagen/Soporte';
+
     /** @use HasFactory<SolicitudSoporteFactory> */
     use HasFactory;
 
@@ -80,7 +82,41 @@ class SolicitudSoporte extends Model
             return;
         }
 
-        Storage::disk('public')->delete($rutas);
+        $prefijo = self::DIRECTORIO_PUBLICO.'/';
+        $enImagen = [];
+        $anteriores = [];
+
+        foreach ($rutas as $ruta) {
+            if (str_starts_with($ruta, $prefijo)) {
+                $enImagen[] = substr($ruta, strlen($prefijo));
+            } else {
+                $anteriores[] = $ruta;
+            }
+        }
+
+        if ($enImagen !== []) {
+            Storage::disk('soporte')->delete($enImagen);
+        }
+
+        if ($anteriores !== []) {
+            Storage::disk('public')->delete($anteriores);
+        }
+    }
+
+    /**
+     * Public URLs for the photos attached to this request.
+     *
+     * @return list<string>
+     */
+    public function urlsImagenes(): array
+    {
+        return collect($this->imagenes ?? [])
+            ->filter(fn (mixed $ruta): bool => is_string($ruta) && $ruta !== '')
+            ->map(fn (string $ruta): string => str_starts_with($ruta, self::DIRECTORIO_PUBLICO.'/')
+                ? '/'.$ruta
+                : Storage::disk('public')->url($ruta))
+            ->values()
+            ->all();
     }
 
     /**

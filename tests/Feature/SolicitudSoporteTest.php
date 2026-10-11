@@ -82,7 +82,7 @@ test('a support request can be stored before a sub equipment is chosen', functio
 });
 
 test('a public support form stores the request for the admin panel', function () {
-    Storage::fake('public');
+    Storage::fake('soporte');
     $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
     $modulo = Modulo::factory()->create([
         'modulo' => 'Ultrasonido',
@@ -128,8 +128,8 @@ test('a public support form stores the request for the admin panel', function ()
         ->and($solicitud->imagenes)->toHaveCount(5);
 
     foreach ($solicitud->imagenes as $ruta) {
-        expect($ruta)->toStartWith('Soporte/mantenimiento-correctivo/'.now()->format('Y/m').'/');
-        Storage::disk('public')->assertExists($ruta);
+        expect($ruta)->toStartWith('Imagen/Soporte/'.now()->format('Y/m').'/ultrasonido/mantenimiento-correctivo/');
+        Storage::disk('soporte')->assertExists(substr($ruta, strlen('Imagen/Soporte/')));
     }
 
     $this->post(route('mantenimiento.soporte.store'), [
@@ -163,6 +163,7 @@ test('a public support form stores the request for the admin panel', function ()
             ->where('solicitudes.0.equipo.nombre', 'LOGIQ E')
             ->where('solicitudes.0.equipo.marca', 'GE')
             ->has('solicitudes.0.imagenes', 5)
+            ->where('solicitudes.0.imagenes.0', '/'.$solicitud->imagenes[0])
         );
 });
 
