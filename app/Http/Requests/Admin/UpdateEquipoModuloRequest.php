@@ -31,7 +31,6 @@ class UpdateEquipoModuloRequest extends FormRequest
             'estado' => EquipoFieldFlags::ESTADO_ENABLED
                 ? ['required', 'string', 'max:255']
                 : ['nullable'],
-            'modalidad' => ['required', 'string', 'max:255'],
             'aplicaciones' => ['required', 'string', 'max:2000'],
             'anio' => ['nullable', 'integer', 'min:1990', 'max:'.((int) date('Y') + 1)],
             'tipo_equipo_id' => [
@@ -60,7 +59,6 @@ class UpdateEquipoModuloRequest extends FormRequest
             'modelo.required' => 'El modelo es obligatorio.',
             'descripcion_corta.max' => 'La descripción del equipo no debe superar los 5000 caracteres.',
             'estado.required' => 'Seleccione o indique el estado del equipo.',
-            'modalidad.required' => 'La modalidad es obligatoria.',
             'aplicaciones.required' => 'Las aplicaciones son obligatorias.',
             'tipo_equipo_id.required' => 'Seleccione el tipo de equipo.',
             'tipo_equipo_id.exists' => 'El tipo de equipo seleccionado no es válido.',

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\FabricanteController as AdminFabricanteController
 use App\Http\Controllers\Admin\Imagen360Controller as AdminImagen360Controller;
 use App\Http\Controllers\Admin\ModuloController as AdminModuloController;
 use App\Http\Controllers\Admin\MonitoreoController as AdminMonitoreoController;
+use App\Http\Controllers\Admin\RefaccionController as AdminRefaccionController;
 use App\Http\Controllers\Admin\ServicioController as AdminServicioController;
 use App\Http\Controllers\Admin\SiteMaintenanceController as AdminSiteMaintenanceController;
 use App\Http\Controllers\Admin\SolicitudSoporteController as AdminSolicitudSoporteController;
@@ -30,6 +31,12 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('/', 'welcome')->name('home');
 Route::get('mantenimiento', [MantenimientoController::class, 'index'])->name('mantenimiento');
 Route::get('refacciones', [RefaccionController::class, 'index'])->name('refacciones');
+Route::get('refacciones/{modalidad}', [RefaccionController::class, 'piezas'])
+    ->name('refacciones.piezas');
+Route::get('refacciones/{modalidad}/{refaccion}/cotizacion', [RefaccionController::class, 'cotizacion'])
+    ->name('refacciones.cotizacion');
+Route::get('refacciones/{modalidad}/{refaccion}', [RefaccionController::class, 'show'])
+    ->name('refacciones.show');
 Route::get('mantenimiento/soporte', [SoporteController::class, 'show'])
     ->name('mantenimiento.soporte');
 Route::post('mantenimiento/soporte', [SoporteController::class, 'store'])
@@ -95,6 +102,11 @@ Route::middleware(EnsureUserIsAdmin::class)->prefix('admin')->name('admin.')->gr
             ->name('modelos-equipos.imagenes-360.sync-puntos');
         Route::delete('modelos-equipos/{equipoModulo}/imagenes-360/{imagen360}', [AdminImagen360Controller::class, 'destroy'])
             ->name('modelos-equipos.imagenes-360.destroy');
+
+        Route::get('refacciones/crear', [AdminRefaccionController::class, 'create'])
+            ->name('refacciones.create');
+        Route::post('refacciones', [AdminRefaccionController::class, 'store'])
+            ->name('refacciones.store');
     });
 
     Route::middleware('admin.area:fabricantes')->group(function () {

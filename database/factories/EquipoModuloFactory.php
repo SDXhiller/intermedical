@@ -27,7 +27,6 @@ class EquipoModuloFactory extends Factory
             'imagen' => null,
             'descripcion_corta' => fake()->sentence(),
             'estado' => fake()->randomElement(['Nuevo', 'Reacondicionado', 'Demostración']),
-            'modalidad' => 'Diagnóstico por imagen',
             'aplicaciones' => 'Hospitalario, ambulatorio y clínica especializada',
             'anio' => fake()->numberBetween(2018, (int) date('Y')),
             'tipo_equipo_id' => TipoEquipo::query()->value('id') ?? TipoEquipo::factory(),

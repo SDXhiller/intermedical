@@ -1,8 +1,11 @@
 <?php
 
 use App\Models\EquipoModulo;
+use App\Models\Fabricante;
 use App\Models\Mibrafaccion;
 use App\Models\Modulo;
+use App\Models\Refaccion;
+use App\Models\RefaccionImagen;
 use App\Models\Status;
 use Database\Seeders\StatusSeeder;
 use Illuminate\Support\Facades\Schema;
@@ -18,9 +21,6 @@ test('guests can view the refacciones page', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('Refacciones/ViewPiesasReffaciones')
             ->has('modalidades')
-            ->where('modalidad', null)
-            ->where('modelo', null)
-            ->where('refacciones', [])
         );
 });
 
@@ -61,40 +61,39 @@ test('the refacciones landing page only lists modality cards', function () {
     $this->get(route('refacciones'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('modalidad', null)
-            ->where('modelo', null)
-            ->where('refacciones', [])
             ->where('modalidades.0.slug', 'ultrasonido')
             ->where('modalidades.0.nombre', 'Ultrasonido')
         );
 });
 
-test('choosing a modality lists equipment models before spare parts', function () {
+test('choosing a modality opens the pieces page with its models', function () {
     $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
     $modulo = Modulo::factory()->create([
         'modulo' => 'Ultrasonido',
         'slug' => 'ultrasonido',
         'estatus_id' => $activo->id,
     ]);
-    $equipo = EquipoModulo::factory()->create([
+    Refaccion::factory()->create([
         'modulo_id' => $modulo->id,
-        'modelo' => 'LOGIQ E',
-        'slug' => 'logiq-e',
-        'activo' => true,
+        'nombre' => 'Transductor lineal',
+        'numero_parte' => 'PN-TL-12L',
+        'categoria' => 'Módulos',
+        'publicado' => true,
     ]);
-    Mibrafaccion::factory()->create([
-        'equipo_modulo_id' => $equipo->id,
-        'refaccion_requerida' => 'Transductor lineal',
+    Refaccion::factory()->unpublished()->create([
+        'modulo_id' => $modulo->id,
+        'nombre' => 'Pieza oculta',
     ]);
 
-    $this->get(route('refacciones', ['modalidad' => 'ultrasonido']))
+    $this->get(route('refacciones.piezas', ['modalidad' => 'ultrasonido']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('modalidad.slug', 'ultrasonido')
-            ->where('modelo', null)
-            ->where('refacciones', [])
-            ->where('modelos.0.slug', 'logiq-e')
-            ->where('modelos.0.nombre', 'LOGIQ E')
+            ->component('Refacciones/PiesaRefraccion')
+            ->where('modalidad.nombre', 'Ultrasonido')
+            ->has('refacciones', 1)
+            ->where('refacciones.0.nombre', 'Transductor lineal')
+            ->where('refacciones.0.parte', 'PN-TL-12L')
+            ->where('refacciones.0.categoria', 'Módulos')
         );
 });
 
@@ -105,36 +104,96 @@ test('choosing a model lists spare parts with catalog fields', function () {
         'slug' => 'ultrasonido',
         'estatus_id' => $activo->id,
     ]);
-    $equipo = EquipoModulo::factory()->create([
-        'modulo_id' => $modulo->id,
-        'modelo' => 'LOGIQ E',
-        'slug' => 'logiq-e',
-        'activo' => true,
+    $fabricante = Fabricante::factory()->create([
+        'nombre' => 'GE',
     ]);
-    Mibrafaccion::factory()->create([
-        'equipo_modulo_id' => $equipo->id,
-        'refaccion_requerida' => 'Transductor lineal',
+    $refaccion = Refaccion::factory()->create([
+        'modulo_id' => $modulo->id,
+        'nombre' => 'Transductor lineal',
         'numero_parte' => 'PN-TL-12L',
+        'fabricante_id' => $fabricante->id,
+        'categoria' => 'Módulos',
         'descripcion' => 'Transductor compatible con el equipo.',
-        'fotografias' => ['Imagen/Maquinas/transductor.webp'],
+        'publicado' => true,
+    ]);
+    RefaccionImagen::query()->create([
+        'refaccion_id' => $refaccion->id,
+        'ruta' => 'Imagen/Refacciones/transductor.webp',
+        'orden' => 0,
+        'es_principal' => true,
     ]);
 
-    $this->get(route('refacciones', [
-        'modalidad' => 'ultrasonido',
-        'modelo' => 'logiq-e',
-    ]))
+    $this->get(route('refacciones.piezas', 'ultrasonido'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('modelo.slug', 'logiq-e')
+            ->where('modalidad.nombre', 'Ultrasonido')
             ->has('refacciones', 1)
-            ->where('refacciones.0.refaccion_requerida', 'Transductor lineal')
-            ->where('refacciones.0.numero_parte', 'PN-TL-12L')
+            ->where('refacciones.0.nombre', 'Transductor lineal')
+            ->where('refacciones.0.parte', 'PN-TL-12L')
+            ->where('refacciones.0.marca', 'GE')
             ->where('refacciones.0.descripcion', 'Transductor compatible con el equipo.')
-            ->where('refacciones.0.equipo', 'Ultrasonido')
-            ->where('refacciones.0.marca', $equipo->fabricante->nombre)
-            ->where('refacciones.0.modelo', 'LOGIQ E')
-            ->where('refacciones.0.fotografias.0', '/Imagen/Maquinas/transductor.webp')
+            ->where('refacciones.0.imagen', '/Imagen/Refacciones/transductor.webp')
         );
+});
+
+test('a published spare part opens its detail and quote pages', function () {
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    $modulo = Modulo::factory()->create([
+        'modulo' => 'Ultrasonido',
+        'slug' => 'ultrasonido',
+        'estatus_id' => $activo->id,
+    ]);
+    $fabricante = Fabricante::factory()->create([
+        'nombre' => 'GE',
+    ]);
+    $refaccion = Refaccion::factory()->create([
+        'modulo_id' => $modulo->id,
+        'nombre' => 'Transductor lineal',
+        'numero_parte' => 'PN-TL-12L',
+        'fabricante_id' => $fabricante->id,
+        'categoria' => 'Módulos',
+        'descripcion' => 'Transductor compatible con el equipo.',
+        'condicion' => 'nueva',
+        'disponibilidad' => 'disponible',
+        'publicado' => true,
+    ]);
+    RefaccionImagen::query()->create([
+        'refaccion_id' => $refaccion->id,
+        'ruta' => 'Imagen/Refacciones/transductor.webp',
+        'orden' => 0,
+        'es_principal' => true,
+    ]);
+    $oculta = Refaccion::factory()->unpublished()->create([
+        'modulo_id' => $modulo->id,
+        'nombre' => 'Pieza oculta',
+    ]);
+
+    $this->get(route('refacciones.show', ['modalidad' => 'ultrasonido', 'refaccion' => $refaccion]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Refacciones/vistarefraccionview')
+            ->where('refaccion.nombre', 'Transductor lineal')
+            ->where('refaccion.parte', 'PN-TL-12L')
+            ->where('refaccion.marca', 'GE')
+            ->where('refaccion.categoria', 'Módulos')
+            ->where('refaccion.condicion', 'Nueva')
+            ->where('refaccion.disponibilidad', 'Disponible')
+            ->where('refaccion.modalidad.nombre', 'Ultrasonido')
+            ->where('refaccion.imagenes.0.url', '/Imagen/Refacciones/transductor.webp')
+        );
+
+    $this->get(route('refacciones.cotizacion', ['modalidad' => 'ultrasonido', 'refaccion' => $refaccion]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Refacciones/cotizacionesViewPiesasReffaciones')
+            ->where('refaccion.nombre', 'Transductor lineal')
+            ->where('refaccion.modalidad.slug', 'ultrasonido')
+        );
+
+    $this->get(route('refacciones.show', ['modalidad' => 'ultrasonido', 'refaccion' => $oculta]))
+        ->assertNotFound();
+    $this->get(route('refacciones.cotizacion', ['modalidad' => 'rayos-x', 'refaccion' => $refaccion]))
+        ->assertNotFound();
 });
 
 test('a spare part keeps the brand and modality linked to its equipment model', function () {
@@ -153,23 +212,28 @@ test('a spare part keeps the brand and modality linked to its equipment model', 
 });
 
 test('the refacciones page source uses modality cards and spare-part fields', function () {
-    $page = file_get_contents(resource_path('js/pages/Refacciones/ViewPiesasReffaciones.tsx'));
+    $landing = file_get_contents(resource_path('js/pages/Refacciones/ViewPiesasReffaciones.tsx'));
+    $pieces = file_get_contents(resource_path('js/pages/Refacciones/PiesaRefraccion.tsx'));
 
-    expect($page)->not->toBeFalse();
-    expect($page)
+    expect($landing)->not->toBeFalse();
+    expect($pieces)->not->toBeFalse();
+    expect($landing)
         ->toContain('CatalogImageCard')
-        ->toContain('Equipo:')
-        ->toContain('Marca:')
-        ->toContain('Modelo:')
-        ->toContain('Refacción requerida:')
-        ->toContain('Número de parte / P.N.')
-        ->toContain('Descripción o comentarios:')
+        ->toContain('piezas.url(item.slug)')
         ->toContain('lg:grid-cols-4')
         ->toContain('bg-black')
-        ->toContain('border-gray-500')
-        ->toContain('CardHoverGlow')
-        ->toContain('group-hover:bg-white/30')
-        ->not->toContain('bg-neutral-100');
+        ->not->toContain('Equipo:');
+    expect($pieces)
+        ->toContain('{modalidad.nombre}')
+        ->toContain('Encuentra piezas y módulos compatibles con este equipo.')
+        ->toContain('Categorías')
+        ->toContain('refacciones.map')
+        ->toContain('Ver detalles')
+        ->toContain('show.url({')
+        ->toContain('cotizacion.url({')
+        ->not->toContain('CatalogImageCard')
+        ->not->toContain('Elija el modelo')
+        ->not->toContain('Equipo:');
 });
 
 test('the mantenimiento refaccion card links to the refacciones page', function () {

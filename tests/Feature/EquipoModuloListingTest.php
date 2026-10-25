@@ -91,7 +91,6 @@ test('equipment detail page resolves database equipos_modulos by public slug', f
         'modelo' => 'EPIQ Elite',
         'descripcion_corta' => 'Resumen del equipo EPIQ',
         'estado' => 'Reacondicionado',
-        'modalidad' => 'Diagnóstico por imagen',
         'aplicaciones' => 'Cardiología, Pediatría, Vascular',
         'anio' => 2022,
         'activo' => true,
@@ -106,7 +105,6 @@ test('equipment detail page resolves database equipos_modulos by public slug', f
             ->where('module.brand', 'Philips')
             ->where('module.estado', 'Reacondicionado')
             ->where('module.disponibilidad', 'Disponible')
-            ->where('module.modalidad', 'Diagnóstico por imagen')
             ->where('module.aplicaciones', 'Cardiología, Pediatría, Vascular')
             ->where('module.anio', 2022)
             ->where('module.sku', 'MIG-EM-'.$equipo->id)

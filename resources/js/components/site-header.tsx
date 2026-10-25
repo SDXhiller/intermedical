@@ -1,8 +1,5 @@
 import { Link } from '@inertiajs/react';
 import {
-    Compass,
-    Eye,
-    Gem,
     Home,
     Layers,
     Mail,
@@ -10,26 +7,22 @@ import {
     Monitor,
     Search,
     Settings,
-    Target,
     Users,
     X,
     type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GlobalSearchBar } from '@/components/global-search-bar';
-import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
+import { CONTENT_WIDTH } from '@/data/equipment';
 import { contacto, home, mantenimiento, sobreNosotros } from '@/routes';
 import { equipos as bibliotecaEquipos, equiposDisponibles } from '@/routes/biblioteca';
 
 const MIG_HORIZONTAL_WHITE = '/Imagen/Logos/MIG-horizontal-blanco.png';
 
-type MegaMenuKey = 'empresa';
-
 type NavItem = {
     label: string;
     href: string;
     icon: LucideIcon;
-    megaMenu?: MegaMenuKey;
 };
 
 const navItems: NavItem[] = [
@@ -49,117 +42,19 @@ const navItems: NavItem[] = [
         label: 'Nosotros',
         href: sobreNosotros.url(),
         icon: Users,
-        megaMenu: 'empresa',
     },
     { label: 'Contacto', href: contacto.url(), icon: Mail },
 ];
 
-const empresaSubtitles: {
-    title: string;
-    href: string;
-    icon: LucideIcon;
-    description?: ReactNode;
-}[] = [
-    {
-        title: 'OBJETIVO',
-        href: `${sobreNosotros.url()}#objetivo`,
-        icon: Target,
-        description: (
-            <>
-                Establecer los principios, valores y lineamientos que orientan
-                el actuar de Medical Imaging Group, promoviendo una cultura de{' '}
-                <strong className="font-semibold text-gray-900 dark:text-white">
-                    ética, responsabilidad, seguridad, excelencia técnica y
-                    mejora continua
-                </strong>{' '}
-                en cada una de nuestras actividades.
-            </>
-        ),
-    },
-    {
-        title: 'MISIÓN',
-        href: `${sobreNosotros.url()}#mision`,
-        icon: Compass,
-        description:
-            'Mantener la tecnología de imagen médica segura, confiable y disponible, mediante ingeniería especializada, innovación y un servicio cercano que contribuya a una atención médica eficiente y oportuna.',
-    },
-    {
-        title: 'VISIÓN',
-        href: `${sobreNosotros.url()}#vision`,
-        icon: Eye,
-        description:
-            'Ser una empresa referente en México en ingeniería y soporte de tecnología de diagnóstico por imagen, reconocida por su innovación, experiencia y compromiso con una atención médica más confiable y accesible.',
-    },
-    {
-        title: 'VALORES',
-        href: `${sobreNosotros.url()}#valores`,
-        icon: Gem,
-        description:
-            'Actuamos con compromiso, profesionalismo, responsabilidad, honestidad, servicio y lealtad, aplicando nuestros conocimientos con integridad y transparencia para brindar soluciones confiables, cuidar los recursos y mantener relaciones basadas en el respeto, la confianza y la excelencia.',
-    },
-];
 
-function EmpresaMegaMenu({ onNavigate }: { onNavigate?: () => void }) {
-    return (
-        <div>
-            <p className="text-xs font-bold tracking-wider text-gray-900 dark:text-white">
-                EMPRESA
-            </p>
-            <p className="mt-3 text-sm leading-relaxed whitespace-nowrap text-muted-foreground">
-                Somos un grupo de ingenieros con amplia experiencia en el entorno de la Imagenología Clínica. Trabajamos para mantener la tecnología médica disponible, segura y confiable.
-            </p>
-            <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {empresaSubtitles.map(
-                    ({ title, href, icon: Icon, description }) => (
-                        <Link
-                            key={title}
-                            href={href}
-                            onClick={onNavigate}
-                            className="group flex max-w-[16rem] flex-col"
-                        >
-                            <h3 className="text-sm font-bold tracking-wider text-gray-900 transition group-hover:text-[#0a7c4a] dark:text-white">
-                                {title}
-                            </h3>
-
-                            <div className="mt-3 flex items-start gap-2.5">
-                                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#0a7c4a]/10 transition group-hover:bg-[#0a7c4a]/15 dark:bg-[#0a7c4a]/20">
-                                    <Icon
-                                        className="size-4"
-                                        style={{ color: BRAND_COLOR }}
-                                        strokeWidth={1.75}
-                                    />
-                                </span>
-                                {description && (
-                                    <p className="line-clamp-3 min-w-0 flex-1 text-sm leading-snug text-muted-foreground">
-                                        {description}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div
-                                className="mt-3 h-0.5 w-full max-w-[10rem] rounded-full"
-                                style={{ backgroundColor: BRAND_COLOR }}
-                            />
-                        </Link>
-                    ),
-                )}
-            </div>
-        </div>
-    );
-}
 
 const iconButtonClassName =
     'flex size-10 shrink-0 items-center justify-center rounded-full text-white/85 transition hover:bg-white/10 hover:text-white';
 
 export default function SiteHeader() {
-    const [activeMegaMenu, setActiveMegaMenu] = useState<MegaMenuKey | null>(
-        null,
-    );
     const [searchOpen, setSearchOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
-    const closeMegaMenu = () => setActiveMegaMenu(null);
-
     useEffect(() => {
         if (!searchOpen) {
             return;
@@ -203,7 +98,6 @@ export default function SiteHeader() {
         <div className="sticky top-0 z-[100] isolate overflow-visible">
             <header
                 className="relative overflow-visible border-b border-white/10 bg-neutral-950"
-                onMouseLeave={() => setActiveMegaMenu(null)}
             >
                 <div
                     className={`mx-auto flex ${CONTENT_WIDTH} items-center gap-3 overflow-visible py-4 lg:justify-between lg:gap-4`}
@@ -225,8 +119,6 @@ export default function SiteHeader() {
                             const Icon = item.icon;
                             const className =
                                 'inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-white/80 transition hover:text-[#0a7c4a]';
-                            const onMouseEnter = () =>
-                                setActiveMegaMenu(item.megaMenu ?? null);
                             const label = (
                                 <>
                                     <Icon
@@ -243,7 +135,6 @@ export default function SiteHeader() {
                                         key={item.label}
                                         href="#"
                                         className={className}
-                                        onMouseEnter={onMouseEnter}
                                         onClick={(event) =>
                                             event.preventDefault()
                                         }
@@ -258,7 +149,6 @@ export default function SiteHeader() {
                                     key={item.label}
                                     href={item.href}
                                     className={className}
-                                    onMouseEnter={onMouseEnter}
                                 >
                                     {label}
                                 </Link>
@@ -407,16 +297,6 @@ export default function SiteHeader() {
                         </div>
                     </div>
                 </nav>
-
-                {activeMegaMenu === 'empresa' && (
-                    <div className="absolute inset-x-0 top-full hidden border-b border-border bg-background shadow-lg lg:block">
-                        <div className={`mx-auto ${CONTENT_WIDTH} py-8`}>
-                            <EmpresaMegaMenu
-                                onNavigate={closeMegaMenu}
-                            />
-                        </div>
-                    </div>
-                )}
             </header>
         </div>
     );

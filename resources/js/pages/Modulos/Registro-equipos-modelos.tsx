@@ -43,7 +43,6 @@ type EquipoItem = {
     imagen: string | null;
     descripcion_corta: string | null;
     estado: string | null;
-    modalidad: string | null;
     aplicaciones: string | null;
     anio: number | null;
     tipo_equipo_id: number;
@@ -307,7 +306,7 @@ export default function RegistroEquiposModelos({
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="modelo">Modelo</Label>
+                                        <Label htmlFor="modelo">Nombre de equipo</Label>
                                         <Input
                                             id="modelo"
                                             name="modelo"
@@ -409,21 +408,6 @@ export default function RegistroEquiposModelos({
                                             />
                                         </div>
                                     ) : null}
-
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="modalidad">
-                                            Modalidad
-                                        </Label>
-                                        <Input
-                                            id="modalidad"
-                                            name="modalidad"
-                                            required
-                                            placeholder="Ej. Diagnóstico por imagen"
-                                        />
-                                        <InputError
-                                            message={errors.modalidad}
-                                        />
-                                    </div>
 
                                     <div className="grid gap-2">
                                         <Label htmlFor="precio">
@@ -1015,24 +999,6 @@ export default function RegistroEquiposModelos({
                                                 />
                                             </div>
                                         ) : null}
-
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="edit-modalidad">
-                                                Modalidad
-                                            </Label>
-                                            <Input
-                                                id="edit-modalidad"
-                                                name="modalidad"
-                                                required
-                                                defaultValue={
-                                                    equipoToEdit.modalidad ??
-                                                    ''
-                                                }
-                                            />
-                                            <InputError
-                                                message={errors.modalidad}
-                                            />
-                                        </div>
 
                                         <div className="grid gap-2">
                                             <Label htmlFor="edit-precio">

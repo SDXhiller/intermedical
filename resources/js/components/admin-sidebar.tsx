@@ -9,6 +9,7 @@ import {
     LayoutGrid,
     LifeBuoy,
     LogOut,
+    Package,
     Phone,
     Settings,
     UserPen,
@@ -40,6 +41,7 @@ import { create as adminEquipos } from '@/routes/admin/equipos';
 import { index as adminCotizaciones } from '@/routes/admin/cotizaciones';
 import { index as adminSoporte } from '@/routes/admin/soporte';
 import { index as adminFabricantes } from '@/routes/admin/fabricantes';
+import { create as adminRefacciones } from '@/routes/admin/refacciones';
 import { index as adminServicios } from '@/routes/admin/servicios';
 import {
     create as adminUsuariosCreate,
@@ -66,6 +68,12 @@ const contentItems: NavItem[] = [
         title: 'Modelos de equipos',
         href: adminModelosEquipos(),
         icon: Layers,
+        area: 'modelos-equipos',
+    },
+    {
+        title: 'Piezas de refacción',
+        href: adminRefacciones(),
+        icon: Package,
         area: 'modelos-equipos',
     },
     {

@@ -40,7 +40,6 @@ type ModuleProps = {
         description?: string | null;
         estado?: string | null;
         disponibilidad?: string | null;
-        modalidad?: string | null;
         aplicaciones?: string | null;
         anio?: number | null;
         sku?: string | null;

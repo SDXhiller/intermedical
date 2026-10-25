@@ -51,7 +51,10 @@ test('the servicios navigation link does not open a hover menu', function () {
     expect($header)
         ->toContain("label: 'Servicios'")
         ->toContain('href: mantenimiento.url()')
+        ->toContain("label: 'Nosotros'")
         ->not->toContain("megaMenu: 'servicios'")
+        ->not->toContain("megaMenu: 'empresa'")
+        ->not->toContain('EmpresaMegaMenu')
         ->not->toContain('SERVICIOS ESPECIALIZADOS')
         ->not->toContain('Soluciones integrales para sus equipos médicos')
         ->not->toContain('SpecializedServicesMegaMenu');
@@ -70,6 +73,17 @@ test('the site header collapses search and navigation behind buttons on mobile',
         ->toContain('grid-rows-[1fr]')
         ->toContain('grid-rows-[0fr]')
         ->toContain('duration-300');
+});
+
+test('the site footer links use the public route helpers', function () {
+    $footer = file_get_contents(resource_path('js/components/site-footer.tsx'));
+
+    expect($footer)
+        ->toContain('contacto, home, mantenimiento, sobreNosotros')
+        ->toContain('href: mantenimiento.url()')
+        ->toContain('href: sobreNosotros.url()')
+        ->toContain('href: contacto.url()')
+        ->toContain('href={home()}');
 });
 
 test('existing public pages linked from the site header remain available', function (string $routeName) {

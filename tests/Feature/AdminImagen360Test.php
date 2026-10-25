@@ -2,8 +2,13 @@
 
 use App\Models\EquipoModulo;
 use App\Models\Imagen360;
+use App\Models\Modulo;
 use App\Models\PuntoImagen360;
+use App\Models\Status;
 use App\Models\UserAdmin;
+use Database\Seeders\DisponibilidadSeeder;
+use Database\Seeders\StatusSeeder;
+use Database\Seeders\TipoEquipoSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -13,9 +18,9 @@ beforeEach(function () {
     Storage::fake('maquinas');
 
     $this->seed([
-        \Database\Seeders\StatusSeeder::class,
-        \Database\Seeders\DisponibilidadSeeder::class,
-        \Database\Seeders\TipoEquipoSeeder::class,
+        StatusSeeder::class,
+        DisponibilidadSeeder::class,
+        TipoEquipoSeeder::class,
     ]);
 });
 
@@ -30,7 +35,6 @@ test('storing an equipo with image also creates a principal imagen_360', functio
                 'fabricante_id',
                 'modelo',
                 'estado',
-                'modalidad',
                 'aplicaciones',
                 'tipo_equipo_id',
                 'disponibilidad_id',
@@ -255,8 +259,8 @@ test('hotspots can reuse an existing 360 image as destination without uploading 
 });
 
 test('public detail includes imagenes_360 and puntos', function () {
-    $activo = \App\Models\Status::query()->where('nombre', 'Activo')->firstOrFail();
-    $modulo = \App\Models\Modulo::factory()->create(['estatus_id' => $activo->id]);
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    $modulo = Modulo::factory()->create(['estatus_id' => $activo->id]);
     $equipo = EquipoModulo::factory()->create([
         'modulo_id' => $modulo->id,
         'activo' => true,

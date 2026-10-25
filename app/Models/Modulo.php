@@ -167,6 +167,14 @@ class Modulo extends Model
     }
 
     /**
+     * @return HasMany<Refaccion, $this>
+     */
+    public function refacciones(): HasMany
+    {
+        return $this->hasMany(Refaccion::class, 'modulo_id');
+    }
+
+    /**
      * @return HasMany<SolicitudSoporte, $this>
      */
     public function solicitudesSoporte(): HasMany

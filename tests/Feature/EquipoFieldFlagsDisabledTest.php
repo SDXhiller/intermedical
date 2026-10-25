@@ -6,6 +6,9 @@ use App\Models\Modulo;
 use App\Models\TipoEquipo;
 use App\Models\UserAdmin;
 use App\Support\EquipoFieldFlags;
+use Database\Seeders\DisponibilidadSeeder;
+use Database\Seeders\StatusSeeder;
+use Database\Seeders\TipoEquipoSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -13,9 +16,9 @@ beforeEach(function () {
     Storage::fake('maquinas');
 
     $this->seed([
-        \Database\Seeders\StatusSeeder::class,
-        \Database\Seeders\DisponibilidadSeeder::class,
-        \Database\Seeders\TipoEquipoSeeder::class,
+        StatusSeeder::class,
+        DisponibilidadSeeder::class,
+        TipoEquipoSeeder::class,
     ]);
 });
 
@@ -34,7 +37,6 @@ test('disabled equipo fields are forced to null even when submitted', function (
             'fabricante_id' => $fabricante->id,
             'modelo' => 'Modelo sin estado',
             'estado' => 'Nuevo',
-            'modalidad' => 'Diagnóstico por imagen',
             'aplicaciones' => 'Hospitalario',
             'tipo_equipo_id' => $tipoEquipo->id,
             'disponibilidad_id' => 1,

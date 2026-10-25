@@ -127,7 +127,6 @@ class SearchController extends Controller
                     ->where('modelo', 'like', $term)
                     ->orWhere('descripcion_corta', 'like', $term)
                     ->orWhere('aplicaciones', 'like', $term)
-                    ->orWhere('modalidad', 'like', $term)
                     ->orWhereHas(
                         'fabricante',
                         fn (Builder $fabricanteQuery) => $fabricanteQuery->where('nombre', 'like', $term),

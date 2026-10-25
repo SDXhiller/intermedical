@@ -25,6 +25,49 @@ const attendedModalities = [
 
 const REFACCION_SLUG = 'suministro-y-venta-de-refacciones';
 
+
+function serviceImagePath(filename: string): string {
+    return `/Imagen/Servicios/${encodeURIComponent(filename)}`;
+}
+
+const serviceCardImages: Record<string, string> = {
+    'suministro-y-venta-de-refacciones': serviceImagePath(
+        'Equipos_de_diagnostico_por_imagen_medicos.png',
+    ),
+    'mantenimiento-preventivo': serviceImagePath(
+        'Mantenimiento_preventivo_de_equipo_medico.png',
+    ),
+    'mantenimiento-correctivo': serviceImagePath(
+        'Mantenimiento_de_ecografo_con_tecnico_y_herramientas.png',
+    ),
+    'diagnostico-tecnico': serviceImagePath(
+        'Diagnostico_medico_y_reparacion_tecnica.png',
+    ),
+    'renta-de-equipos': serviceImagePath(
+        'Equipos_de_diagnostico_por_imagen_medicos.png',
+    ),
+    instalacion: serviceImagePath(
+        'Instalacion_de_sistema_de_imagen_medica.png',
+    ),
+    desinstalacion: serviceImagePath(
+        'Desinstalacion_de_escaner_medico.png',
+    ),
+    'puesta-en-marcha': serviceImagePath(
+        'Puesta_en_marcha_de_equipo_medico.png',
+    ),
+    'servicio-a-inyectores': serviceImagePath(
+        'Mantenimiento_de_inyector_medico_de_contraste.png',
+    ),
+    'control-de-calidad-de-imagen': serviceImagePath(
+        'Control_de_calidad_en_tomografia_computarizada.png',
+    ),
+};
+
+
+function cardImage(slug: string): string {
+    return serviceCardImages[slug] ?? '#';
+}
+
 const refaccionService: MaintenanceService = {
     title: 'Servicio de suministro y venta de refacciones',
     slug: REFACCION_SLUG,
@@ -32,28 +75,51 @@ const refaccionService: MaintenanceService = {
         'Suministramos y comercializamos refacciones para equipos de diagnóstico por imagen, de acuerdo con la modalidad y las necesidades de cada institución.',
 };
 
-function ServiceCard({ service }: { service: MaintenanceService }) {
+function ServiceArtwork({ src }: { src: string }) {
+    if (src === '#') {
+        return null;
+    }
+
     return (
-        <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-neutral-950 p-5 shadow-sm dark:bg-black">
-            <h2 className="text-lg font-bold tracking-tight text-white">
-                {service.title}
-            </h2>
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-[46%] overflow-hidden">
+            <img
+                src={src}
+                alt=""
+                className="absolute top-1/2 right-0 h-full w-auto max-w-none -translate-y-1/2 object-contain object-right"
+            />
+            <div
+                className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-transparent dark:from-black dark:via-black/80"
+                aria-hidden="true"
+            />
+        </div>
+    );
+}
 
-            <p className="mt-2 flex-1 text-sm leading-relaxed text-white/75">
-                {service.description}
-            </p>
+function ServiceCard({ service }: { service: MaintenanceService }) {
+    const image = cardImage(service.slug);
 
-            <Link
-                href={soporte.url({
-                    query: { servicio: service.slug },
-                })}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-                style={{ backgroundColor: BRAND_COLOR }}
-            >
-                <CalendarDays className="size-3.5" strokeWidth={1.75} />
-                Solicitar servicio
-                <ArrowRight className="size-3.5" />
-            </Link>
+    return (
+        <article className="relative flex min-h-56 items-center overflow-hidden rounded-2xl border border-white/10 bg-neutral-950 shadow-sm dark:bg-black">
+            <ServiceArtwork src={image} />
+            <div className="relative z-10 flex min-h-56 w-[56%] flex-col justify-center p-5">
+                <h2 className="text-lg font-bold tracking-tight text-white">
+                    {service.title}
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-white/75">
+                    {service.description}
+                </p>
+                <Link
+                    href={soporte.url({
+                        query: { servicio: service.slug },
+                    })}
+                    className="mt-4 inline-flex w-fit items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold whitespace-nowrap text-white transition hover:opacity-90"
+                    style={{ backgroundColor: BRAND_COLOR }}
+                >
+                    <CalendarDays className="size-3.5" strokeWidth={1.75} />
+                    Solicitar servicio
+                    <ArrowRight className="size-3.5" />
+                </Link>
+            </div>
         </article>
     );
 }
@@ -142,25 +208,25 @@ export default function Mantenimiento({
                 className={`mx-auto ${CONTENT_WIDTH} py-10 sm:py-12 lg:py-14`}
             >
                 <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-2 lg:grid-cols-3">
-                    <article className="flex flex-col gap-5 rounded-2xl border border-white/10 bg-neutral-950 p-6 shadow-sm sm:col-span-2 sm:flex-row sm:items-center sm:justify-between sm:p-8 lg:col-span-3 dark:bg-black">
-                        <div className="max-w-3xl">
-                            <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                    <article className="relative flex min-h-44 items-center overflow-hidden rounded-2xl border border-white/10 bg-neutral-950 shadow-sm sm:col-span-2 sm:items-center lg:col-span-3 dark:bg-black">
+                        <ServiceArtwork src={cardImage(REFACCION_SLUG)} />
+                        <div className="relative z-10 flex w-[56%] flex-col items-start justify-center p-5 sm:py-6 sm:pl-6">
+                            <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
                                 {refaccionService.title}
                             </h2>
-                            <p className="mt-3 text-sm leading-relaxed text-white/75 sm:text-base">
+                            <p className="mt-2 text-sm leading-relaxed text-white/75">
                                 {refaccionService.description}
                             </p>
+                            <Link
+                                href={refacciones.url()}
+                                className="mt-4 inline-flex w-fit items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold whitespace-nowrap text-white transition hover:opacity-90"
+                                style={{ backgroundColor: BRAND_COLOR }}
+                            >
+                                <Package className="size-4" strokeWidth={1.75} />
+                                Solicitar refacción
+                                <ArrowRight className="size-4" />
+                            </Link>
                         </div>
-
-                        <Link
-                            href={refacciones.url()}
-                            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
-                            style={{ backgroundColor: BRAND_COLOR }}
-                        >
-                            <Package className="size-4" strokeWidth={1.75} />
-                            Solicitar refacción
-                            <ArrowRight className="size-4" />
-                        </Link>
                     </article>
                     {servicios
                         .filter((service) => service.slug !== REFACCION_SLUG)

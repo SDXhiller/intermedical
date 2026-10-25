@@ -19,7 +19,8 @@ createInertiaApp({
                 return BlankLayout;
             case name === 'welcome':
             case name.startsWith('Mantenimiento/'):
-            case name.startsWith('Refacciones/'):
+            case name.startsWith('Refacciones/') &&
+                name !== 'Refacciones/FormularioPiesasReffaciones':
             case name.startsWith('Empresa/'):
             case name.startsWith('Biblioteca/'):
             case name === 'Contacto/Mostrar-contacto':
@@ -43,6 +44,7 @@ createInertiaApp({
             case name.startsWith('Servcios/'):
             case name.startsWith('Users/'):
             case name.startsWith('Admins/'):
+            case name === 'Refacciones/FormularioPiesasReffaciones':
             case name === 'settings/monitoreo':
             case name === 'settings/equipos-ajustes':
                 return AdminLayout;

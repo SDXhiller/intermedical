@@ -65,6 +65,15 @@ return [
             'report' => false,
         ],
 
+        'refacciones' => [
+            'driver' => 'local',
+            'root' => public_path('Imagen/Refacciones'),
+            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/Imagen/Refacciones',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
         'fabricantes' => [
             'driver' => 'local',
             'root' => public_path('Imagen/Fabricantes'),

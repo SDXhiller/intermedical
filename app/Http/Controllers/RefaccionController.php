@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\EquipoModulo;
-use App\Models\Mibrafaccion;
 use App\Models\Modulo;
+use App\Models\Refaccion;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -12,12 +12,18 @@ use Inertia\Response;
 class RefaccionController extends Controller
 {
     /**
-     * Public spare-parts catalog: modality, then model, then parts.
+     * Public spare-parts catalog. Modalities only; models and parts live on the pieces page.
      */
-    public function index(Request $request): Response
+    public function index(Request $request): Response|RedirectResponse
     {
-        $modalidadSlug = $request->string('modalidad')->toString();
-        $modeloSlug = $request->string('modelo')->toString();
+        if ($request->filled('modalidad')) {
+            $modelo = $request->string('modelo')->toString();
+
+            return redirect()->route('refacciones.piezas', array_filter([
+                'modalidad' => $request->string('modalidad')->toString(),
+                'modelo' => $modelo !== '' ? $modelo : null,
+            ]));
+        }
 
         $modalidades = Modulo::query()
             ->activos()
@@ -31,67 +37,85 @@ class RefaccionController extends Controller
             ->values()
             ->all();
 
-        $modalidad = $modalidadSlug === ''
-            ? null
-            : collect($modalidades)->firstWhere('slug', $modalidadSlug);
-
-        $modelos = [];
-        $modelo = null;
-        $refacciones = [];
-
-        if ($modalidad !== null) {
-            $modelos = EquipoModulo::query()
-                ->where('activo', true)
-                ->whereHas(
-                    'modulo',
-                    fn ($query) => $query->activos()->where('slug', $modalidadSlug),
-                )
-                ->with('fabricante:id,nombre')
-                ->orderBy('modelo')
-                ->get(['id', 'modulo_id', 'fabricante_id', 'modelo', 'slug', 'imagen'])
-                ->map(fn (EquipoModulo $equipo): array => [
-                    'slug' => $equipo->publicSlug(),
-                    'nombre' => $equipo->modelo,
-                    'marca' => $equipo->fabricante?->nombre ?? '',
-                    'imagen' => $equipo->imageUrl() ?? '',
-                ])
-                ->values()
-                ->all();
-
-            $modelo = $modeloSlug === ''
-                ? null
-                : collect($modelos)->firstWhere('slug', $modeloSlug);
-
-            if ($modelo !== null) {
-                $refacciones = Mibrafaccion::query()
-                    ->where('activo', true)
-                    ->whereHas(
-                        'equipoModulo',
-                        fn ($query) => $query
-                            ->where('activo', true)
-                            ->where('slug', $modeloSlug),
-                    )
-                    ->with([
-                        'equipoModulo:id,modulo_id,fabricante_id,modelo,slug,imagen',
-                        'equipoModulo.modulo:id,modulo,slug',
-                        'equipoModulo.fabricante:id,nombre',
-                        'modulo:id,modulo,slug',
-                        'fabricante:id,nombre',
-                    ])
-                    ->orderBy('refaccion_requerida')
-                    ->get()
-                    ->map(fn (Mibrafaccion $refaccion): array => $refaccion->toPublicCard())
-                    ->values()
-                    ->all();
-            }
-        }
-
         return Inertia::render('Refacciones/ViewPiesasReffaciones', [
             'modalidades' => $modalidades,
-            'modalidad' => $modalidad,
-            'modelos' => $modelos,
-            'modelo' => $modelo,
+        ]);
+    }
+
+    /**
+     * Public detail of one published spare part.
+     */
+    public function show(string $modalidad, Refaccion $refaccion): Response
+    {
+        $modulo = $this->moduloPublicado($modalidad);
+        abort_unless($this->perteneceAlModulo($refaccion, $modulo), 404);
+
+        return Inertia::render('Refacciones/vistarefraccionview', [
+            'refaccion' => $refaccion->toDetailPayload(),
+        ]);
+    }
+
+    /**
+     * Placeholder while the spare-part quote form is built.
+     */
+    public function cotizacion(string $modalidad, Refaccion $refaccion): Response
+    {
+        $modulo = $this->moduloPublicado($modalidad);
+        abort_unless($this->perteneceAlModulo($refaccion, $modulo), 404);
+
+        return Inertia::render('Refacciones/cotizacionesViewPiesasReffaciones', [
+            'refaccion' => [
+                'id' => $refaccion->id,
+                'nombre' => $refaccion->nombre,
+                'modalidad' => [
+                    'slug' => $modulo->slug,
+                    'nombre' => $modulo->modulo,
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Spare parts for one modality, without the equipment catalog.
+     */
+    public function piezas(string $modalidad): Response
+    {
+        $modulo = $this->moduloPublicado($modalidad);
+
+        $refacciones = Refaccion::query()
+            ->where('publicado', true)
+            ->where('modulo_id', $modulo->id)
+            ->with(['imagenes', 'fabricante'])
+            ->orderBy('nombre')
+            ->get()
+            ->map(fn (Refaccion $refaccion): array => $refaccion->toCatalogCard())
+            ->values()
+            ->all();
+
+        return Inertia::render('Refacciones/PiesaRefraccion', [
+            'modalidad' => [
+                'slug' => $modulo->slug,
+                'nombre' => $modulo->modulo,
+                'imagen' => $modulo->imageUrl() ?? '',
+            ],
             'refacciones' => $refacciones,
         ]);
+    }
+
+    private function moduloPublicado(string $modalidad): Modulo
+    {
+        $modulo = Modulo::query()
+            ->activos()
+            ->where('slug', $modalidad)
+            ->first(['id', 'modulo', 'slug', 'imagen']);
+
+        abort_if($modulo === null, 404);
+
+        return $modulo;
+    }
+
+    private function perteneceAlModulo(Refaccion $refaccion, Modulo $modulo): bool
+    {
+        return $refaccion->publicado && $refaccion->modulo_id === $modulo->id;
     }
 }

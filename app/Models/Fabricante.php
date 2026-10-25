@@ -52,6 +52,14 @@ class Fabricante extends Model
     }
 
     /**
+     * @return HasMany<Refaccion, $this>
+     */
+    public function refacciones(): HasMany
+    {
+        return $this->hasMany(Refaccion::class, 'fabricante_id');
+    }
+
+    /**
      * Public logo URL for this manufacturer.
      */
     public function logoUrl(): ?string

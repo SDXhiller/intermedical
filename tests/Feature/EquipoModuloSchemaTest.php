@@ -5,13 +5,16 @@ use App\Models\EquipoModulo;
 use App\Models\Fabricante;
 use App\Models\Modulo;
 use App\Models\TipoEquipo;
+use Database\Seeders\DisponibilidadSeeder;
+use Database\Seeders\StatusSeeder;
+use Database\Seeders\TipoEquipoSeeder;
 use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
     $this->seed([
-        \Database\Seeders\StatusSeeder::class,
-        \Database\Seeders\DisponibilidadSeeder::class,
-        \Database\Seeders\TipoEquipoSeeder::class,
+        StatusSeeder::class,
+        DisponibilidadSeeder::class,
+        TipoEquipoSeeder::class,
     ]);
 });
 
@@ -32,7 +35,6 @@ test('equipment related tables exist with expected columns', function () {
             'imagen',
             'descripcion_corta',
             'estado',
-            'modalidad',
             'aplicaciones',
             'anio',
             'tipo_equipo_id',
@@ -40,7 +42,8 @@ test('equipment related tables exist with expected columns', function () {
             'precio',
             'activo',
         ]))->toBeTrue()
-        ->and(Schema::hasColumn('equipos_modulos', 'tipo_equipo'))->toBeFalse();
+        ->and(Schema::hasColumn('equipos_modulos', 'tipo_equipo'))->toBeFalse()
+        ->and(Schema::hasColumn('equipos_modulos', 'modalidad'))->toBeFalse();
 });
 
 test('disponibilidad seeder registers the three expected statuses', function () {

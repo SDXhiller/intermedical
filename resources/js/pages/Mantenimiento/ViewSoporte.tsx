@@ -627,6 +627,17 @@ export default function ViewSoporte({
             }
         }
 
+        if (
+            paso === 1 &&
+            (descripcion.trim() === '' || descripcionError !== null)
+        ) {
+            setPasoError(
+                descripcionError ?? 'Describe la falla para continuar.',
+            );
+
+            return;
+        }
+
         if (paso === 2) {
             setCorreoTocado(true);
             const correoInvalido = emailFieldError(correo, true);
@@ -773,7 +784,7 @@ export default function ViewSoporte({
                                     [
                                         [1, 'Equipo'],
                                         [2, 'Cliente'],
-                                        [3, 'Problema'],
+                                        [3, 'Evidencias'],
                                     ] as const
                                 ).map(([numero, etiqueta]) => (
                                     <li
@@ -952,6 +963,33 @@ export default function ViewSoporte({
                                             disabled
                                         />
                                     </div>
+                            </div>
+
+                            <div className="mt-5 grid gap-2">
+                                <Label htmlFor="descripcion">
+                                    Descripción de la falla *
+                                </Label>
+                                <textarea
+                                    id="descripcion"
+                                    name="descripcion"
+                                    rows={4}
+                                    value={descripcion}
+                                    onChange={(event) =>
+                                        setDescripcion(event.target.value)
+                                    }
+                                    placeholder="Describe el problema que presenta el equipo..."
+                                    aria-invalid={Boolean(descripcionError)}
+                                    className={`min-h-24 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] ${descripcionError ? 'border-red-600 focus-visible:border-red-600 focus-visible:ring-red-600/20 dark:border-red-400' : 'border-input focus-visible:border-ring focus-visible:ring-ring/50'}`}
+                                />
+                                <div className="flex items-start justify-between gap-3">
+                                    <FieldError message={descripcionError} />
+                                    <p
+                                        className={`ml-auto text-xs ${descripcionError ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}
+                                    >
+                                        {descripcion.length}/
+                                        {DESCRIPCION_MAX_LENGTH}
+                                    </p>
+                                </div>
                             </div>
 
                             {pasoError ? (
@@ -1219,41 +1257,13 @@ export default function ViewSoporte({
                                 >
                                     3
                                 </span>
-                                Detalles del problema
+                                Evidencias
                             </h2>
 
                             <div className="mt-5 grid gap-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="descripcion">
-                                        Descripción de la falla *
-                                    </Label>
-                                    <textarea
-                                        id="descripcion"
-                                        name="descripcion"
-                                        rows={4}
-                                        value={descripcion}
-                                        onChange={(event) =>
-                                            setDescripcion(event.target.value)
-                                        }
-                                        placeholder="Describe el problema que presenta el equipo..."
-                                        aria-invalid={Boolean(descripcionError)}
-                                        className={`min-h-24 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] ${descripcionError ? 'border-red-600 focus-visible:border-red-600 focus-visible:ring-red-600/20 dark:border-red-400' : 'border-input focus-visible:border-ring focus-visible:ring-ring/50'}`}
-                                    />
-                                    <div className="flex items-start justify-between gap-3">
-                                        <FieldError message={descripcionError} />
-                                        <p
-                                            className={`ml-auto text-xs ${descripcionError ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}
-                                        >
-                                            {descripcion.length}/
-                                            {DESCRIPCION_MAX_LENGTH}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label>Fotografías (opcional)</Label>
                                     <p className="text-xs text-muted-foreground">
-                                        Hasta 5 imágenes. Solo imágenes de hasta 5 MB.
+                                        Solo imágenes de hasta 5 MB.
                                     </p>
                                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                                         {imagenes.map((file, index) => (

@@ -9,7 +9,12 @@ use App\Models\Telefono;
 final class WhatsAppContact
 {
     /**
-     * Digits for https://wa.me/{digits}, or null when WhatsApp is not configured.
+     * Public business line shown in the site footer. Used when no number is configured.
+     */
+    private const FALLBACK_NUMBER = '5519761691';
+
+    /**
+     * Digits for https://wa.me/{digits}, or null when the number cannot be used.
      */
     public static function digits(): ?string
     {
@@ -19,14 +24,23 @@ final class WhatsAppContact
             $raw = self::numberFromDatabase();
         }
 
-        if ($raw === null) {
-            return null;
+        if (! is_string($raw) || trim($raw) === '') {
+            $raw = self::FALLBACK_NUMBER;
         }
 
+        return self::normalize($raw);
+    }
+
+    private static function normalize(string $raw): ?string
+    {
         $digits = preg_replace('/\D+/', '', $raw) ?? '';
 
         if ($digits === '') {
             return null;
+        }
+
+        if (preg_match('/^521(\d{10})$/', $digits, $matches) === 1) {
+            return '52'.$matches[1];
         }
 
         if (strlen($digits) === 10) {

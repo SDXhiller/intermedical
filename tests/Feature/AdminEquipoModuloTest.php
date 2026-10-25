@@ -6,6 +6,9 @@ use App\Models\Fabricante;
 use App\Models\Modulo;
 use App\Models\TipoEquipo;
 use App\Models\UserAdmin;
+use Database\Seeders\DisponibilidadSeeder;
+use Database\Seeders\StatusSeeder;
+use Database\Seeders\TipoEquipoSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -14,9 +17,9 @@ beforeEach(function () {
     Storage::fake('maquinas');
 
     $this->seed([
-        \Database\Seeders\StatusSeeder::class,
-        \Database\Seeders\DisponibilidadSeeder::class,
-        \Database\Seeders\TipoEquipoSeeder::class,
+        StatusSeeder::class,
+        DisponibilidadSeeder::class,
+        TipoEquipoSeeder::class,
     ]);
 });
 
@@ -67,7 +70,6 @@ test('admins can register an equipo modelo', function () {
             'fabricante_id' => $fabricante->id,
             'modelo' => 'Acuson Sequoia',
             'descripcion_corta' => 'Ultrasonido de alto rendimiento',
-            'modalidad' => 'Diagnóstico por imagen',
             'aplicaciones' => 'Hospitalario, ambulatorio y clínica especializada',
             'anio' => 2022,
             'tipo_equipo_id' => $tipoEquipo->id,
@@ -86,7 +88,6 @@ test('admins can register an equipo modelo', function () {
         ->and($equipo->tipo_equipo_id)->toBe($tipoEquipo->id)
         ->and($equipo->estado)->toBeNull()
         ->and($equipo->disponibilidad_id)->toBeNull()
-        ->and($equipo->modalidad)->toBe('Diagnóstico por imagen')
         ->and($equipo->aplicaciones)->toBe('Hospitalario, ambulatorio y clínica especializada')
         ->and($equipo->anio)->toBe(2022)
         ->and($equipo->activo)->toBeTrue()
@@ -108,7 +109,6 @@ test('equipo modelo registration validates required fields', function () {
             'modulo_id',
             'fabricante_id',
             'modelo',
-            'modalidad',
             'aplicaciones',
             'tipo_equipo_id',
             'activo',
@@ -116,7 +116,14 @@ test('equipo modelo registration validates required fields', function () {
         ->assertSessionDoesntHaveErrors([
             'estado',
             'disponibilidad_id',
+            'modalidad',
         ]);
+
+    $form = file_get_contents(resource_path('js/pages/Modulos/Registro-equipos-modelos.tsx'));
+
+    expect($form)
+        ->not->toContain('edit-modalidad')
+        ->not->toContain('name="modalidad"');
 });
 
 test('equipo modelo description accepts up to 5000 characters', function () {
@@ -132,7 +139,6 @@ test('equipo modelo description accepts up to 5000 characters', function () {
             'fabricante_id' => $fabricante->id,
             'modelo' => 'Modelo con descripción larga',
             'descripcion_corta' => $descripcion,
-            'modalidad' => 'Diagnóstico por imagen',
             'aplicaciones' => 'Hospitalario',
             'tipo_equipo_id' => $tipoEquipo->id,
             'activo' => '1',
@@ -157,7 +163,6 @@ test('equipo modelo description rejects more than 5000 characters', function () 
             'fabricante_id' => $fabricante->id,
             'modelo' => 'Modelo descripción excesiva',
             'descripcion_corta' => str_repeat('a', 5001),
-            'modalidad' => 'Diagnóstico por imagen',
             'aplicaciones' => 'Hospitalario',
             'tipo_equipo_id' => $tipoEquipo->id,
             'activo' => '1',

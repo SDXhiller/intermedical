@@ -12,10 +12,16 @@ test('uses the configured whatsapp number with the mexico country code', functio
     expect(WhatsAppContact::digits())->toBe('525519761691');
 });
 
-test('keeps a full international whatsapp number', function () {
+test('drops the legacy mexico mobile prefix so whatsapp accepts the number', function () {
     config(['services.whatsapp.number' => '5215519761691']);
 
-    expect(WhatsAppContact::digits())->toBe('5215519761691');
+    expect(WhatsAppContact::digits())->toBe('525519761691');
+});
+
+test('keeps a full international whatsapp number', function () {
+    config(['services.whatsapp.number' => '5491112345678']);
+
+    expect(WhatsAppContact::digits())->toBe('5491112345678');
 });
 
 test('falls back to an active whatsapp service phone', function () {
@@ -36,10 +42,10 @@ test('falls back to an active whatsapp service phone', function () {
     expect(WhatsAppContact::digits())->toBe('527715861245');
 });
 
-test('returns null when whatsapp is not configured', function () {
+test('uses the public business line when whatsapp is not configured', function () {
     config(['services.whatsapp.number' => null]);
 
-    expect(WhatsAppContact::digits())->toBeNull();
+    expect(WhatsAppContact::digits())->toBe('525519761691');
 });
 
 test('the support page shares the whatsapp number when configured', function () {
@@ -49,6 +55,6 @@ test('the support page shares the whatsapp number when configured', function () 
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Mantenimiento/ViewSoporte')
-            ->where('whatsappNumber', '5215512345678')
+            ->where('whatsappNumber', '525512345678')
         );
 });

@@ -6,6 +6,9 @@ use App\Models\Imagen360;
 use App\Models\Modulo;
 use App\Models\TipoEquipo;
 use App\Models\UserAdmin;
+use Database\Seeders\DisponibilidadSeeder;
+use Database\Seeders\StatusSeeder;
+use Database\Seeders\TipoEquipoSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -14,9 +17,9 @@ beforeEach(function () {
     Storage::fake('imagen_360');
 
     $this->seed([
-        \Database\Seeders\StatusSeeder::class,
-        \Database\Seeders\DisponibilidadSeeder::class,
-        \Database\Seeders\TipoEquipoSeeder::class,
+        StatusSeeder::class,
+        DisponibilidadSeeder::class,
+        TipoEquipoSeeder::class,
     ]);
 });
 
@@ -38,7 +41,6 @@ test('admins can update an equipo modelo', function () {
             'modelo' => 'Modelo editado',
             'descripcion_corta' => 'Descripción actualizada',
             'estado' => 'Reacondicionado',
-            'modalidad' => 'Diagnóstico por imagen',
             'aplicaciones' => 'Hospitalario',
             'anio' => 2024,
             'tipo_equipo_id' => $tipoEquipo->id,
@@ -81,7 +83,6 @@ test('admins can replace equipo modelo image on update', function () {
             'fabricante_id' => $fabricante->id,
             'modelo' => $equipo->modelo,
             'estado' => 'Nuevo',
-            'modalidad' => 'Diagnóstico',
             'aplicaciones' => 'Clínica',
             'tipo_equipo_id' => $tipoEquipo->id,
             'disponibilidad_id' => 1,

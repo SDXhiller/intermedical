@@ -21,7 +21,6 @@ use Illuminate\Support\Str;
  * @property string|null $imagen
  * @property string|null $descripcion_corta
  * @property string|null $estado
- * @property string|null $modalidad
  * @property string|null $aplicaciones
  * @property int|null $anio
  * @property int $tipo_equipo_id
@@ -45,7 +44,6 @@ use Illuminate\Support\Str;
     'imagen',
     'descripcion_corta',
     'estado',
-    'modalidad',
     'aplicaciones',
     'anio',
     'tipo_equipo_id',
@@ -286,7 +284,6 @@ class EquipoModulo extends Model
             'description' => $this->descripcion_corta,
             'estado' => $this->estado,
             'disponibilidad' => $this->disponibilidad?->nombre,
-            'modalidad' => $this->modalidad,
             'aplicaciones' => $this->aplicaciones,
             'anio' => $this->anio,
             'sku' => 'MIG-EM-'.$this->id,
