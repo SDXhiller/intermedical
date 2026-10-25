@@ -189,4 +189,12 @@ class Modulo extends Model
     {
         return $this->hasMany(Mibrafaccion::class, 'modulo_id');
     }
+
+    /**
+     * @return HasMany<CotizacionRefaccion, $this>
+     */
+    public function cotizacionesRefacciones(): HasMany
+    {
+        return $this->hasMany(CotizacionRefaccion::class, 'modulo_id');
+    }
 }

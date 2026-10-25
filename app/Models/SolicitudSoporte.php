@@ -28,6 +28,8 @@ use Illuminate\Support\Facades\Storage;
  * @property string $descripcion
  * @property list<string>|null $imagenes
  * @property Carbon|null $atendida_at
+ * @property string $estatus
+ * @property string|null $observaciones
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read TipoServicioMantenimiento $servicio
@@ -51,6 +53,8 @@ use Illuminate\Support\Facades\Storage;
     'descripcion',
     'imagenes',
     'atendida_at',
+    'estatus',
+    'observaciones',
 ])]
 class SolicitudSoporte extends Model
 {
@@ -60,6 +64,13 @@ class SolicitudSoporte extends Model
     use HasFactory;
 
     protected $table = 'solicitudes_soporte';
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'estatus' => 'en_espera',
+    ];
 
     protected static function booted(): void
     {
@@ -164,7 +175,8 @@ class SolicitudSoporte extends Model
 
     public function isNueva(): bool
     {
-        return $this->atendida_at === null
+        return $this->estatus === 'en_espera'
+            && $this->atendida_at === null
             && $this->created_at !== null
             && $this->created_at->gte(now()->subDay());
     }

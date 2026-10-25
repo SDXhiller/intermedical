@@ -24,6 +24,8 @@ use Illuminate\Support\Carbon;
  * @property string $area
  * @property string $telefono
  * @property string $correo
+ * @property string $estatus
+ * @property string|null $observaciones
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read EquipoModulo|null $equipoModulo
@@ -42,6 +44,8 @@ use Illuminate\Support\Carbon;
     'area',
     'telefono',
     'correo',
+    'estatus',
+    'observaciones',
 ])]
 class ClienteCotisacion extends Model
 {

@@ -63,6 +63,8 @@ test('admins can view support requests with service modality and equipment', fun
             ->where('filtros.anio', 2026)
             ->where('resumen.total_mes', 1)
             ->where('resumen.mes_nombre', 'Septiembre')
+            ->where('solicitudes.0.estado_servicio', 'en_espera')
+            ->where('solicitudes.0.observaciones', '')
         );
 });
 
@@ -135,6 +137,86 @@ test('admins can mark a support request as attended and clear the new marker', f
         );
 });
 
+test('admins can save the follow-up status and internal notes of a support request', function () {
+    $admin = UserAdmin::factory()->create();
+    $solicitud = SolicitudSoporte::factory()->create([
+        'estatus' => 'en_espera',
+        'nombre' => 'Ana López',
+    ]);
+    $solicitud->load('servicio');
+
+    $this->actingAs($admin, 'admin')
+        ->patch(route('admin.soporte.update', [
+            'solicitudSoporte' => $solicitud,
+            'mes' => 10,
+            'anio' => 2026,
+        ]), [
+            'estado' => 'cancelado',
+            'observaciones' => 'El hospital reprogramó la visita.',
+        ])
+        ->assertRedirect(route('admin.soporte.index', [
+            'mes' => 10,
+            'anio' => 2026,
+        ]))
+        ->assertSessionHas('success');
+
+    $solicitud->refresh();
+
+    expect($solicitud->estatus)->toBe('cancelado')
+        ->and($solicitud->observaciones)->toBe('El hospital reprogramó la visita.')
+        ->and($solicitud->atendida_at)->toBeNull();
+
+    $this->actingAs($admin, 'admin')
+        ->patch(route('admin.soporte.update', $solicitud), [
+            'estado' => 'concluido',
+            'observaciones' => 'La falla quedó resuelta.',
+        ])
+        ->assertRedirect(route('admin.soporte.index'))
+        ->assertSessionHas('solicitud_atendida', [
+            'servicio' => $solicitud->servicio->nombre,
+            'nombre' => 'Ana López',
+        ]);
+
+    $solicitud->refresh();
+
+    expect($solicitud->estatus)->toBe('concluido')
+        ->and($solicitud->atendida_at)->not->toBeNull()
+        ->and($solicitud->isNueva())->toBeFalse();
+});
+
+test('the support follow-up only accepts waiting completed or cancelled statuses', function () {
+    $admin = UserAdmin::factory()->create();
+    $solicitud = SolicitudSoporte::factory()->create([
+        'estatus' => 'en_espera',
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->from(route('admin.soporte.index'))
+        ->patch(route('admin.soporte.update', $solicitud), [
+            'estado' => 'pendiente',
+            'observaciones' => 'Nota interna',
+        ])
+        ->assertRedirect(route('admin.soporte.index'))
+        ->assertSessionHasErrors('estado');
+
+    expect($solicitud->fresh()->estatus)->toBe('en_espera');
+});
+
+test('admins outside support cannot update a support request follow-up', function () {
+    $admin = UserAdmin::factory()->equipos()->create();
+    $solicitud = SolicitudSoporte::factory()->create([
+        'estatus' => 'en_espera',
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->patch(route('admin.soporte.update', $solicitud), [
+            'estado' => 'cancelado',
+        ])
+        ->assertForbidden();
+
+    expect($solicitud->fresh()->estatus)->toBe('en_espera');
+});
+
 test('guests cannot mark a support request as attended', function () {
     $solicitud = SolicitudSoporte::factory()->create();
 
@@ -149,24 +231,26 @@ test('the support list labels each field and offers an attended action', functio
 
     expect($page)
         ->toContain('titulo="Nombre"')
-        ->toContain('titulo="Empresa"')
-        ->toContain('titulo="Marca"')
-        ->toContain('titulo="Modelo"')
-        ->toContain('titulo="Servicio"')
+        ->toContain('titulo="Empresa o institución"')
+        ->toContain('titulo="Marca del equipo"')
+        ->toContain('titulo="Modelo del equipo"')
+        ->toContain('titulo="Servicio solicitado"')
         ->toContain('titulo="Modalidad"')
-        ->toContain('Atendido')
+        ->toContain('Servicio concluido')
+        ->toContain('Seguimiento administrativo')
+        ->toContain('Observaciones internas')
         ->toContain('titulo="Teléfono"')
         ->toContain('titulo="Correo electrónico"')
         ->toContain('{solicitud.cliente.nombre}')
         ->toContain('{solicitud.servicio.nombre}')
         ->toContain('break-words whitespace-pre-wrap')
         ->toContain('Solicitud atendida')
-        ->toContain('quedó atendida')
+        ->toContain('quedó marcada como atendida')
         ->toContain('Fotografía anterior')
         ->toContain('Fotografía siguiente')
         ->toContain('Acercar')
         ->toContain('Alejar')
-        ->toContain('Mano para mover el zoom')
+        ->toContain('Mover imagen')
         ->not->toContain('target="_blank"');
 });
 
@@ -211,10 +295,12 @@ test('the support sidebar item is listed under cotizaciones', function () {
     expect($sidebar)->not->toBeFalse();
 
     $cotizaciones = strpos($sidebar, "title: 'Cotizaciones'");
+    $refacciones = strpos($sidebar, "title: 'Cotizaciones de refacciones'");
     $soporte = strpos($sidebar, "title: 'Soporte'");
 
     expect($cotizaciones)->not->toBeFalse()
-        ->and($soporte)->toBeGreaterThan($cotizaciones);
+        ->and($refacciones)->toBeGreaterThan($cotizaciones)
+        ->and($soporte)->toBeGreaterThan($refacciones);
 
     expect($sidebar)
         ->toContain('href: adminSoporte()')

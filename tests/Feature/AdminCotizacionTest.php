@@ -1,20 +1,138 @@
 <?php
 
 use App\Models\ClienteCotisacion;
+use App\Models\CotizacionRefaccion;
+use App\Models\CotizacionRefaccionImagen;
 use App\Models\EquipoModulo;
 use App\Models\Modulo;
 use App\Models\Status;
 use App\Models\UserAdmin;
+use Database\Seeders\StatusSeeder;
 use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\StatusSeeder::class);
+    $this->seed(StatusSeeder::class);
 });
 
 test('guests cannot access the cotizaciones admin page', function () {
     $this->get(route('admin.cotizaciones.index'))
         ->assertRedirect(route('admin.login'));
+});
+
+test('admins with cotizaciones access can open the spare part quote registry', function () {
+    $admin = UserAdmin::factory()->create();
+
+    $this->actingAs($admin, 'admin')
+        ->get(route('admin.cotizaciones-refacciones.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Refacciones/cotizacion-listrado-view')
+            ->has('cotizaciones', 0)
+        );
+});
+
+test('the spare part quote registry lists requests sent from the public form', function () {
+    $admin = UserAdmin::factory()->create();
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    $modulo = Modulo::factory()->create([
+        'modulo' => 'Arcos C',
+        'estatus_id' => $activo->id,
+    ]);
+    $cotizacion = CotizacionRefaccion::factory()->create([
+        'modulo_id' => $modulo->id,
+        'cliente' => 'Hospital de prueba',
+        'contacto' => 'Ana López',
+        'equipo' => 'Arco en C móvil',
+        'marca' => 'SIEMENS',
+        'refaccion' => 'Tubo de rayos X',
+        'numero_parte' => 'SC-ARC-01',
+        'descripcion' => 'Falla intermitente.',
+        'estatus' => 'pendiente',
+    ]);
+    CotizacionRefaccionImagen::factory()->create([
+        'cotizacion_id' => $cotizacion->id,
+        'ruta' => 'Imagen/Cotizaciones/tubo.webp',
+        'orden' => 0,
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->get(route('admin.cotizaciones-refacciones.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('cotizaciones', 1)
+            ->where('cotizaciones.0.folio', 'COT-'.str_pad((string) $cotizacion->id, 4, '0', STR_PAD_LEFT))
+            ->where('cotizaciones.0.cliente', 'Hospital de prueba')
+            ->where('cotizaciones.0.contacto', 'Ana López')
+            ->where('cotizaciones.0.equipo', 'Arco en C móvil')
+            ->where('cotizaciones.0.marca', 'SIEMENS')
+            ->where('cotizaciones.0.modulo', 'Arcos C')
+            ->where('cotizaciones.0.refaccion', 'Tubo de rayos X')
+            ->where('cotizaciones.0.numero_parte', 'SC-ARC-01')
+            ->where('cotizaciones.0.estado', 'pendiente')
+            ->where('cotizaciones.0.observaciones', '')
+            ->where('cotizaciones.0.imagenes.0', '/Imagen/Cotizaciones/tubo.webp')
+        );
+});
+
+test('admins can save the follow-up status and internal notes of a spare part quote', function () {
+    $admin = UserAdmin::factory()->create();
+    $cotizacion = CotizacionRefaccion::factory()->create([
+        'estatus' => 'pendiente',
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->patch(route('admin.cotizaciones-refacciones.update', $cotizacion), [
+            'estado' => 'cancelada',
+            'observaciones' => 'El cliente pidió detener la solicitud.',
+        ])
+        ->assertRedirect(route('admin.cotizaciones-refacciones.index'));
+
+    expect($cotizacion->fresh())
+        ->estatus->toBe('cancelada')
+        ->observaciones->toBe('El cliente pidió detener la solicitud.');
+});
+
+test('the spare part quote follow-up only accepts pending quoted or cancelled statuses', function () {
+    $admin = UserAdmin::factory()->create();
+    $cotizacion = CotizacionRefaccion::factory()->create([
+        'estatus' => 'pendiente',
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->from(route('admin.cotizaciones-refacciones.index'))
+        ->patch(route('admin.cotizaciones-refacciones.update', $cotizacion), [
+            'estado' => 'en_revision',
+            'observaciones' => 'Nota interna',
+        ])
+        ->assertRedirect(route('admin.cotizaciones-refacciones.index'))
+        ->assertSessionHasErrors('estado');
+
+    expect($cotizacion->fresh()->estatus)->toBe('pendiente');
+});
+
+test('admins outside cotizaciones cannot update a spare part quote follow-up', function () {
+    $admin = UserAdmin::factory()->equipos()->create();
+    $cotizacion = CotizacionRefaccion::factory()->create([
+        'estatus' => 'pendiente',
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->patch(route('admin.cotizaciones-refacciones.update', $cotizacion), [
+            'estado' => 'cotizada',
+            'observaciones' => 'Lista para enviar.',
+        ])
+        ->assertForbidden();
+
+    expect($cotizacion->fresh()->estatus)->toBe('pendiente');
+});
+
+test('admins outside cotizaciones cannot open the spare part quote registry', function () {
+    $admin = UserAdmin::factory()->equipos()->create();
+
+    $this->actingAs($admin, 'admin')
+        ->get(route('admin.cotizaciones-refacciones.index'))
+        ->assertForbidden();
 });
 
 test('admins can view submitted quote requests', function () {
@@ -46,6 +164,8 @@ test('admins can view submitted quote requests', function () {
             ->component('Cotizaciones/Cotizacionview')
             ->has('cotizaciones', 1)
             ->where('cotizaciones.0.cliente', 'Hospital Central')
+            ->where('cotizaciones.0.estado', 'en_espera')
+            ->where('cotizaciones.0.observaciones', '')
             ->where('filtros.mes', 8)
             ->where('filtros.anio', 2026)
             ->where('resumen.total_mes', 1)
@@ -122,6 +242,65 @@ test('admins can delete a quote request', function () {
     $this->assertDatabaseMissing('cliente_cotisacion', [
         'id' => $cotizacion->id,
     ]);
+});
+
+test('admins can save the follow-up status and internal notes of an equipment quote', function () {
+    $admin = UserAdmin::factory()->create();
+    $cotizacion = ClienteCotisacion::factory()->create([
+        'estatus' => 'en_espera',
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->patch(route('admin.cotizaciones.update', [
+            'clienteCotisacion' => $cotizacion,
+            'mes' => 8,
+            'anio' => 2026,
+        ]), [
+            'estado' => 'atendida',
+            'observaciones' => 'Se envió la propuesta al hospital.',
+        ])
+        ->assertRedirect(route('admin.cotizaciones.index', [
+            'mes' => 8,
+            'anio' => 2026,
+        ]));
+
+    expect($cotizacion->fresh())
+        ->estatus->toBe('atendida')
+        ->observaciones->toBe('Se envió la propuesta al hospital.');
+});
+
+test('the equipment quote follow-up only accepts waiting attended or cancelled statuses', function () {
+    $admin = UserAdmin::factory()->create();
+    $cotizacion = ClienteCotisacion::factory()->create([
+        'estatus' => 'en_espera',
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->from(route('admin.cotizaciones.index'))
+        ->patch(route('admin.cotizaciones.update', $cotizacion), [
+            'estado' => 'pendiente',
+            'observaciones' => 'Nota interna',
+        ])
+        ->assertRedirect(route('admin.cotizaciones.index'))
+        ->assertSessionHasErrors('estado');
+
+    expect($cotizacion->fresh()->estatus)->toBe('en_espera');
+});
+
+test('admins outside cotizaciones cannot update an equipment quote follow-up', function () {
+    $admin = UserAdmin::factory()->equipos()->create();
+    $cotizacion = ClienteCotisacion::factory()->create([
+        'estatus' => 'en_espera',
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->patch(route('admin.cotizaciones.update', $cotizacion), [
+            'estado' => 'cancelada',
+            'observaciones' => 'El cliente canceló.',
+        ])
+        ->assertForbidden();
+
+    expect($cotizacion->fresh()->estatus)->toBe('en_espera');
 });
 
 test('guests cannot delete quote requests', function () {

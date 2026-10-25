@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ClienteCotisacionController as AdminClienteCotisacionController;
+use App\Http\Controllers\Admin\CotizacionRefaccionController as AdminCotizacionRefaccionController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DatosContactoController as AdminDatosContactoController;
 use App\Http\Controllers\Admin\EquipoModuloController as AdminEquipoModuloController;
@@ -33,8 +34,16 @@ Route::get('mantenimiento', [MantenimientoController::class, 'index'])->name('ma
 Route::get('refacciones', [RefaccionController::class, 'index'])->name('refacciones');
 Route::get('refacciones/{modalidad}', [RefaccionController::class, 'piezas'])
     ->name('refacciones.piezas');
+Route::get('refacciones/{modalidad}/cotizacion', [RefaccionController::class, 'cotizarModalidad'])
+    ->name('refacciones.cotizar');
+Route::post('refacciones/{modalidad}/cotizacion', [RefaccionController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('refacciones.cotizar.store');
 Route::get('refacciones/{modalidad}/{refaccion}/cotizacion', [RefaccionController::class, 'cotizacion'])
     ->name('refacciones.cotizacion');
+Route::post('refacciones/{modalidad}/{refaccion}/cotizacion', [RefaccionController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('refacciones.cotizacion.store');
 Route::get('refacciones/{modalidad}/{refaccion}', [RefaccionController::class, 'show'])
     ->name('refacciones.show');
 Route::get('mantenimiento/soporte', [SoporteController::class, 'show'])
@@ -146,10 +155,18 @@ Route::middleware(EnsureUserIsAdmin::class)->prefix('admin')->name('admin.')->gr
     Route::middleware('admin.area:cotizaciones')->group(function () {
         Route::get('cotizaciones', [AdminClienteCotisacionController::class, 'index'])
             ->name('cotizaciones.index');
+        Route::get('cotizaciones-refacciones', [AdminCotizacionRefaccionController::class, 'index'])
+            ->name('cotizaciones-refacciones.index');
+        Route::patch('cotizaciones-refacciones/{cotizacionRefaccion}', [AdminCotizacionRefaccionController::class, 'update'])
+            ->name('cotizaciones-refacciones.update');
+        Route::patch('cotizaciones/{clienteCotisacion}', [AdminClienteCotisacionController::class, 'update'])
+            ->name('cotizaciones.update');
         Route::delete('cotizaciones/{clienteCotisacion}', [AdminClienteCotisacionController::class, 'destroy'])
             ->name('cotizaciones.destroy');
         Route::get('soporte', [AdminSolicitudSoporteController::class, 'index'])
             ->name('soporte.index');
+        Route::patch('soporte/{solicitudSoporte}', [AdminSolicitudSoporteController::class, 'update'])
+            ->name('soporte.update');
         Route::patch('soporte/{solicitudSoporte}/atendida', [AdminSolicitudSoporteController::class, 'atender'])
             ->name('soporte.atender');
         Route::delete('soporte/{solicitudSoporte}', [AdminSolicitudSoporteController::class, 'destroy'])

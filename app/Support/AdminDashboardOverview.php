@@ -85,7 +85,7 @@ final class AdminDashboardOverview
 
         if ($this->admin->canAccess(Cargo::AREA_COTIZACIONES)) {
             $soporteTotal = SolicitudSoporte::query()->count();
-            $soportePendientes = SolicitudSoporte::query()->whereNull('atendida_at')->count();
+            $soportePendientes = SolicitudSoporte::query()->where('estatus', 'en_espera')->count();
             $soporteNuevasMes = SolicitudSoporte::query()
                 ->where('created_at', '>=', $startOfMonth)
                 ->count();

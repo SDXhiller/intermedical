@@ -75,12 +75,5 @@ test('admins can store a published spare part with a photo', function () {
         ->and($refaccion->imagenes->first()->es_principal)->toBeTrue();
 
     $this->get(route('refacciones.piezas', 'rayos-x'))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('modalidad.nombre', 'Rayos X')
-            ->has('refacciones', 1)
-            ->where('refacciones.0.nombre', 'Cable de conexión')
-            ->where('refacciones.0.parte', 'GE-RX-005')
-            ->where('refacciones.0.categoria', 'Cables')
-        );
+        ->assertRedirect(route('refacciones.cotizar', 'rayos-x'));
 });

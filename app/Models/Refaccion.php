@@ -63,6 +63,14 @@ class Refaccion extends Model
     }
 
     /**
+     * @return HasMany<CotizacionRefaccion, $this>
+     */
+    public function cotizaciones(): HasMany
+    {
+        return $this->hasMany(CotizacionRefaccion::class, 'refaccion_id');
+    }
+
+    /**
      * @return array{
      *     id: int,
      *     nombre: string,

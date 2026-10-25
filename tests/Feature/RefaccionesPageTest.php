@@ -66,7 +66,30 @@ test('the refacciones landing page only lists modality cards', function () {
         );
 });
 
-test('choosing a modality opens the pieces page with its models', function () {
+test('choosing a modality opens the spare part quote page', function () {
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    $modulo = Modulo::factory()->create([
+        'modulo' => 'Arcos C',
+        'slug' => 'arcos-c',
+        'estatus_id' => $activo->id,
+    ]);
+
+    $this->get(route('refacciones.cotizar', 'arcos-c'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Refacciones/cotizacionesViewPiesasReffaciones')
+            ->where('modalidad.id', $modulo->id)
+            ->where('modalidad.slug', 'arcos-c')
+            ->where('modalidad.nombre', 'Arcos C')
+            ->where('refaccion', null)
+            ->has('marcas')
+        );
+
+    $this->get(route('refacciones.cotizar', 'modalidad-inexistente'))
+        ->assertNotFound();
+});
+
+test('the modality parts catalog stays hidden and opens the quote form', function () {
     $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
     $modulo = Modulo::factory()->create([
         'modulo' => 'Ultrasonido',
@@ -86,18 +109,10 @@ test('choosing a modality opens the pieces page with its models', function () {
     ]);
 
     $this->get(route('refacciones.piezas', ['modalidad' => 'ultrasonido']))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('Refacciones/PiesaRefraccion')
-            ->where('modalidad.nombre', 'Ultrasonido')
-            ->has('refacciones', 1)
-            ->where('refacciones.0.nombre', 'Transductor lineal')
-            ->where('refacciones.0.parte', 'PN-TL-12L')
-            ->where('refacciones.0.categoria', 'Módulos')
-        );
+        ->assertRedirect(route('refacciones.cotizar', 'ultrasonido'));
 });
 
-test('choosing a model lists spare parts with catalog fields', function () {
+test('an old modality catalog link opens the quote form', function () {
     $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
     $modulo = Modulo::factory()->create([
         'modulo' => 'Ultrasonido',
@@ -124,16 +139,7 @@ test('choosing a model lists spare parts with catalog fields', function () {
     ]);
 
     $this->get(route('refacciones.piezas', 'ultrasonido'))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('modalidad.nombre', 'Ultrasonido')
-            ->has('refacciones', 1)
-            ->where('refacciones.0.nombre', 'Transductor lineal')
-            ->where('refacciones.0.parte', 'PN-TL-12L')
-            ->where('refacciones.0.marca', 'GE')
-            ->where('refacciones.0.descripcion', 'Transductor compatible con el equipo.')
-            ->where('refacciones.0.imagen', '/Imagen/Refacciones/transductor.webp')
-        );
+        ->assertRedirect(route('refacciones.cotizar', 'ultrasonido'));
 });
 
 test('a published spare part opens its detail and quote pages', function () {
@@ -187,7 +193,9 @@ test('a published spare part opens its detail and quote pages', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('Refacciones/cotizacionesViewPiesasReffaciones')
             ->where('refaccion.nombre', 'Transductor lineal')
+            ->where('refaccion.fabricante_id', $fabricante->id)
             ->where('refaccion.modalidad.slug', 'ultrasonido')
+            ->has('marcas')
         );
 
     $this->get(route('refacciones.show', ['modalidad' => 'ultrasonido', 'refaccion' => $oculta]))
@@ -219,7 +227,7 @@ test('the refacciones page source uses modality cards and spare-part fields', fu
     expect($pieces)->not->toBeFalse();
     expect($landing)
         ->toContain('CatalogImageCard')
-        ->toContain('piezas.url(item.slug)')
+        ->toContain('cotizar.url(item.slug)')
         ->toContain('lg:grid-cols-4')
         ->toContain('bg-black')
         ->not->toContain('Equipo:');
@@ -234,6 +242,14 @@ test('the refacciones page source uses modality cards and spare-part fields', fu
         ->not->toContain('CatalogImageCard')
         ->not->toContain('Elija el modelo')
         ->not->toContain('Equipo:');
+
+    $quote = file_get_contents(resource_path('js/pages/Refacciones/cotizacionesViewPiesasReffaciones.tsx'));
+    $detail = file_get_contents(resource_path('js/pages/Refacciones/vistarefraccionview.tsx'));
+
+    expect($quote)->not->toBeFalse()
+        ->and($quote)->not->toContain('piezas.url');
+    expect($detail)->not->toBeFalse()
+        ->and($detail)->not->toContain('piezas.url');
 });
 
 test('the mantenimiento refaccion card links to the refacciones page', function () {

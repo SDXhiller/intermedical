@@ -60,6 +60,14 @@ class Fabricante extends Model
     }
 
     /**
+     * @return HasMany<CotizacionRefaccion, $this>
+     */
+    public function cotizacionesRefacciones(): HasMany
+    {
+        return $this->hasMany(CotizacionRefaccion::class, 'fabricante_id');
+    }
+
+    /**
      * Public logo URL for this manufacturer.
      */
     public function logoUrl(): ?string

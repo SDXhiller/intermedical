@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { SiteBreadcrumb } from '@/components/site-breadcrumb';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { home, mantenimiento, refacciones as refaccionesRoute } from '@/routes';
-import { cotizacion, piezas } from '@/routes/refacciones';
+import { cotizacion } from '@/routes/refacciones';
 
 type RefaccionImagen = {
     id: number;
@@ -67,11 +67,6 @@ export default function VistaRefaccionView({
                         {
                             label: 'Refacciones',
                             href: refaccionesRoute.url(),
-                            icon: Package,
-                        },
-                        {
-                            label: refaccion.modalidad.nombre,
-                            href: piezas.url(refaccion.modalidad.slug),
                             icon: Package,
                         },
                         { label: refaccion.nombre, icon: Package },

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateClienteCotisacionRequest;
 use App\Models\ClienteCotisacion;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -101,6 +102,23 @@ class ClienteCotisacionController extends Controller
     }
 
     /**
+     * Update the administrative follow-up of an equipment quote.
+     */
+    public function update(UpdateClienteCotisacionRequest $request, ClienteCotisacion $clienteCotisacion): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        $clienteCotisacion->update([
+            'estatus' => $validated['estado'],
+            'observaciones' => $validated['observaciones'] ?? null,
+        ]);
+
+        return redirect()
+            ->route('admin.cotizaciones.index', $request->only(['mes', 'anio', 'buscar']))
+            ->with('success', 'Seguimiento guardado correctamente.');
+    }
+
+    /**
      * Remove a quote request from the listing.
      */
     public function destroy(Request $request, ClienteCotisacion $clienteCotisacion): RedirectResponse
@@ -140,6 +158,8 @@ class ClienteCotisacionController extends Controller
             'created_at' => $cotizacion->created_at?->toIso8601String(),
             'created_at_formatted' => $cotizacion->created_at?->format('d/m/Y H:i'),
             'es_nueva' => $cotizacion->isNueva(),
+            'estado' => $cotizacion->estatus,
+            'observaciones' => $cotizacion->observaciones ?? '',
         ];
     }
 }

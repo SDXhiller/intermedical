@@ -1,27 +1,44 @@
-import { Head, router, usePage } from '@inertiajs/react';
+
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
+    Bell,
+    Building2,
     CalendarDays,
     Check,
-    ChevronDown,
+    CheckCircle2,
     ChevronLeft,
     ChevronRight,
+    ClipboardList,
+    Clock3,
+    Eye,
     Hand,
+    Image as ImageIcon,
     LifeBuoy,
+    Mail,
+    Monitor,
+    Phone,
+    Save,
     Search,
     Trash2,
+    UserRound,
+    Wrench,
+    X,
+    XCircle,
     ZoomIn,
     ZoomOut,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type FormEvent,
+    type PointerEvent,
+} from 'react';
+
 import SolicitudSoporteController from '@/actions/App/Http/Controllers/Admin/SolicitudSoporteController';
 import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import {
     Dialog,
     DialogClose,
@@ -30,8 +47,6 @@ import {
     DialogFooter,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -41,11 +56,24 @@ import {
 } from '@/components/ui/select';
 import { index as adminSoporteIndex } from '@/routes/admin/soporte';
 
+/* =====================================================
+   CONFIGURACIÓN
+===================================================== */
+
+const BRAND_COLOR = '#006635';
 const NUEVA_SOLICITUD_MS = 24 * 60 * 60 * 1000;
-const BRAND_COLOR = '#0a7c4a';
+const PAGE_SIZE = 10;
+
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 4;
 const ZOOM_PASO = 0.5;
+
+type EstadoServicio =
+    | 'en_espera'
+    | 'concluido'
+    | 'cancelado';
+
+type FiltroEstado = EstadoServicio | 'todos';
 
 type SolicitudAtendidaFlash = {
     servicio: string;
@@ -88,6 +116,8 @@ type SolicitudItem = {
     created_at_formatted: string | null;
     atendida: boolean;
     es_nueva: boolean;
+    estado_servicio: EstadoServicio;
+    observaciones: string;
 };
 
 type MesOption = {
@@ -109,7 +139,21 @@ type Resumen = {
     anio: number;
 };
 
-function getCreatedAtMs(solicitud: SolicitudItem): number | null {
+type Props = {
+    solicitudes: SolicitudItem[];
+    filtros: Filtros;
+    resumen: Resumen;
+    meses: MesOption[];
+    anios_disponibles: number[];
+};
+
+/* =====================================================
+   FUNCIONES AUXILIARES
+===================================================== */
+
+function getCreatedAtMs(
+    solicitud: SolicitudItem,
+): number | null {
     if (!solicitud.created_at) {
         return null;
     }
@@ -119,8 +163,12 @@ function getCreatedAtMs(solicitud: SolicitudItem): number | null {
     return Number.isNaN(parsed) ? null : parsed;
 }
 
-function isNuevaSolicitud(solicitud: SolicitudItem, nowMs: number): boolean {
-    if (solicitud.atendida) {
+function isNuevaSolicitud(
+    solicitud: SolicitudItem,
+    nowMs: number,
+    estado: EstadoServicio,
+): boolean {
+    if (estado !== 'en_espera') {
         return false;
     }
 
@@ -130,28 +178,9 @@ function isNuevaSolicitud(solicitud: SolicitudItem, nowMs: number): boolean {
         return solicitud.es_nueva;
     }
 
-    return nowMs - createdAtMs < NUEVA_SOLICITUD_MS;
-}
-
-function Campo({
-    titulo,
-    valor,
-}: {
-    titulo: string;
-    valor: string | null | undefined;
-}) {
-    const texto =
-        valor !== null && valor !== undefined && valor.trim() !== ''
-            ? valor
-            : 'No indicado';
-
     return (
-        <div className="grid min-w-0 gap-0.5">
-            <p className="text-xs font-semibold text-muted-foreground">
-                {titulo}
-            </p>
-            <p className="min-w-0 text-sm break-words text-foreground">{texto}</p>
-        </div>
+        nowMs >= createdAtMs &&
+        nowMs - createdAtMs < NUEVA_SOLICITUD_MS
     );
 }
 
@@ -160,30 +189,131 @@ function nextNuevaExpiryMs(
     nowMs: number,
 ): number | null {
     const expirations = solicitudes
-        .map((solicitud) => getCreatedAtMs(solicitud))
-        .filter((createdAtMs): createdAtMs is number => createdAtMs !== null)
-        .map((createdAtMs) => createdAtMs + NUEVA_SOLICITUD_MS)
-        .filter((expiresAtMs) => expiresAtMs > nowMs)
-        .sort((left, right) => left - right);
+        .filter((solicitud) => {
+            const estado =
+                solicitud.estado_servicio ??
+                (solicitud.atendida
+                    ? 'concluido'
+                    : 'en_espera');
+
+            return estado === 'en_espera';
+        })
+        .map(getCreatedAtMs)
+        .filter(
+            (value): value is number => value !== null,
+        )
+        .map(
+            (createdAtMs) =>
+                createdAtMs + NUEVA_SOLICITUD_MS,
+        )
+        .filter((expiry) => expiry > nowMs)
+        .sort((a, b) => a - b);
 
     return expirations[0] ?? null;
 }
 
-function GaleriaFotografias({ imagenes }: { imagenes: string[] }) {
-    const [indice, setIndice] = useState<number | null>(null);
+function NotificationDot() {
+    return (
+        <span
+            className="inline-block size-2.5 shrink-0 animate-pulse rounded-full bg-red-500 ring-2 ring-red-500/25"
+            aria-label="Nueva solicitud"
+        />
+    );
+}
+
+function Campo({
+    titulo,
+    valor,
+}: {
+    titulo: string;
+    valor?: string | null;
+}) {
+    return (
+        <div className="min-w-0">
+            <p className="text-xs font-medium text-white/40">
+                {titulo}
+            </p>
+
+            <p className="mt-1 break-words text-sm font-medium text-white/85 [overflow-wrap:anywhere]">
+                {valor?.trim() || 'No indicado'}
+            </p>
+        </div>
+    );
+}
+
+function EstadoBadge({
+    estado,
+}: {
+    estado: EstadoServicio;
+}) {
+    const estilos = {
+        en_espera: {
+            label: 'Servicio en espera',
+            icon: Clock3,
+            className:
+                'border-amber-500/25 bg-amber-500/10 text-amber-400',
+        },
+        concluido: {
+            label: 'Servicio concluido',
+            icon: CheckCircle2,
+            className:
+                'border-green-500/25 bg-green-500/10 text-green-400',
+        },
+        cancelado: {
+            label: 'Servicio cancelado',
+            icon: XCircle,
+            className:
+                'border-red-500/25 bg-red-500/10 text-red-400',
+        },
+    };
+
+    const config = estilos[estado];
+    const Icon = config.icon;
+
+    return (
+        <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${config.className}`}
+        >
+            <Icon className="size-3.5" />
+            {config.label}
+        </span>
+    );
+}
+
+/* =====================================================
+   GALERÍA DE FOTOGRAFÍAS
+===================================================== */
+
+function GaleriaFotografias({
+    imagenes,
+}: {
+    imagenes: string[];
+}) {
+    const [indice, setIndice] =
+        useState<number | null>(null);
+
     const [zoom, setZoom] = useState(ZOOM_MIN);
     const [pan, setPan] = useState({ x: 0, y: 0 });
-    const [herramienta, setHerramienta] = useState<'zoom' | 'mano'>('zoom');
-    const [arrastrando, setArrastrando] = useState(false);
+
+    const [herramienta, setHerramienta] =
+        useState<'zoom' | 'mano'>('zoom');
+
+    const [arrastrando, setArrastrando] =
+        useState(false);
+
     const arrastre = useRef<{
         x: number;
         y: number;
         panX: number;
         panY: number;
     } | null>(null);
+
     const varias = imagenes.length > 1;
-    const actual = indice === null ? null : imagenes[indice];
-    const puedeMover = herramienta === 'mano' && zoom > ZOOM_MIN;
+    const actual =
+        indice === null ? null : imagenes[indice];
+
+    const puedeMover =
+        herramienta === 'mano' && zoom > ZOOM_MIN;
 
     useEffect(() => {
         setZoom(ZOOM_MIN);
@@ -200,29 +330,39 @@ function GaleriaFotografias({ imagenes }: { imagenes: string[] }) {
         const onKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'ArrowLeft') {
                 event.preventDefault();
-                setIndice(
-                    (actualIndice) =>
-                        actualIndice === null
-                            ? actualIndice
-                            : (actualIndice - 1 + imagenes.length) %
-                              imagenes.length,
+
+                setIndice((actualIndice) =>
+                    actualIndice === null
+                        ? actualIndice
+                        : (actualIndice -
+                              1 +
+                              imagenes.length) %
+                          imagenes.length,
                 );
             }
 
             if (event.key === 'ArrowRight') {
                 event.preventDefault();
-                setIndice(
-                    (actualIndice) =>
-                        actualIndice === null
-                            ? actualIndice
-                            : (actualIndice + 1) % imagenes.length,
+
+                setIndice((actualIndice) =>
+                    actualIndice === null
+                        ? actualIndice
+                        : (actualIndice + 1) %
+                          imagenes.length,
                 );
             }
         };
 
-        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener(
+            'keydown',
+            onKeyDown,
+        );
 
-        return () => window.removeEventListener('keydown', onKeyDown);
+        return () =>
+            window.removeEventListener(
+                'keydown',
+                onKeyDown,
+            );
     }, [imagenes.length, indice, varias]);
 
     const mover = (direccion: -1 | 1) => {
@@ -232,13 +372,19 @@ function GaleriaFotografias({ imagenes }: { imagenes: string[] }) {
             }
 
             return (
-                (actualIndice + direccion + imagenes.length) % imagenes.length
+                (actualIndice +
+                    direccion +
+                    imagenes.length) %
+                imagenes.length
             );
         });
     };
 
     const cambiarZoom = (siguiente: number) => {
-        const limitado = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, siguiente));
+        const limitado = Math.min(
+            ZOOM_MAX,
+            Math.max(ZOOM_MIN, siguiente),
+        );
 
         setZoom(limitado);
 
@@ -247,29 +393,41 @@ function GaleriaFotografias({ imagenes }: { imagenes: string[] }) {
         }
     };
 
-    const iniciarArrastre = (event: PointerEvent<HTMLDivElement>) => {
+    const iniciarArrastre = (
+        event: PointerEvent<HTMLDivElement>,
+    ) => {
         if (!puedeMover) {
             return;
         }
 
-        event.currentTarget.setPointerCapture(event.pointerId);
+        event.currentTarget.setPointerCapture(
+            event.pointerId,
+        );
+
         arrastre.current = {
             x: event.clientX,
             y: event.clientY,
             panX: pan.x,
             panY: pan.y,
         };
+
         setArrastrando(true);
     };
 
-    const moverArrastre = (event: PointerEvent<HTMLDivElement>) => {
+    const moverArrastre = (
+        event: PointerEvent<HTMLDivElement>,
+    ) => {
         if (!arrastre.current) {
             return;
         }
 
         setPan({
-            x: arrastre.current.panX + (event.clientX - arrastre.current.x),
-            y: arrastre.current.panY + (event.clientY - arrastre.current.y),
+            x:
+                arrastre.current.panX +
+                (event.clientX - arrastre.current.x),
+            y:
+                arrastre.current.panY +
+                (event.clientY - arrastre.current.y),
         });
     };
 
@@ -278,24 +436,29 @@ function GaleriaFotografias({ imagenes }: { imagenes: string[] }) {
         setArrastrando(false);
     };
 
-    return (
-        <div className="grid gap-2 sm:col-span-2">
-            <p className="text-xs font-semibold text-muted-foreground">
-                Fotografías
+    if (imagenes.length === 0) {
+        return (
+            <p className="text-sm text-white/40">
+                No se adjuntaron fotografías.
             </p>
-            <div className="flex flex-wrap gap-2">
+        );
+    }
+
+    return (
+        <div className="min-w-0">
+            <div className="flex flex-wrap gap-3">
                 {imagenes.map((src, index) => (
                     <button
-                        key={src}
+                        key={`${src}-${index}`}
                         type="button"
                         onClick={() => setIndice(index)}
-                        className="overflow-hidden rounded-lg"
+                        className="group overflow-hidden rounded-xl border border-white/10 bg-white/5"
                         aria-label={`Ver fotografía ${index + 1}`}
                     >
                         <img
                             src={src}
                             alt={`Fotografía ${index + 1}`}
-                            className="h-16 w-16 object-cover"
+                            className="size-20 object-cover transition-transform group-hover:scale-105 sm:size-24"
                         />
                     </button>
                 ))}
@@ -309,35 +472,44 @@ function GaleriaFotografias({ imagenes }: { imagenes: string[] }) {
                     }
                 }}
             >
-                <DialogContent className="border-none bg-black p-3 sm:max-w-4xl">
+                <DialogContent className="border-white/15 bg-black p-3 text-white sm:max-w-4xl">
                     <DialogTitle className="sr-only">
-                        {indice === null
-                            ? 'Fotografía'
-                            : `Fotografía ${indice + 1} de ${imagenes.length}`}
+                        Fotografía ampliada
                     </DialogTitle>
+
                     <DialogDescription className="sr-only">
-                        Vista ampliada de la fotografía enviada con la solicitud.
+                        Vista ampliada de la fotografía
+                        enviada con la solicitud.
                     </DialogDescription>
-                    {actual ? (
+
+                    {actual && (
                         <div
-                            className={`relative h-[70vh] overflow-hidden ${herramienta === 'mano' ? (arrastrando ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'}`}
+                            className={`relative h-[65vh] overflow-hidden touch-none ${
+                                herramienta === 'mano'
+                                    ? arrastrando
+                                        ? 'cursor-grabbing'
+                                        : 'cursor-grab'
+                                    : 'cursor-zoom-in'
+                            }`}
                             onPointerDown={iniciarArrastre}
                             onPointerMove={moverArrastre}
                             onPointerUp={soltarArrastre}
                             onPointerCancel={soltarArrastre}
                             onClick={() => {
-                                if (herramienta === 'zoom') {
-                                    cambiarZoom(zoom + ZOOM_PASO);
+                                if (
+                                    herramienta === 'zoom'
+                                ) {
+                                    cambiarZoom(
+                                        zoom + ZOOM_PASO,
+                                    );
                                 }
                             }}
                         >
                             <img
                                 src={actual}
-                                alt={
-                                    indice === null
-                                        ? 'Fotografía'
-                                        : `Fotografía ${indice + 1}`
-                                }
+                                alt={`Fotografía ${
+                                    (indice ?? 0) + 1
+                                }`}
                                 draggable={false}
                                 className="h-full w-full object-contain select-none"
                                 style={{
@@ -345,210 +517,91 @@ function GaleriaFotografias({ imagenes }: { imagenes: string[] }) {
                                 }}
                             />
                         </div>
-                    ) : null}
-                    <div className="mt-3 flex items-center justify-center gap-2">
+                    )}
+
+                    <div className="flex items-center justify-center gap-2">
                         <button
                             type="button"
                             aria-label="Acercar"
-                            aria-pressed={herramienta === 'zoom'}
                             onClick={() => {
                                 setHerramienta('zoom');
-                                cambiarZoom(zoom + ZOOM_PASO);
+                                cambiarZoom(
+                                    zoom + ZOOM_PASO,
+                                );
                             }}
-                            className={`flex size-10 items-center justify-center rounded-full transition ${herramienta === 'zoom' ? 'bg-white text-black' : 'bg-white/15 text-white hover:bg-white/25'}`}
+                            className="flex size-10 items-center justify-center rounded-full bg-white/15 hover:bg-white/25"
                         >
                             <ZoomIn className="size-5" />
                         </button>
+
                         <button
                             type="button"
                             aria-label="Alejar"
-                            onClick={() => cambiarZoom(zoom - ZOOM_PASO)}
-                            className="flex size-10 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                            onClick={() =>
+                                cambiarZoom(
+                                    zoom - ZOOM_PASO,
+                                )
+                            }
+                            className="flex size-10 items-center justify-center rounded-full bg-white/15 hover:bg-white/25"
                         >
                             <ZoomOut className="size-5" />
                         </button>
+
                         <button
                             type="button"
-                            aria-label="Mano para mover el zoom"
-                            aria-pressed={herramienta === 'mano'}
-                            onClick={() => setHerramienta('mano')}
-                            className={`flex size-10 items-center justify-center rounded-full transition ${herramienta === 'mano' ? 'bg-white text-black' : 'bg-white/15 text-white hover:bg-white/25'}`}
+                            aria-label="Mover imagen"
+                            onClick={() =>
+                                setHerramienta('mano')
+                            }
+                            className={`flex size-10 items-center justify-center rounded-full ${
+                                herramienta === 'mano'
+                                    ? 'bg-white text-black'
+                                    : 'bg-white/15 text-white'
+                            }`}
                         >
                             <Hand className="size-5" />
                         </button>
-                        <span className="ml-1 min-w-12 text-center text-sm font-medium text-white">
+
+                        <span className="min-w-12 text-center text-sm">
                             {Math.round(zoom * 100)}%
                         </span>
                     </div>
-                    {varias ? (
-                        <>
+
+                    {varias && (
+                        <div className="flex items-center justify-between gap-3">
                             <button
                                 type="button"
-                                aria-label="Fotografía anterior"
                                 onClick={() => mover(-1)}
-                                className="absolute top-1/2 left-3 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                                className="rounded-lg bg-white/15 p-2 hover:bg-white/25"
+                                aria-label="Fotografía anterior"
                             >
                                 <ChevronLeft className="size-5" />
                             </button>
+
+                            <span className="text-sm text-white/70">
+                                {(indice ?? 0) + 1} de{' '}
+                                {imagenes.length}
+                            </span>
+
                             <button
                                 type="button"
-                                aria-label="Fotografía siguiente"
                                 onClick={() => mover(1)}
-                                className="absolute top-1/2 right-3 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                                className="rounded-lg bg-white/15 p-2 hover:bg-white/25"
+                                aria-label="Fotografía siguiente"
                             >
                                 <ChevronRight className="size-5" />
                             </button>
-                            <p className="text-center text-sm font-medium text-white">
-                                {indice !== null ? indice + 1 : 1} de{' '}
-                                {imagenes.length}
-                            </p>
-                        </>
-                    ) : null}
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>
     );
 }
 
-function NotificationDot() {
-    return (
-        <span
-            className="size-2.5 shrink-0 animate-pulse rounded-full bg-red-500 ring-2 ring-red-500/30"
-            aria-label="Nueva solicitud"
-        />
-    );
-}
-
-function SolicitudAccordionItem({
-    solicitud,
-    showNotification,
-    onDelete,
-    isDeleting,
-    onAtender,
-    isAtendiendo,
-}: {
-    solicitud: SolicitudItem;
-    showNotification: boolean;
-    onDelete: (solicitud: SolicitudItem) => void;
-    isDeleting: boolean;
-    onAtender: (solicitud: SolicitudItem) => void;
-    isAtendiendo: boolean;
-}) {
-    return (
-        <Collapsible
-            defaultOpen={false}
-            className="border-b border-border last:border-b-0"
-        >
-            <div className="flex items-start gap-2 px-5 py-4 md:px-6">
-                <CollapsibleTrigger className="group flex min-w-0 flex-1 items-start gap-3 text-left transition-colors hover:opacity-90">
-                    <ChevronDown className="mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-
-                    <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            {showNotification && <NotificationDot />}
-                            <h3 className="text-base font-semibold text-foreground">
-                                {solicitud.cliente.nombre}
-                            </h3>
-                            <Badge className="bg-[#0a7c4a]/10 text-[#0a7c4a] hover:bg-[#0a7c4a]/10">
-                                {solicitud.modalidad.nombre}
-                            </Badge>
-                            <Badge variant="secondary">
-                                {solicitud.servicio.nombre}
-                            </Badge>
-                        </div>
-
-                        <time
-                            dateTime={solicitud.created_at ?? undefined}
-                            className="shrink-0 text-sm text-muted-foreground"
-                        >
-                            {solicitud.created_at_formatted}
-                        </time>
-                    </div>
-                </CollapsibleTrigger>
-
-                {solicitud.atendida ? (
-                    <span className="mt-0.5 inline-flex h-8 shrink-0 items-center rounded-full bg-[#0a7c4a]/10 px-3 text-xs font-semibold text-[#0a7c4a]">
-                        Atendido
-                    </span>
-                ) : (
-                    <button
-                        type="button"
-                        disabled={isAtendiendo}
-                        onClick={(event) => {
-                            event.stopPropagation();
-                            onAtender(solicitud);
-                        }}
-                        className="mt-0.5 inline-flex h-8 shrink-0 items-center rounded-full border border-[#0a7c4a]/40 px-3 text-xs font-semibold text-[#0a7c4a] transition hover:bg-[#0a7c4a]/10 disabled:opacity-50"
-                    >
-                        {isAtendiendo ? 'Guardando...' : 'Atendido'}
-                    </button>
-                )}
-
-                <button
-                    type="button"
-                    title="Eliminar solicitud"
-                    aria-label="Eliminar solicitud"
-                    disabled={isDeleting}
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        onDelete(solicitud);
-                    }}
-                    className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-destructive/30 text-destructive transition hover:bg-destructive/10 disabled:opacity-50"
-                >
-                    <Trash2 className="size-3.5" />
-                </button>
-            </div>
-
-            <CollapsibleContent className="min-w-0 px-5 pb-5 md:px-6">
-                <div className="ml-7 grid min-w-0 gap-4 sm:grid-cols-2">
-                    <Campo titulo="Servicio" valor={solicitud.servicio.nombre} />
-                    <Campo
-                        titulo="Modalidad"
-                        valor={solicitud.modalidad.nombre}
-                    />
-                    <Campo
-                        titulo="Marca"
-                        valor={solicitud.equipo?.marca}
-                    />
-                    <Campo
-                        titulo="Modelo"
-                        valor={solicitud.equipo?.nombre}
-                    />
-                    <Campo titulo="Nombre" valor={solicitud.cliente.nombre} />
-                    <Campo
-                        titulo="Empresa"
-                        valor={solicitud.cliente.empresa}
-                    />
-                    <Campo
-                        titulo="Teléfono"
-                        valor={solicitud.cliente.telefono}
-                    />
-                    <Campo
-                        titulo="Correo electrónico"
-                        valor={solicitud.cliente.correo}
-                    />
-                    <Campo
-                        titulo="Estado o ciudad"
-                        valor={solicitud.cliente.estado}
-                    />
-                    <div className="grid min-w-0 gap-0.5 sm:col-span-2">
-                        <p className="text-xs font-semibold text-muted-foreground">
-                            Descripción de la falla
-                        </p>
-                        <p className="min-w-0 text-sm break-words whitespace-pre-wrap text-foreground">
-                            {solicitud.descripcion.trim() !== ''
-                                ? solicitud.descripcion
-                                : 'No indicado'}
-                        </p>
-                    </div>
-                    {solicitud.imagenes.length > 0 ? (
-                        <GaleriaFotografias imagenes={solicitud.imagenes} />
-                    ) : null}
-                </div>
-            </CollapsibleContent>
-        </Collapsible>
-    );
-}
+/* =====================================================
+   COMPONENTE PRINCIPAL
+===================================================== */
 
 export default function ServciosViewMail({
     solicitudes,
@@ -556,42 +609,95 @@ export default function ServciosViewMail({
     resumen,
     meses,
     anios_disponibles,
-}: {
-    solicitudes: SolicitudItem[];
-    filtros: Filtros;
-    resumen: Resumen;
-    meses: MesOption[];
-    anios_disponibles: number[];
-}) {
+}: Props) {
     const { flash } = usePage<{
         flash?: {
             success?: string | null;
-            solicitud_atendida?: SolicitudAtendidaFlash | null;
+            solicitud_atendida?:
+                | SolicitudAtendidaFlash
+                | null;
         };
     }>().props;
-    const [nowMs, setNowMs] = useState(() => Date.now());
-    const [solicitudToDelete, setSolicitudToDelete] =
-        useState<SolicitudItem | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [atendiendoId, setAtendiendoId] = useState<number | null>(null);
-    const [avisosOcultos, setAvisosOcultos] = useState<number[]>([]);
-    const [solicitudAtendida, setSolicitudAtendida] =
-        useState<SolicitudAtendidaFlash | null>(
-            flash?.solicitud_atendida ?? null,
+
+    const [nowMs, setNowMs] = useState(
+        () => Date.now(),
+    );
+
+    const [buscar, setBuscar] = useState(
+        filtros.buscar,
+    );
+
+    const [filtroEstado, setFiltroEstado] =
+        useState<FiltroEstado>('todos');
+
+    const [paginaActual, setPaginaActual] =
+        useState(1);
+
+    const [
+        solicitudSeleccionada,
+        setSolicitudSeleccionada,
+    ] = useState<SolicitudItem | null>(null);
+
+    const [
+        solicitudToDelete,
+        setSolicitudToDelete,
+    ] = useState<SolicitudItem | null>(null);
+
+    const [isDeleting, setIsDeleting] =
+        useState(false);
+
+    const [seguimientoAbierto, setSeguimientoAbierto] =
+        useState(false);
+
+    const seguimiento = useForm<{
+        estado: EstadoServicio;
+        observaciones: string;
+    }>({
+        estado: 'en_espera',
+        observaciones: '',
+    });
+
+    const [
+        solicitudAtendida,
+        setSolicitudAtendida,
+    ] = useState<SolicitudAtendidaFlash | null>(
+        flash?.solicitud_atendida ?? null,
+    );
+
+    const obtenerEstado = (
+        solicitud: SolicitudItem,
+    ): EstadoServicio => {
+        return (
+            solicitud.estado_servicio ??
+            (solicitud.atendida ? 'concluido' : 'en_espera')
         );
-    const [buscar, setBuscar] = useState(filtros.buscar);
+    };
 
     useEffect(() => {
-        if (flash?.solicitud_atendida) {
-            setSolicitudAtendida(flash.solicitud_atendida);
-        }
-    }, [flash?.solicitud_atendida]);
+        setSolicitudSeleccionada((actual) => {
+            if (!actual) {
+                return null;
+            }
+
+            return (
+                solicitudes.find(
+                    (item) => item.id === actual.id,
+                ) ?? actual
+            );
+        });
+    }, [solicitudes]);
+
+    /* =====================================
+       FILTROS DE LARAVEL
+    ===================================== */
 
     useEffect(() => {
         setBuscar(filtros.buscar);
     }, [filtros.buscar]);
 
-    const applyFilters = (next: Partial<Filtros>) => {
+    const applyFilters = (
+        next: Partial<Filtros>,
+    ) => {
         const params = {
             mes: next.mes ?? filtros.mes,
             anio: next.anio ?? filtros.anio,
@@ -603,7 +709,9 @@ export default function ServciosViewMail({
                 query: {
                     mes: params.mes,
                     anio: params.anio,
-                    ...(params.buscar !== '' ? { buscar: params.buscar } : {}),
+                    ...(params.buscar !== ''
+                        ? { buscar: params.buscar }
+                        : {}),
                 },
             }),
             {},
@@ -622,68 +730,181 @@ export default function ServciosViewMail({
             }
         }, 400);
 
-        return () => window.clearTimeout(timer);
-    }, [buscar, filtros.buscar]);
+        return () =>
+            window.clearTimeout(timer);
+    }, [
+        buscar,
+        filtros.buscar,
+        filtros.mes,
+        filtros.anio,
+    ]);
+
+    useEffect(() => {
+        setPaginaActual(1);
+    }, [
+        filtros.mes,
+        filtros.anio,
+        filtros.buscar,
+        filtroEstado,
+    ]);
+
+    /* =====================================
+       AVISOS DE SOLICITUDES NUEVAS
+    ===================================== */
+
+    useEffect(() => {
+        if (flash?.solicitud_atendida) {
+            setSolicitudAtendida(
+                flash.solicitud_atendida,
+            );
+        }
+    }, [flash?.solicitud_atendida]);
 
     const nuevaIds = useMemo(() => {
         return new Set(
             solicitudes
-                .filter((solicitud) => isNuevaSolicitud(solicitud, nowMs))
+                .filter((solicitud) =>
+                    isNuevaSolicitud(
+                        solicitud,
+                        nowMs,
+                        obtenerEstado(solicitud),
+                    ),
+                )
                 .map((solicitud) => solicitud.id),
         );
     }, [solicitudes, nowMs]);
 
-    const hasNuevas = solicitudes.some(
-        (solicitud) =>
-            nuevaIds.has(solicitud.id) && !avisosOcultos.includes(solicitud.id),
-    );
+    const hasNuevas = nuevaIds.size > 0;
 
     useEffect(() => {
-        const expiresAtMs = nextNuevaExpiryMs(solicitudes, nowMs);
+        const timerExpiry = nextNuevaExpiryMs(
+            solicitudes.filter(
+                (solicitud) =>
+                    obtenerEstado(solicitud) ===
+                    'en_espera',
+            ),
+            nowMs,
+        );
 
-        if (expiresAtMs === null) {
+        if (timerExpiry === null) {
             return;
         }
 
-        const timer = window.setTimeout(() => {
-            setNowMs(Date.now());
-        }, Math.max(expiresAtMs - Date.now(), 0));
-
-        return () => window.clearTimeout(timer);
-    }, [solicitudes, nowMs]);
-
-    const marcarAtendida = (solicitud: SolicitudItem) => {
-        setAtendiendoId(solicitud.id);
-        setAvisosOcultos((current) =>
-            current.includes(solicitud.id) ? current : [...current, solicitud.id],
+        const timer = window.setTimeout(
+            () => setNowMs(Date.now()),
+            Math.max(
+                timerExpiry - Date.now(),
+                0,
+            ),
         );
 
-        router.patch(
-            SolicitudSoporteController.atender.url(solicitud.id, {
-                query: {
-                    mes: filtros.mes,
-                    anio: filtros.anio,
-                    ...(filtros.buscar ? { buscar: filtros.buscar } : {}),
+        return () =>
+            window.clearTimeout(timer);
+    }, [solicitudes, nowMs]);
+
+    /* =====================================
+       ESTADÍSTICAS Y FILTRADO LOCAL
+    ===================================== */
+
+    const totalEspera = solicitudes.filter(
+        (solicitud) =>
+            obtenerEstado(solicitud) ===
+            'en_espera',
+    ).length;
+
+    const totalConcluido = solicitudes.filter(
+        (solicitud) =>
+            obtenerEstado(solicitud) ===
+            'concluido',
+    ).length;
+
+    const totalCancelado = solicitudes.filter(
+        (solicitud) =>
+            obtenerEstado(solicitud) ===
+            'cancelado',
+    ).length;
+
+    const solicitudesFiltradas =
+        solicitudes.filter((solicitud) => {
+            return (
+                filtroEstado === 'todos' ||
+                obtenerEstado(solicitud) ===
+                    filtroEstado
+            );
+        });
+
+    const totalPaginas = Math.max(
+        1,
+        Math.ceil(
+            solicitudesFiltradas.length /
+                PAGE_SIZE,
+        ),
+    );
+
+    const paginaSegura = Math.min(
+        paginaActual,
+        totalPaginas,
+    );
+
+    const solicitudesPaginadas =
+        solicitudesFiltradas.slice(
+            (paginaSegura - 1) *
+                PAGE_SIZE,
+            paginaSegura * PAGE_SIZE,
+        );
+
+    /* =====================================
+       CAMBIO DE ESTADO
+    ===================================== */
+
+    const cerrarDetalle = () => {
+        setSeguimientoAbierto(false);
+        setSolicitudSeleccionada(null);
+    };
+
+    const abrirSeguimiento = () => {
+        if (!solicitudSeleccionada) {
+            return;
+        }
+
+        seguimiento.setData({
+            estado: obtenerEstado(solicitudSeleccionada),
+            observaciones: solicitudSeleccionada.observaciones,
+        });
+        seguimiento.clearErrors();
+        setSeguimientoAbierto(true);
+    };
+
+    const guardarSeguimiento = (event: FormEvent) => {
+        event.preventDefault();
+
+        if (!solicitudSeleccionada) {
+            return;
+        }
+
+        seguimiento.patch(
+            SolicitudSoporteController.update.url(
+                solicitudSeleccionada.id,
+                {
+                    query: {
+                        mes: filtros.mes,
+                        anio: filtros.anio,
+                        ...(filtros.buscar !== ''
+                            ? { buscar: filtros.buscar }
+                            : {}),
+                    },
                 },
-            }),
-            {},
+            ),
             {
                 preserveScroll: true,
-                onSuccess: () => {
-                    setSolicitudAtendida({
-                        servicio: solicitud.servicio.nombre,
-                        nombre: solicitud.cliente.nombre,
-                    });
-                },
-                onError: () => {
-                    setAvisosOcultos((current) =>
-                        current.filter((id) => id !== solicitud.id),
-                    );
-                },
-                onFinish: () => setAtendiendoId(null),
+                onSuccess: () => setSeguimientoAbierto(false),
             },
         );
     };
+
+    /* =====================================
+       ELIMINAR SOLICITUD
+    ===================================== */
 
     const confirmDelete = () => {
         if (!solicitudToDelete) {
@@ -693,15 +914,24 @@ export default function ServciosViewMail({
         setIsDeleting(true);
 
         router.delete(
-            SolicitudSoporteController.destroy.url(solicitudToDelete.id, {
-                query: {
-                    mes: filtros.mes,
-                    anio: filtros.anio,
-                    ...(filtros.buscar ? { buscar: filtros.buscar } : {}),
+            SolicitudSoporteController.destroy.url(
+                solicitudToDelete.id,
+                {
+                    query: {
+                        mes: filtros.mes,
+                        anio: filtros.anio,
+                        ...(filtros.buscar
+                            ? {
+                                  buscar:
+                                      filtros.buscar,
+                              }
+                            : {}),
+                    },
                 },
-            }),
+            ),
             {
                 preserveScroll: true,
+
                 onFinish: () => {
                     setIsDeleting(false);
                     setSolicitudToDelete(null);
@@ -710,45 +940,139 @@ export default function ServciosViewMail({
         );
     };
 
-    const resumenSolicitud =
-        resumen.total_mes === 1 ? 'solicitud' : 'solicitudes';
-    const resumenFiltrado =
-        resumen.total_filtrado === 1 ? 'resultado' : 'resultados';
+    const metricas = [
+        {
+            titulo: 'Total del mes',
+            valor: resumen.total_mes,
+            icono: LifeBuoy,
+            color: 'text-[#4cc185]',
+            fondo: 'bg-[#006635]/15',
+        },
+        {
+            titulo: 'En espera',
+            valor: totalEspera,
+            icono: Clock3,
+            color: 'text-amber-400',
+            fondo: 'bg-amber-500/10',
+        },
+        {
+            titulo: 'Concluidos',
+            valor: totalConcluido,
+            icono: CheckCircle2,
+            color: 'text-green-400',
+            fondo: 'bg-green-500/10',
+        },
+        {
+            titulo: 'Cancelados',
+            valor: totalCancelado,
+            icono: XCircle,
+            color: 'text-red-400',
+            fondo: 'bg-red-500/10',
+        },
+    ];
+
+    /* =================================================
+       RENDER PRINCIPAL
+    ================================================= */
 
     return (
         <>
-            <Head title="Soporte" />
+            <Head title="Servicios de mantenimiento" />
 
-            <div className="flex h-full min-w-0 flex-1 flex-col gap-6 overflow-x-hidden p-4 md:p-6">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-7 overflow-x-hidden p-4 md:p-6">
                 <Heading
-                    title="Soporte"
-                    description="Solicitudes enviadas desde el formulario público de soporte técnico."
+                    title="Servicios de mantenimiento"
+                    description="Administración y seguimiento de solicitudes de mantenimiento, soporte técnico y otros servicios."
                 />
 
                 {flash?.success && (
-                    <div className="rounded-xl border border-[#0a7c4a]/30 bg-[#0a7c4a]/10 px-4 py-3 text-sm font-medium text-[#0a7c4a]">
+                    <div className="rounded-xl border border-[#006635]/30 bg-[#006635]/10 px-4 py-3 text-sm font-medium text-[#4cc185]">
                         {flash.success}
                     </div>
                 )}
 
-                <section className="rounded-xl border border-border bg-card p-5 shadow-sm md:p-6">
-                    <div className="grid flex-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <div className="grid gap-2">
-                            <Label htmlFor="filtro-mes">Mes</Label>
+                {/* =================================
+                    TARJETAS DE ESTADÍSTICAS
+                ================================= */}
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {metricas.map((metrica) => {
+                        const Icon = metrica.icono;
+
+                        return (
+                            <div
+                                key={metrica.titulo}
+                                className="rounded-xl border border-white/10 bg-[#141816] p-5"
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <p className="text-sm font-medium text-white/55">
+                                        {metrica.titulo}
+                                    </p>
+
+                                    <div
+                                        className={`rounded-lg p-2 ${metrica.fondo}`}
+                                    >
+                                        <Icon
+                                            className={`size-5 ${metrica.color}`}
+                                        />
+                                    </div>
+                                </div>
+
+                                <p className="mt-4 text-3xl font-bold text-white">
+                                    {metrica.valor}
+                                </p>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* =================================
+                    FILTROS
+                ================================= */}
+
+                <section className="rounded-2xl border border-white/10 bg-[#111513] p-5 sm:p-6">
+                    <div className="mb-5">
+                        <h2 className="text-lg font-semibold text-white">
+                            Filtros de búsqueda
+                        </h2>
+
+                        <p className="mt-1 text-sm text-white/45">
+                            Consulta solicitudes por fecha,
+                            servicio, equipo o cliente.
+                        </p>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="space-y-2">
+                            <label
+                                htmlFor="servicio-mes"
+                                className="text-sm font-medium text-white/75"
+                            >
+                                Mes
+                            </label>
+
                             <Select
                                 value={String(filtros.mes)}
                                 onValueChange={(value) =>
-                                    applyFilters({ mes: Number(value) })
+                                    applyFilters({
+                                        mes: Number(value),
+                                    })
                                 }
                             >
-                                <SelectTrigger id="filtro-mes" className="w-full">
+                                <SelectTrigger
+                                    id="servicio-mes"
+                                    className="h-11 w-full border-white/15 bg-[#191e1b] text-white"
+                                >
                                     <SelectValue placeholder="Seleccionar mes" />
                                 </SelectTrigger>
+
                                 <SelectContent>
                                     {meses.map((mes) => (
                                         <SelectItem
                                             key={mes.value}
-                                            value={String(mes.value)}
+                                            value={String(
+                                                mes.value,
+                                            )}
                                         >
                                             {mes.label}
                                         </SelectItem>
@@ -757,122 +1081,781 @@ export default function ServciosViewMail({
                             </Select>
                         </div>
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="filtro-anio">Año</Label>
+                        <div className="space-y-2">
+                            <label
+                                htmlFor="servicio-anio"
+                                className="text-sm font-medium text-white/75"
+                            >
+                                Año
+                            </label>
+
                             <Select
                                 value={String(filtros.anio)}
                                 onValueChange={(value) =>
-                                    applyFilters({ anio: Number(value) })
+                                    applyFilters({
+                                        anio: Number(value),
+                                    })
                                 }
                             >
                                 <SelectTrigger
-                                    id="filtro-anio"
-                                    className="w-full"
+                                    id="servicio-anio"
+                                    className="h-11 w-full border-white/15 bg-[#191e1b] text-white"
                                 >
                                     <SelectValue placeholder="Seleccionar año" />
                                 </SelectTrigger>
+
                                 <SelectContent>
-                                    {anios_disponibles.map((anio) => (
-                                        <SelectItem
-                                            key={anio}
-                                            value={String(anio)}
-                                        >
-                                            {anio}
-                                        </SelectItem>
-                                    ))}
+                                    {anios_disponibles.map(
+                                        (anio) => (
+                                            <SelectItem
+                                                key={anio}
+                                                value={String(
+                                                    anio,
+                                                )}
+                                            >
+                                                {anio}
+                                            </SelectItem>
+                                        ),
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>
 
-                        <div className="grid gap-2 sm:col-span-2 lg:col-span-1">
-                            <Label htmlFor="filtro-buscar">Buscar</Label>
+                        <div className="space-y-2">
+                            <label
+                                htmlFor="servicio-estado"
+                                className="text-sm font-medium text-white/75"
+                            >
+                                Estado del servicio
+                            </label>
+
+                            <Select
+                                value={filtroEstado}
+                                onValueChange={(value) =>
+                                    setFiltroEstado(
+                                        value as FiltroEstado,
+                                    )
+                                }
+                            >
+                                <SelectTrigger
+                                    id="servicio-estado"
+                                    className="h-11 w-full border-white/15 bg-[#191e1b] text-white"
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                    <SelectItem value="todos">
+                                        Todos los estados
+                                    </SelectItem>
+
+                                    <SelectItem value="en_espera">
+                                        Servicio en espera
+                                    </SelectItem>
+
+                                    <SelectItem value="concluido">
+                                        Servicio concluido
+                                    </SelectItem>
+
+                                    <SelectItem value="cancelado">
+                                        Servicio cancelado
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label
+                                htmlFor="servicio-buscar"
+                                className="text-sm font-medium text-white/75"
+                            >
+                                Buscar solicitud
+                            </label>
+
                             <div className="relative">
-                                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    id="filtro-buscar"
+                                <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-white/40" />
+
+                                <input
+                                    id="servicio-buscar"
+                                    type="search"
                                     value={buscar}
                                     onChange={(event) =>
-                                        setBuscar(event.target.value)
+                                        setBuscar(
+                                            event.target.value,
+                                        )
                                     }
-                                    placeholder="Servicio, modalidad, equipo o cliente"
-                                    className="pl-9"
+                                    placeholder="Servicio, equipo o cliente"
+                                    className="h-11 w-full rounded-lg border border-white/15 bg-[#191e1b] pl-10 pr-4 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#006635]"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-5 flex items-start gap-3 rounded-lg border border-[#0a7c4a]/20 bg-[#0a7c4a]/5 px-4 py-3">
-                        <CalendarDays className="mt-0.5 size-5 shrink-0 text-[#0a7c4a]" />
-                        <div className="space-y-1 text-sm">
-                            <p className="font-medium text-foreground">
-                                En {resumen.mes_nombre} de {resumen.anio} se
-                                recibieron {resumen.total_mes} {resumenSolicitud}.
+                    <div className="mt-5 flex items-start gap-3 rounded-lg border border-[#006635]/25 bg-[#006635]/10 px-4 py-3">
+                        <CalendarDays className="mt-0.5 size-5 shrink-0 text-[#4cc185]" />
+
+                        <div className="text-sm">
+                            <p className="font-medium text-white/85">
+                                En {resumen.mes_nombre} de{' '}
+                                {resumen.anio} se recibieron{' '}
+                                {resumen.total_mes}{' '}
+                                {resumen.total_mes === 1
+                                    ? 'solicitud'
+                                    : 'solicitudes'}.
                             </p>
+
                             {filtros.buscar !== '' && (
-                                <p className="text-muted-foreground">
-                                    Mostrando {resumen.total_filtrado}{' '}
-                                    {resumenFiltrado} para &quot;{filtros.buscar}
-                                    &quot;.
+                                <p className="mt-1 text-white/50">
+                                    Mostrando{' '}
+                                    {resumen.total_filtrado}{' '}
+                                    {resumen.total_filtrado === 1
+                                        ? 'resultado'
+                                        : 'resultados'}{' '}
+                                    para "{filtros.buscar}".
                                 </p>
                             )}
                         </div>
                     </div>
                 </section>
 
-                <section className="min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                    <div className="flex items-center justify-between border-b border-border px-5 py-4 md:px-6">
+                {/* =================================
+                    BANDEJA DE SOLICITUDES
+                ================================= */}
+
+                <section className="min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-[#111513]">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-5 sm:p-6">
                         <div className="flex items-center gap-2">
-                            <LifeBuoy className="size-5 text-[#0a7c4a]" />
-                            <h2 className="text-base font-semibold text-foreground">
+                            <Wrench className="size-5 text-[#4cc185]" />
+
+                            <h2 className="text-lg font-semibold text-white">
                                 Solicitudes recibidas
                             </h2>
-                            {hasNuevas && <NotificationDot />}
+
+                            {hasNuevas && (
+                                <NotificationDot />
+                            )}
                         </div>
-                        <Badge variant="secondary">
-                            {resumen.total_filtrado}{' '}
-                            {resumen.total_filtrado === 1
+
+                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/65">
+                            {solicitudesFiltradas.length}{' '}
+                            {solicitudesFiltradas.length === 1
                                 ? 'solicitud'
                                 : 'solicitudes'}
-                        </Badge>
+                        </span>
                     </div>
 
-                    {solicitudes.length === 0 ? (
-                        <div className="px-5 py-12 text-center md:px-6">
-                            <LifeBuoy className="mx-auto size-10 text-muted-foreground/50" />
-                            <p className="mt-4 text-sm font-medium text-foreground">
-                                {filtros.buscar !== ''
-                                    ? 'No se encontraron solicitudes con esa búsqueda'
-                                    : `No hay solicitudes en ${resumen.mes_nombre} de ${resumen.anio}`}
+                    {solicitudesFiltradas.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center gap-3 px-5 py-16 text-center">
+                            <LifeBuoy className="size-10 text-white/25" />
+
+                            <p className="text-sm font-semibold text-white/70">
+                                No se encontraron solicitudes
                             </p>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                {filtros.buscar !== ''
-                                    ? 'Pruebe con otro servicio, modalidad o equipo.'
-                                    : 'Seleccione otro mes o año para consultar solicitudes anteriores.'}
+
+                            <p className="text-xs text-white/40">
+                                Modifica los filtros para
+                                consultar otros registros.
                             </p>
                         </div>
                     ) : (
-                        <div>
-                            {solicitudes.map((solicitud) => (
-                                <SolicitudAccordionItem
-                                    key={solicitud.id}
-                                    solicitud={solicitud}
-                                    showNotification={
-                                        nuevaIds.has(solicitud.id) &&
-                                        !avisosOcultos.includes(solicitud.id)
-                                    }
-                                    onDelete={setSolicitudToDelete}
-                                    isDeleting={
-                                        isDeleting &&
-                                        solicitudToDelete?.id === solicitud.id
-                                    }
-                                    onAtender={marcarAtendida}
-                                    isAtendiendo={atendiendoId === solicitud.id}
-                                />
-                            ))}
-                        </div>
+                        <>
+                            {/* Tabla escritorio */}
+
+                            <div className="hidden overflow-x-auto lg:block">
+                                <table className="w-full min-w-[1000px] text-left">
+                                    <thead className="border-b border-white/10 bg-[#171c19]">
+                                        <tr className="text-xs font-semibold uppercase tracking-wide text-white/45">
+                                            <th className="px-5 py-4">
+                                                Cliente
+                                            </th>
+                                            <th className="px-5 py-4">
+                                                Servicio
+                                            </th>
+                                            <th className="px-5 py-4">
+                                                Equipo
+                                            </th>
+                                            <th className="px-5 py-4">
+                                                Fecha
+                                            </th>
+                                            <th className="px-5 py-4">
+                                                Estado
+                                            </th>
+                                            <th className="px-5 py-4 text-right">
+                                                Acciones
+                                            </th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody className="divide-y divide-white/10">
+                                        {solicitudesPaginadas.map(
+                                            (solicitud) => (
+                                                <tr
+                                                    key={solicitud.id}
+                                                    className="transition hover:bg-white/[0.035]"
+                                                >
+                                                    <td className="px-5 py-4">
+                                                        <div className="flex items-start gap-2">
+                                                            {nuevaIds.has(
+                                                                solicitud.id,
+                                                            ) && (
+                                                                <span className="mt-1.5">
+                                                                    <NotificationDot />
+                                                                </span>
+                                                            )}
+
+                                                            <div>
+                                                                <p className="max-w-48 break-words text-sm font-semibold text-white">
+                                                                    {solicitud.cliente.nombre}
+                                                                </p>
+
+                                                                <p className="mt-1 text-xs text-white/40">
+                                                                    {solicitud.cliente.empresa ||
+                                                                        'Particular'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+
+                                                    <td className="px-5 py-4">
+                                                        <p className="text-sm font-medium text-white/85">
+                                                            {solicitud.servicio.nombre}
+                                                        </p>
+
+                                                        <p className="mt-1 text-xs text-[#4cc185]">
+                                                            {solicitud.modalidad.nombre}
+                                                        </p>
+                                                    </td>
+
+                                                    <td className="px-5 py-4">
+                                                        <p className="text-sm text-white/75">
+                                                            {solicitud.equipo?.nombre ||
+                                                                'No indicado'}
+                                                        </p>
+
+                                                        <p className="mt-1 text-xs text-white/40">
+                                                            {solicitud.equipo?.marca ||
+                                                                ''}
+                                                        </p>
+                                                    </td>
+
+                                                    <td className="px-5 py-4">
+                                                        <p className="text-xs text-white/55">
+                                                            {solicitud.created_at_formatted ||
+                                                                '—'}
+                                                        </p>
+                                                    </td>
+
+                                                    <td className="px-5 py-4">
+                                                        <EstadoBadge
+                                                            estado={obtenerEstado(
+                                                                solicitud,
+                                                            )}
+                                                        />
+                                                    </td>
+
+                                                    <td className="px-5 py-4">
+                                                        <div className="flex justify-end gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setSolicitudSeleccionada(
+                                                                        solicitud,
+                                                                    )
+                                                                }
+                                                                className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-[#252b27] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#303b33]"
+                                                            >
+                                                                <Eye className="size-4" />
+                                                                Ver solicitud
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setSolicitudToDelete(
+                                                                        solicitud,
+                                                                    )
+                                                                }
+                                                                className="inline-flex size-9 items-center justify-center rounded-lg border border-red-500/20 text-red-400 transition hover:bg-red-500/10"
+                                                                aria-label="Eliminar solicitud"
+                                                            >
+                                                                <Trash2 className="size-4" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ),
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Tarjetas móviles */}
+
+                            <div className="grid gap-3 p-4 lg:hidden">
+                                {solicitudesPaginadas.map(
+                                    (solicitud) => (
+                                        <article
+                                            key={solicitud.id}
+                                            className="rounded-xl border border-white/10 bg-[#191e1b] p-4"
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex items-start gap-2">
+                                                    {nuevaIds.has(
+                                                        solicitud.id,
+                                                    ) && (
+                                                        <span className="mt-1.5">
+                                                            <NotificationDot />
+                                                        </span>
+                                                    )}
+
+                                                    <p className="text-sm font-semibold text-white">
+                                                        {solicitud.cliente.nombre}
+                                                    </p>
+                                                </div>
+
+                                                <span className="shrink-0 text-xs text-white/40">
+                                                    {solicitud.created_at_formatted ||
+                                                        '—'}
+                                                </span>
+                                            </div>
+
+                                            <p className="mt-3 text-sm font-medium text-white/75">
+                                                {solicitud.servicio.nombre}
+                                            </p>
+
+                                            <p className="mt-1 text-xs text-white/40">
+                                                {solicitud.modalidad.nombre}
+                                            </p>
+
+                                            <div className="mt-3">
+                                                <EstadoBadge
+                                                    estado={obtenerEstado(
+                                                        solicitud,
+                                                    )}
+                                                />
+                                            </div>
+
+                                            <div className="mt-4 flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setSolicitudSeleccionada(
+                                                            solicitud,
+                                                        )
+                                                    }
+                                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-white/15 bg-[#252b27] px-3 py-2.5 text-xs font-semibold text-white"
+                                                >
+                                                    <Eye className="size-4" />
+                                                    Ver solicitud
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setSolicitudToDelete(
+                                                            solicitud,
+                                                        )
+                                                    }
+                                                    className="inline-flex size-10 items-center justify-center rounded-lg border border-red-500/20 text-red-400"
+                                                    aria-label="Eliminar solicitud"
+                                                >
+                                                    <Trash2 className="size-4" />
+                                                </button>
+                                            </div>
+                                        </article>
+                                    ),
+                                )}
+                            </div>
+
+                            {/* Paginación */}
+
+                            <div className="flex flex-col gap-3 border-t border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-xs text-white/45">
+                                    Mostrando{' '}
+                                    {(paginaSegura - 1) *
+                                        PAGE_SIZE +
+                                        1}{' '}
+                                    -{' '}
+                                    {Math.min(
+                                        paginaSegura *
+                                            PAGE_SIZE,
+                                        solicitudesFiltradas.length,
+                                    )}{' '}
+                                    de{' '}
+                                    {solicitudesFiltradas.length}{' '}
+                                    solicitudes
+                                </p>
+
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        disabled={
+                                            paginaSegura <= 1
+                                        }
+                                        onClick={() =>
+                                            setPaginaActual(
+                                                paginaSegura - 1,
+                                            )
+                                        }
+                                        className="inline-flex size-9 items-center justify-center rounded-lg border border-white/15 text-white transition hover:bg-white/10 disabled:opacity-30"
+                                        aria-label="Página anterior"
+                                    >
+                                        <ChevronLeft className="size-4" />
+                                    </button>
+
+                                    <span className="px-2 text-xs text-white/65">
+                                        Página {paginaSegura} de{' '}
+                                        {totalPaginas}
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        disabled={
+                                            paginaSegura >=
+                                            totalPaginas
+                                        }
+                                        onClick={() =>
+                                            setPaginaActual(
+                                                paginaSegura + 1,
+                                            )
+                                        }
+                                        className="inline-flex size-9 items-center justify-center rounded-lg border border-white/15 text-white transition hover:bg-white/10 disabled:opacity-30"
+                                        aria-label="Página siguiente"
+                                    >
+                                        <ChevronRight className="size-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </>
                     )}
                 </section>
             </div>
+
+            {/* =================================
+                MODAL DE DETALLES
+            ================================= */}
+
+            <Dialog
+                open={solicitudSeleccionada !== null}
+                onOpenChange={(open) => {
+                    if (!open && !seguimientoAbierto) {
+                        cerrarDetalle();
+                    }
+                }}
+            >
+                <DialogContent className="flex max-h-[92vh] w-[calc(100%-1.5rem)] max-w-3xl flex-col overflow-hidden border-white/15 bg-[#111513] p-0 text-white sm:max-w-3xl">
+                    <DialogTitle className="sr-only">
+                        Detalle de solicitud de servicio
+                    </DialogTitle>
+
+                    <DialogDescription className="sr-only">
+                        Información del cliente, equipo,
+                        servicio y fotografías adjuntas.
+                    </DialogDescription>
+
+                    {solicitudSeleccionada && (
+                        <>
+                            <div className="shrink-0 border-b border-white/10 p-5 sm:p-6">
+                                <div className="flex flex-wrap items-start justify-between gap-3 pr-8">
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-[#4cc185]">
+                                            Solicitud #
+                                            {solicitudSeleccionada.id}
+                                        </p>
+
+                                        <h2 className="mt-1 text-xl font-bold text-white">
+                                            Detalle del servicio
+                                        </h2>
+
+                                        <p className="mt-1 text-xs text-white/45">
+                                            {solicitudSeleccionada.created_at_formatted ||
+                                                'Sin fecha'}
+                                        </p>
+                                    </div>
+
+                                    <EstadoBadge
+                                        estado={obtenerEstado(
+                                            solicitudSeleccionada,
+                                        )}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-7 overflow-y-auto p-5 sm:p-6">
+                                {/* Información del servicio */}
+
+                                <section>
+                                    <h3 className="mb-4 flex items-center gap-2 border-b border-white/10 pb-3 text-sm font-semibold text-white">
+                                        <Wrench className="size-4 text-[#4cc185]" />
+                                        Información del servicio
+                                    </h3>
+
+                                    <div className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+                                        <Campo
+                                            titulo="Servicio solicitado"
+                                            valor={
+                                                solicitudSeleccionada
+                                                    .servicio.nombre
+                                            }
+                                        />
+
+                                        <Campo
+                                            titulo="Modalidad"
+                                            valor={
+                                                solicitudSeleccionada
+                                                    .modalidad.nombre
+                                            }
+                                        />
+
+                                        <Campo
+                                            titulo="Marca del equipo"
+                                            valor={
+                                                solicitudSeleccionada
+                                                    .equipo?.marca
+                                            }
+                                        />
+
+                                        <Campo
+                                            titulo="Modelo del equipo"
+                                            valor={
+                                                solicitudSeleccionada
+                                                    .equipo?.nombre
+                                            }
+                                        />
+                                    </div>
+                                </section>
+
+                                {/* Datos del cliente */}
+
+                                <section>
+                                    <h3 className="mb-4 flex items-center gap-2 border-b border-white/10 pb-3 text-sm font-semibold text-white">
+                                        <UserRound className="size-4 text-[#4cc185]" />
+                                        Datos del solicitante
+                                    </h3>
+
+                                    <div className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+                                        <Campo
+                                            titulo="Nombre"
+                                            valor={
+                                                solicitudSeleccionada
+                                                    .cliente.nombre
+                                            }
+                                        />
+
+                                        <Campo
+                                            titulo="Empresa o institución"
+                                            valor={
+                                                solicitudSeleccionada
+                                                    .cliente.empresa
+                                            }
+                                        />
+
+                                        <Campo
+                                            titulo="Teléfono"
+                                            valor={
+                                                solicitudSeleccionada
+                                                    .cliente.telefono
+                                            }
+                                        />
+
+                                        <Campo
+                                            titulo="Correo electrónico"
+                                            valor={
+                                                solicitudSeleccionada
+                                                    .cliente.correo
+                                            }
+                                        />
+
+                                        <Campo
+                                            titulo="Estado o ciudad"
+                                            valor={
+                                                solicitudSeleccionada
+                                                    .cliente.estado
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="mt-5 flex flex-wrap gap-2">
+                                        {solicitudSeleccionada
+                                            .cliente.telefono && (
+                                            <a
+                                                href={`tel:${solicitudSeleccionada.cliente.telefono.replace(/\s/g, '')}`}
+                                                className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+                                            >
+                                                <Phone className="size-4" />
+                                                Llamar
+                                            </a>
+                                        )}
+
+                                        {solicitudSeleccionada
+                                            .cliente.correo && (
+                                            <a
+                                                href={`mailto:${solicitudSeleccionada.cliente.correo}`}
+                                                className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+                                            >
+                                                <Mail className="size-4" />
+                                                Enviar correo
+                                            </a>
+                                        )}
+                                    </div>
+                                </section>
+
+                                {/* Descripción */}
+
+                                <section>
+                                    <h3 className="mb-4 flex items-center gap-2 border-b border-white/10 pb-3 text-sm font-semibold text-white">
+                                        <Monitor className="size-4 text-[#4cc185]" />
+                                        Descripción de la falla
+                                    </h3>
+
+                                    <div className="rounded-xl border border-white/10 bg-[#191e1b] p-4">
+                                        <p className="break-words whitespace-pre-wrap text-sm leading-relaxed text-white/75 [overflow-wrap:anywhere]">
+                                            {solicitudSeleccionada.descripcion.trim() ||
+                                                'No se proporcionó una descripción.'}
+                                        </p>
+                                    </div>
+                                </section>
+
+                                {/* Fotografías */}
+
+                                <section>
+                                    <h3 className="mb-4 flex items-center gap-2 border-b border-white/10 pb-3 text-sm font-semibold text-white">
+                                        <ImageIcon className="size-4 text-[#4cc185]" />
+                                        Fotografías adjuntas
+                                    </h3>
+
+                                    <GaleriaFotografias
+                                        imagenes={
+                                            solicitudSeleccionada.imagenes
+                                        }
+                                    />
+                                </section>
+
+                            </div>
+
+                            <div className="flex shrink-0 flex-col-reverse gap-3 border-t border-white/10 p-4 sm:flex-row sm:justify-end sm:p-5">
+                                <button
+                                    type="button"
+                                    onClick={abrirSeguimiento}
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                                >
+                                    <ClipboardList className="size-4" />
+                                    Seguimiento
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={cerrarDetalle}
+                                    className="rounded-lg bg-[#006635] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#087a43]"
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {solicitudSeleccionada && seguimientoAbierto && (
+                <div
+                    className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6"
+                    onMouseDown={(event) => {
+                        if (event.target === event.currentTarget) {
+                            setSeguimientoAbierto(false);
+                        }
+                    }}
+                >
+                    <form
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="titulo-seguimiento-servicio"
+                        onSubmit={guardarSeguimiento}
+                        className="w-full max-w-xl rounded-2xl border border-white/15 bg-[#111513] p-5 shadow-2xl sm:p-6"
+                    >
+                        <div className="flex items-center gap-2">
+                            <ClipboardList className="size-4 text-[#4cc185]" />
+                            <h2
+                                id="titulo-seguimiento-servicio"
+                                className="text-base font-semibold text-white"
+                            >
+                                Seguimiento administrativo
+                            </h2>
+                        </div>
+
+                        <p className="mt-2 text-xs text-white/45">
+                            {solicitudSeleccionada.servicio.nombre}
+                            {' · '}
+                            {solicitudSeleccionada.cliente.nombre}
+                        </p>
+
+                        <label className="mt-5 block text-sm text-white/70">
+                            Estado de la solicitud
+                            <select
+                                value={seguimiento.data.estado}
+                                onChange={(event) =>
+                                    seguimiento.setData(
+                                        'estado',
+                                        event.target
+                                            .value as EstadoServicio,
+                                    )
+                                }
+                                className="mt-2 h-11 w-full appearance-none rounded-lg border border-white/15 bg-[#191e1b] px-4 text-sm text-white outline-none focus:border-[#006635] focus:ring-2 focus:ring-[#006635]/20"
+                            >
+                                <option value="en_espera">
+                                    Servicio en espera
+                                </option>
+                                <option value="concluido">
+                                    Servicio concluido
+                                </option>
+                                <option value="cancelado">
+                                    Servicio cancelado
+                                </option>
+                            </select>
+                            {seguimiento.errors.estado && (
+                                <p className="mt-2 text-xs text-red-400">
+                                    {seguimiento.errors.estado}
+                                </p>
+                            )}
+                        </label>
+
+                        <label className="mt-5 block text-sm text-white/70">
+                            Observaciones internas
+                            <textarea
+                                value={seguimiento.data.observaciones}
+                                onChange={(event) =>
+                                    seguimiento.setData(
+                                        'observaciones',
+                                        event.target.value,
+                                    )
+                                }
+                                rows={4}
+                                placeholder="Agregar notas sobre la solicitud..."
+                                className="mt-2 w-full resize-none rounded-lg border border-white/15 bg-[#191e1b] px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#006635] focus:ring-2 focus:ring-[#006635]/20"
+                            />
+                            {seguimiento.errors.observaciones && (
+                                <p className="mt-2 text-xs text-red-400">
+                                    {seguimiento.errors.observaciones}
+                                </p>
+                            )}
+                        </label>
+
+                        <button
+                            type="submit"
+                            disabled={seguimiento.processing}
+                            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#006635] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#087a43] disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                            <Save className="size-4" />
+                            {seguimiento.processing
+                                ? 'Guardando...'
+                                : 'Guardar seguimiento'}
+                        </button>
+                    </form>
+                </div>
+            )}
+
+            {/* =================================
+                AVISO DE SOLICITUD ATENDIDA
+            ================================= */}
 
             <Dialog
                 open={solicitudAtendida !== null}
@@ -886,14 +1869,19 @@ export default function ServciosViewMail({
                     <div className="flex flex-col items-center gap-4 px-2 pt-2 text-center">
                         <span
                             className="flex size-14 items-center justify-center rounded-full text-white"
-                            style={{ backgroundColor: BRAND_COLOR }}
+                            style={{
+                                backgroundColor:
+                                    BRAND_COLOR,
+                            }}
                         >
-                            <Check className="size-7" strokeWidth={2.25} />
+                            <Check className="size-7" />
                         </span>
+
                         <DialogTitle className="text-xl">
                             Solicitud atendida
                         </DialogTitle>
-                        <DialogDescription className="text-base leading-relaxed text-foreground">
+
+                        <DialogDescription className="text-base leading-relaxed">
                             La solicitud de{' '}
                             <span className="font-semibold">
                                 {solicitudAtendida?.servicio}
@@ -902,19 +1890,25 @@ export default function ServciosViewMail({
                             <span className="font-semibold">
                                 {solicitudAtendida?.nombre}
                             </span>{' '}
-                            quedó atendida.
+                            quedó marcada como atendida.
                         </DialogDescription>
+
                         <button
                             type="button"
-                            onClick={() => setSolicitudAtendida(null)}
-                            className="mt-1 inline-flex w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
-                            style={{ backgroundColor: BRAND_COLOR }}
+                            onClick={() =>
+                                setSolicitudAtendida(null)
+                            }
+                            className="mt-1 w-full rounded-xl bg-[#006635] px-5 py-3 text-sm font-semibold text-white hover:bg-[#087a43]"
                         >
                             Entendido
                         </button>
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* =================================
+                CONFIRMAR ELIMINACIÓN
+            ================================= */}
 
             <Dialog
                 open={solicitudToDelete !== null}
@@ -925,7 +1919,10 @@ export default function ServciosViewMail({
                 }}
             >
                 <DialogContent>
-                    <DialogTitle>Eliminar solicitud</DialogTitle>
+                    <DialogTitle>
+                        Eliminar solicitud
+                    </DialogTitle>
+
                     <DialogDescription>
                         ¿Desea eliminar la solicitud de{' '}
                         <span className="font-semibold text-foreground">
@@ -933,19 +1930,26 @@ export default function ServciosViewMail({
                         </span>
                         ? Esta acción no se puede deshacer.
                     </DialogDescription>
+
                     <DialogFooter className="gap-2">
                         <DialogClose asChild>
-                            <Button type="button" variant="outline">
+                            <Button
+                                type="button"
+                                variant="outline"
+                            >
                                 Cancelar
                             </Button>
                         </DialogClose>
+
                         <Button
                             type="button"
                             variant="destructive"
                             disabled={isDeleting}
                             onClick={confirmDelete}
                         >
-                            {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                            {isDeleting
+                                ? 'Eliminando...'
+                                : 'Eliminar'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -1,9 +1,12 @@
 <?php
 
 use App\Enums\ServicioIcono;
+use App\Models\Modulo;
 use App\Models\Servicio;
+use App\Models\Status;
 use App\Models\Telefono;
 use App\Support\WhatsAppContact;
+use Database\Seeders\StatusSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('uses the configured whatsapp number with the mexico country code', function () {
@@ -46,6 +49,29 @@ test('uses the public business line when whatsapp is not configured', function (
     config(['services.whatsapp.number' => null]);
 
     expect(WhatsAppContact::digits())->toBe('525519761691');
+});
+
+test('the spare part quote page shares the configured whatsapp number', function () {
+    $this->seed(StatusSeeder::class);
+    config(['services.whatsapp.number' => '5215519761691']);
+
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    Modulo::factory()->create([
+        'modulo' => 'Arcos C',
+        'slug' => 'arcos-c',
+        'estatus_id' => $activo->id,
+    ]);
+
+    $this->get(route('refacciones.cotizar', 'arcos-c'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Refacciones/cotizacionesViewPiesasReffaciones')
+            ->where('whatsappNumber', '525519761691')
+        );
+
+    expect(file_get_contents(resource_path('js/pages/Refacciones/cotizacionesViewPiesasReffaciones.tsx')))
+        ->toContain('whatsappNumber')
+        ->toContain('whatsappChatUrl');
 });
 
 test('the support page shares the whatsapp number when configured', function () {

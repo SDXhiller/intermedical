@@ -74,6 +74,15 @@ return [
             'report' => false,
         ],
 
+        'cotizaciones' => [
+            'driver' => 'local',
+            'root' => public_path('Imagen/Cotizaciones'),
+            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/Imagen/Cotizaciones',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
         'fabricantes' => [
             'driver' => 'local',
             'root' => public_path('Imagen/Fabricantes'),

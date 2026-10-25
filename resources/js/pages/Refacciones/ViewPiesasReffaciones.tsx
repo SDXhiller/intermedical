@@ -6,7 +6,7 @@ import {
 } from '@/components/site-breadcrumb';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { home, mantenimiento } from '@/routes';
-import { piezas } from '@/routes/refacciones';
+import { cotizar } from '@/routes/refacciones';
 
 type ModalidadCard = {
     slug: string;
@@ -118,7 +118,7 @@ export default function ViewPiesasReffaciones({ modalidades }: PageProps) {
                                     key={item.slug}
                                     nombre={item.nombre}
                                     imagen={item.imagen}
-                                    href={piezas.url(item.slug)}
+                                    href={cotizar.url(item.slug)}
                                 />
                             ))}
                         </div>

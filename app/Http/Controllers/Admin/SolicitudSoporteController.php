@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateSolicitudSoporteRequest;
 use App\Models\SolicitudSoporte;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -106,6 +107,38 @@ class SolicitudSoporteController extends Controller
     }
 
     /**
+     * Update the administrative follow-up of a support request.
+     */
+    public function update(UpdateSolicitudSoporteRequest $request, SolicitudSoporte $solicitudSoporte): RedirectResponse
+    {
+        $validated = $request->validated();
+        $estatus = $validated['estado'];
+
+        $solicitudSoporte->update([
+            'estatus' => $estatus,
+            'observaciones' => $validated['observaciones'] ?? null,
+            'atendida_at' => $estatus === 'concluido'
+                ? ($solicitudSoporte->atendida_at ?? now())
+                : null,
+        ]);
+
+        $solicitudSoporte->loadMissing('servicio');
+
+        $redirect = redirect()
+            ->route('admin.soporte.index', $request->only(['mes', 'anio', 'buscar']))
+            ->with('success', 'Seguimiento guardado correctamente.');
+
+        if ($estatus === 'concluido') {
+            $redirect->with('solicitud_atendida', [
+                'servicio' => $solicitudSoporte->servicio->nombre,
+                'nombre' => $solicitudSoporte->nombre,
+            ]);
+        }
+
+        return $redirect;
+    }
+
+    /**
      * Mark a support request as attended and clear its new-request marker.
      */
     public function atender(Request $request, SolicitudSoporte $solicitudSoporte): RedirectResponse
@@ -113,6 +146,7 @@ class SolicitudSoporteController extends Controller
         if ($solicitudSoporte->atendida_at === null) {
             $solicitudSoporte->update([
                 'atendida_at' => now(),
+                'estatus' => 'concluido',
             ]);
         }
 
@@ -187,8 +221,10 @@ class SolicitudSoporteController extends Controller
             'imagenes' => $solicitud->urlsImagenes(),
             'created_at' => $solicitud->created_at?->toIso8601String(),
             'created_at_formatted' => $solicitud->created_at?->format('d/m/Y H:i'),
-            'atendida' => $solicitud->atendida_at !== null,
+            'atendida' => $solicitud->estatus === 'concluido' || $solicitud->atendida_at !== null,
             'es_nueva' => $solicitud->isNueva(),
+            'estado_servicio' => $solicitud->estatus,
+            'observaciones' => $solicitud->observaciones ?? '',
         ];
     }
 

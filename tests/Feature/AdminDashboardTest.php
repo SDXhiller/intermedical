@@ -32,6 +32,7 @@ test('admins can view live dashboard counts for equipment models support and inc
         'created_at' => now()->subDay(),
         'updated_at' => now()->subDay(),
         'atendida_at' => now()->subDay(),
+        'estatus' => 'concluido',
     ]);
     SolicitudSoporte::factory()->create([
         'modulo_id' => $modulos->first()->id,
