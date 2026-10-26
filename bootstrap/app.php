@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\ConvertUploadedImagesToWebp;
 use App\Http\Middleware\EnsureAdminCanAccess;
+use App\Http\Middleware\EnsureAdminPatternVerified;
 use App\Http\Middleware\EnsureSiteIsAvailable;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin.area' => EnsureAdminCanAccess::class,
+            'admin.patron' => EnsureAdminPatternVerified::class,
         ]);
 
         $middleware->web(append: [

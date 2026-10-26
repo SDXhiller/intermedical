@@ -110,7 +110,7 @@ test('recent activity lists registered equipment models and support requests', f
         );
 });
 
-test('sales managers see support requests and incoming quotes on the dashboard', function () {
+test('sales managers see incoming quotes on the dashboard', function () {
     $admin = UserAdmin::factory()->gerenteVentas()->create();
 
     Modulo::factory()->create();
@@ -124,17 +124,13 @@ test('sales managers see support requests and incoming quotes on the dashboard',
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Admins/dashboard-admin')
-            ->has('stats', 2)
-            ->where('stats.0.key', 'soporte')
-            ->where('stats.0.value', 1)
-            ->where('stats.1.key', 'cotizaciones')
-            ->where('stats.1.value', 2)
-            ->has('acciones', 2)
-            ->where('acciones.0.key', 'soporte')
-            ->where('acciones.1.key', 'cotizaciones')
+            ->has('stats', 1)
+            ->where('stats.0.key', 'cotizaciones')
+            ->where('stats.0.value', 2)
+            ->has('acciones', 1)
+            ->where('acciones.0.key', 'cotizaciones')
             ->where('mantenimientoSitio', null)
-            ->has('actividad', 1)
-            ->where('actividad.0.title', 'Se registró la solicitud de soporte de Ana López')
+            ->has('actividad', 0)
             ->where('resumenMensual.total', 2)
         );
 });

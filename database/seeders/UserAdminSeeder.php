@@ -24,6 +24,7 @@ class UserAdminSeeder extends Seeder
                 'rol_usuario_id' => RolUsuario::query()->where('slug', 'super-usuario')->value('id'),
                 'activo' => true,
                 'password' => 'abcde123',
+                ...UserAdmin::atributosPatron(UserAdmin::PATRON_ADMINISTRADOR),
             ],
         );
     }

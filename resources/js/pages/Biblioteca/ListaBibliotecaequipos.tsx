@@ -65,22 +65,29 @@ function EquipoCard({ equipo }: { equipo: BibliotecaEquipo }) {
             : 'Consulta el soporte y los equipos disponibles para esta modalidad.';
 
     return (
-        <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-neutral-900 shadow-none transition-[border-color,box-shadow] duration-300 hover:border-white/30 hover:shadow-[0_10px_28px_rgba(255,255,255,0.16)]">
+        <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-white/15 bg-[#0b0f0d] shadow-none transition-all duration-300 hover:-translate-y-1 hover:border-[#006635]/80 hover:shadow-[0_8px_28px_rgba(0,102,53,0.18)]">
+            <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-t from-[#006635]/10 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            />
             <div
-                className="flex h-32 items-center justify-center overflow-hidden rounded-t-2xl bg-neutral-950/50 px-5"
+                className="relative z-10 flex h-32 items-center justify-center overflow-hidden bg-transparent px-5"
                 style={hasImage ? undefined : { backgroundColor: color }}
             >
                 {hasImage ? (
                     <img
                         src={equipo.image}
                         alt={equipo.name}
-                        className="h-24 w-auto max-w-[78%] object-contain object-center"
+                        className="h-24 w-auto max-w-[78%] object-contain object-center transition-transform duration-300 group-hover:scale-105"
                     />
                 ) : null}
             </div>
 
-            <div className="flex flex-1 flex-col gap-1.5 px-4 pt-3 pb-4">
-                <h2 className="text-base font-bold leading-snug text-white">
+            <div className="relative z-10 flex flex-1 flex-col gap-1.5 px-4 pt-3 pb-4">
+                <h2
+                    className="text-base font-bold leading-snug"
+                    style={{ color: BRAND_COLOR }}
+                >
                     {equipo.name}
                 </h2>
                 <p className="text-sm leading-relaxed text-white/60">

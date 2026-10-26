@@ -35,7 +35,7 @@ class CargoFactory extends Factory
     public function gerenteVentas(): static
     {
         return $this->state(fn (): array => [
-            'nombre' => 'Gerente de ventas',
+            'nombre' => 'Ventas',
             'slug' => Cargo::SLUG_GERENTE_VENTAS,
         ]);
     }
@@ -43,7 +43,7 @@ class CargoFactory extends Factory
     public function equipos(): static
     {
         return $this->state(fn (): array => [
-            'nombre' => 'Cargo de equipos',
+            'nombre' => 'Carga de equipos',
             'slug' => Cargo::SLUG_EQUIPOS,
         ]);
     }
@@ -51,7 +51,7 @@ class CargoFactory extends Factory
     public function atencion(): static
     {
         return $this->state(fn (): array => [
-            'nombre' => 'Servicio a atención',
+            'nombre' => 'Atención a cliente',
             'slug' => Cargo::SLUG_ATENCION,
         ]);
     }

@@ -9,6 +9,7 @@ use App\Models\Status;
 use App\Models\UserAdmin;
 use Database\Seeders\StatusSeeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -29,6 +30,7 @@ test('admins with cotizaciones access can open the spare part quote registry', f
         ->assertInertia(fn (Assert $page) => $page
             ->component('Refacciones/cotizacion-listrado-view')
             ->has('cotizaciones', 0)
+            ->where('puedeEliminar', true)
         );
 });
 
@@ -73,6 +75,48 @@ test('the spare part quote registry lists requests sent from the public form', f
             ->where('cotizaciones.0.observaciones', '')
             ->where('cotizaciones.0.imagenes.0', '/Imagen/Cotizaciones/tubo.webp')
         );
+});
+
+test('the full admin can delete a spare part quote and its photos', function () {
+    Storage::fake('cotizaciones');
+    Storage::disk('cotizaciones')->put('tubo.webp', 'imagen');
+
+    $admin = UserAdmin::factory()->create();
+    $cotizacion = CotizacionRefaccion::factory()->create();
+    CotizacionRefaccionImagen::factory()->create([
+        'cotizacion_id' => $cotizacion->id,
+        'ruta' => 'Imagen/Cotizaciones/tubo.webp',
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->delete(route('admin.cotizaciones-refacciones.destroy', $cotizacion))
+        ->assertRedirect(route('admin.cotizaciones-refacciones.index'));
+
+    expect(CotizacionRefaccion::query()->whereKey($cotizacion->id)->exists())->toBeFalse()
+        ->and(CotizacionRefaccionImagen::query()->where('cotizacion_id', $cotizacion->id)->exists())->toBeFalse();
+
+    Storage::disk('cotizaciones')->assertMissing('tubo.webp');
+});
+
+test('sales and customer service can see spare part quotes but cannot delete them', function () {
+    $cotizacion = CotizacionRefaccion::factory()->create();
+
+    $this->actingAs(UserAdmin::factory()->gerenteVentas()->create(), 'admin')
+        ->get(route('admin.cotizaciones-refacciones.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('puedeEliminar', false)
+        );
+
+    $this->actingAs(UserAdmin::factory()->gerenteVentas()->create(), 'admin')
+        ->delete(route('admin.cotizaciones-refacciones.destroy', $cotizacion))
+        ->assertForbidden();
+
+    $this->actingAs(UserAdmin::factory()->atencion()->create(), 'admin')
+        ->delete(route('admin.cotizaciones-refacciones.destroy', $cotizacion))
+        ->assertForbidden();
+
+    expect(CotizacionRefaccion::query()->whereKey($cotizacion->id)->exists())->toBeTrue();
 });
 
 test('admins can save the follow-up status and internal notes of a spare part quote', function () {

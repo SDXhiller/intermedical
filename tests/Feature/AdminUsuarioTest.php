@@ -44,9 +44,9 @@ test('admins can view the create user page with assignable roles and cargos', fu
             ->where('roles.0.nombre', 'Administrador')
             ->where('roles.1.nombre', 'Usuarios')
             ->has('cargos', 3)
-            ->where('cargos.0.nombre', 'Gerente de ventas')
-            ->where('cargos.1.nombre', 'Cargo de equipos')
-            ->where('cargos.2.nombre', 'Servicio a atención')
+            ->where('cargos.0.nombre', 'Ventas')
+            ->where('cargos.1.nombre', 'Carga de equipos')
+            ->where('cargos.2.nombre', 'Atención a cliente')
             ->missing('admins')
         );
 });
@@ -86,6 +86,7 @@ test('admins can create an admin user with a catalog role and cargo', function (
             'rol_usuario_id' => $rolUsuarios->id,
             'password' => 'abcde123',
             'password_confirmation' => 'abcde123',
+            'patron' => ['ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp'],
         ])
         ->assertRedirect(route('admin.usuarios.create'))
         ->assertSessionHas('success');
@@ -99,7 +100,9 @@ test('admins can create an admin user with a catalog role and cargo', function (
         ->and($created->cargo_id)->toBe($cargoVentas->id)
         ->and($created->rol_usuario_id)->toBe($rolUsuarios->id)
         ->and($created->activo)->toBeTrue()
-        ->and(Hash::check('abcde123', $created->password))->toBeTrue();
+        ->and(Hash::check('abcde123', $created->password))->toBeTrue()
+        ->and($created->patron_longitud)->toBe(5)
+        ->and($created->patronCoincide(['ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp']))->toBeTrue();
 });
 
 test('admin user creation cannot assign the super usuario role', function () {
@@ -116,6 +119,7 @@ test('admin user creation cannot assign the super usuario role', function () {
             'rol_usuario_id' => superUsuarioRoleId(),
             'password' => 'abcde123',
             'password_confirmation' => 'abcde123',
+            'patron' => ['ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp'],
         ])
         ->assertRedirect(route('admin.usuarios.create'))
         ->assertSessionHasErrors(['rol_usuario_id']);
@@ -135,6 +139,7 @@ test('admin user creation cannot assign the super usuario cargo', function () {
             'rol_usuario_id' => administradorRoleId(),
             'password' => 'abcde123',
             'password_confirmation' => 'abcde123',
+            'patron' => ['ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp'],
         ])
         ->assertRedirect(route('admin.usuarios.create'))
         ->assertSessionHasErrors(['cargo_id']);
@@ -154,6 +159,7 @@ test('admin user creation requires password confirmation', function () {
             'rol_usuario_id' => administradorRoleId(),
             'password' => 'abcde123',
             'password_confirmation' => 'otra-clave',
+            'patron' => ['ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp'],
         ])
         ->assertRedirect(route('admin.usuarios.create'))
         ->assertSessionHasErrors(['password']);
@@ -176,6 +182,7 @@ test('admin user creation validates required fields', function () {
             'cargo_id',
             'rol_usuario_id',
             'password',
+            'patron',
         ]);
 });
 
@@ -207,6 +214,98 @@ test('admins can update an admin user', function () {
         ->and($target->cargo_id)->toBe($cargoEquipos->id)
         ->and($target->rol_usuario_id)->toBe($rolUsuarios->id)
         ->and($target->activo)->toBeFalse();
+});
+
+test('admins can replace the security pattern while updating a user', function () {
+    $admin = UserAdmin::factory()->create();
+    $rolUsuarios = RolUsuario::query()->where('slug', 'usuarios')->firstOrFail();
+    $cargoEquipos = Cargo::query()->where('slug', Cargo::SLUG_EQUIPOS)->firstOrFail();
+    $target = UserAdmin::factory()->create([
+        'cargo_id' => $cargoEquipos->id,
+        'rol_usuario_id' => $rolUsuarios->id,
+        ...UserAdmin::atributosPatron(UserAdmin::PATRON_ADMINISTRADOR),
+    ]);
+    $reemplazo = ['ArrowDown', 'ArrowDown', 'ArrowDown', 'ArrowDown', 'ArrowLeft'];
+
+    $this->actingAs($admin, 'admin')
+        ->put(route('admin.usuarios.update', $target), [
+            'nombre' => $target->name,
+            'apellidos' => $target->apellidos,
+            'nombre_usuario' => $target->username,
+            'correo' => $target->email,
+            'cargo_id' => $target->cargo_id,
+            'rol_usuario_id' => $target->rol_usuario_id,
+            'activo' => '1',
+            'patron' => $reemplazo,
+        ])
+        ->assertRedirect(route('admin.usuarios.edit'))
+        ->assertSessionHas('success');
+
+    $target->refresh();
+
+    expect($target->patron_longitud)->toBe(5)
+        ->and($target->patronCoincide($reemplazo))->toBeTrue()
+        ->and($target->patronCoincide(UserAdmin::PATRON_ADMINISTRADOR))->toBeFalse();
+});
+
+test('updating a user without a new pattern keeps the stored one', function () {
+    $admin = UserAdmin::factory()->create();
+    $rolUsuarios = RolUsuario::query()->where('slug', 'usuarios')->firstOrFail();
+    $cargoEquipos = Cargo::query()->where('slug', Cargo::SLUG_EQUIPOS)->firstOrFail();
+    $target = UserAdmin::factory()->create([
+        'cargo_id' => $cargoEquipos->id,
+        'rol_usuario_id' => $rolUsuarios->id,
+        ...UserAdmin::atributosPatron(UserAdmin::PATRON_ADMINISTRADOR),
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->put(route('admin.usuarios.update', $target), [
+            'nombre' => 'Carlos',
+            'apellidos' => $target->apellidos,
+            'nombre_usuario' => $target->username,
+            'correo' => $target->email,
+            'cargo_id' => $target->cargo_id,
+            'rol_usuario_id' => $target->rol_usuario_id,
+            'activo' => '1',
+        ])
+        ->assertRedirect(route('admin.usuarios.edit'))
+        ->assertSessionHas('success');
+
+    $target->refresh();
+
+    expect($target->name)->toBe('Carlos')
+        ->and($target->patron_longitud)->toBe(5)
+        ->and($target->patronCoincide(UserAdmin::PATRON_ADMINISTRADOR))->toBeTrue();
+});
+
+test('an invalid replacement pattern is rejected', function () {
+    $admin = UserAdmin::factory()->create();
+    $rolUsuarios = RolUsuario::query()->where('slug', 'usuarios')->firstOrFail();
+    $cargoEquipos = Cargo::query()->where('slug', Cargo::SLUG_EQUIPOS)->firstOrFail();
+    $target = UserAdmin::factory()->create([
+        'cargo_id' => $cargoEquipos->id,
+        'rol_usuario_id' => $rolUsuarios->id,
+        ...UserAdmin::atributosPatron(UserAdmin::PATRON_ADMINISTRADOR),
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->from(route('admin.usuarios.edit'))
+        ->put(route('admin.usuarios.update', $target), [
+            'nombre' => $target->name,
+            'apellidos' => $target->apellidos,
+            'nombre_usuario' => $target->username,
+            'correo' => $target->email,
+            'cargo_id' => $target->cargo_id,
+            'rol_usuario_id' => $target->rol_usuario_id,
+            'activo' => '1',
+            'patron' => ['ArrowUp', 'ArrowUp'],
+        ])
+        ->assertRedirect(route('admin.usuarios.edit'))
+        ->assertSessionHasErrors('patron');
+
+    $target->refresh();
+
+    expect($target->patronCoincide(UserAdmin::PATRON_ADMINISTRADOR))->toBeTrue();
 });
 
 test('admins can edit a super usuario but cannot change its role or cargo', function () {
@@ -264,6 +363,57 @@ test('admins cannot delete a super usuario', function () {
     expect(UserAdmin::query()->whereKey($super->id)->exists())->toBeTrue();
 });
 
+test('the edit page reports an existing pattern without revealing it', function () {
+    $admin = UserAdmin::factory()->create();
+    UserAdmin::factory()->create([
+        'username' => 'con-patron',
+        ...UserAdmin::atributosPatron(UserAdmin::PATRON_ADMINISTRADOR),
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->get(route('admin.usuarios.edit'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('admins.0.username', 'con-patron')
+            ->where('admins.0.tiene_patron', true)
+            ->missing('admins.0.patron')
+            ->missing('admins.0.patron_longitud')
+        );
+});
+
+test('admins can replace the security pattern of a super usuario', function () {
+    $admin = UserAdmin::factory()->create();
+    $super = UserAdmin::factory()->create([
+        'rol_usuario_id' => superUsuarioRoleId(),
+        'cargo_id' => superUsuarioCargoId(),
+        'apellidos' => null,
+        ...UserAdmin::atributosPatron(UserAdmin::PATRON_ADMINISTRADOR),
+    ]);
+    $reemplazo = ['ArrowLeft', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft'];
+
+    $this->actingAs($admin, 'admin')
+        ->put(route('admin.usuarios.update', $super), [
+            'nombre' => 'Administrador',
+            'apellidos' => null,
+            'nombre_usuario' => $super->username,
+            'correo' => $super->email,
+            'cargo_id' => gerenteVentasCargoId(),
+            'rol_usuario_id' => administradorRoleId(),
+            'activo' => '1',
+            'patron' => $reemplazo,
+        ])
+        ->assertRedirect(route('admin.usuarios.edit'))
+        ->assertSessionHas('success');
+
+    $super->refresh();
+
+    expect($super->rol_usuario_id)->toBe(superUsuarioRoleId())
+        ->and($super->cargo_id)->toBe(superUsuarioCargoId())
+        ->and($super->patron_longitud)->toBe(5)
+        ->and($super->patronCoincide($reemplazo))->toBeTrue()
+        ->and($super->patronCoincide(UserAdmin::PATRON_ADMINISTRADOR))->toBeFalse();
+});
+
 test('edit page marks the super usuario so it cannot show a delete action', function () {
     $admin = UserAdmin::factory()->create();
     $super = UserAdmin::factory()->create([
@@ -280,7 +430,9 @@ test('edit page marks the super usuario so it cannot show a delete action', func
             ->has('admins', 2)
             ->where('admins.0.username', $super->username)
             ->where('admins.0.es_super_usuario', true)
+            ->where('admins.0.tiene_patron', false)
             ->where('admins.0.apellidos', null)
+            ->missing('admins.0.patron')
             ->where('admins.1.es_super_usuario', false)
         );
 });

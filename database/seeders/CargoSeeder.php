@@ -19,17 +19,17 @@ class CargoSeeder extends Seeder
 
         Cargo::query()->updateOrCreate(
             ['slug' => Cargo::SLUG_GERENTE_VENTAS],
-            ['nombre' => 'Gerente de ventas'],
+            ['nombre' => 'Ventas'],
         );
 
         Cargo::query()->updateOrCreate(
             ['slug' => Cargo::SLUG_EQUIPOS],
-            ['nombre' => 'Cargo de equipos'],
+            ['nombre' => 'Carga de equipos'],
         );
 
         Cargo::query()->updateOrCreate(
             ['slug' => Cargo::SLUG_ATENCION],
-            ['nombre' => 'Servicio a atención'],
+            ['nombre' => 'Atención a cliente'],
         );
     }
 }

@@ -66,7 +66,7 @@ class UsuarioController extends Controller
                     'cargo:id,nombre,slug',
                 ])
                 ->latest('id')
-                ->get(['id', 'name', 'apellidos', 'username', 'email', 'cargo_id', 'rol_usuario_id', 'activo', 'created_at'])
+                ->get(['id', 'name', 'apellidos', 'username', 'email', 'cargo_id', 'rol_usuario_id', 'activo', 'patron', 'created_at'])
                 ->map(fn (UserAdmin $admin): array => [
                     'id' => $admin->id,
                     'name' => $admin->name,
@@ -77,6 +77,7 @@ class UsuarioController extends Controller
                     'activo' => $admin->activo,
                     'rol_usuario' => $admin->rolUsuario,
                     'es_super_usuario' => $admin->isSuperUsuario(),
+                    'tiene_patron' => filled($admin->patron),
                 ]),
         ]);
     }
@@ -86,11 +87,17 @@ class UsuarioController extends Controller
      */
     public function update(UpdateUserAdminRequest $request, UserAdmin $userAdmin): RedirectResponse
     {
-        $userAdmin->update($request->adminAttributes());
+        $attributes = $request->adminAttributes();
+
+        $userAdmin->update($attributes);
+
+        $mensaje = array_key_exists('patron', $attributes)
+            ? 'Usuario actualizado correctamente. El patrón de seguridad quedó registrado.'
+            : 'Usuario actualizado correctamente.';
 
         return redirect()
             ->route('admin.usuarios.edit')
-            ->with('success', 'Usuario actualizado correctamente.');
+            ->with('success', $mensaje);
     }
 
     /**

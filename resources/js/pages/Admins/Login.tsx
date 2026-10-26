@@ -1,4 +1,4 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,10 @@ import { home } from '@/routes';
 import { store } from '@/routes/admin/login';
 
 export default function AdminLogin() {
+    const { flash } = usePage<{
+        flash?: { error?: string | null };
+    }>().props;
+
     return (
         <>
             <Head title="Login administrador" />
@@ -21,6 +25,12 @@ export default function AdminLogin() {
             >
                 {({ processing, errors }) => (
                     <>
+                        {(flash?.error || errors.patron) && (
+                            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
+                                {errors.patron || flash?.error}
+                            </p>
+                        )}
+
                         <div className="grid gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="username">Usuario</Label>

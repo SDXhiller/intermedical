@@ -96,5 +96,17 @@ class FortifyServiceProvider extends ServiceProvider
                 ($request->input('credential.id') ?: $request->session()->getId()).'|'.$request->ip(),
             );
         });
+
+        RateLimiter::for('admin-patron', function (Request $request) {
+            $identificador = (string) ($request->user('admin')?->getAuthIdentifier() ?: $request->ip());
+
+            return Limit::perMinute(20)
+                ->by($identificador)
+                ->response(function () {
+                    return redirect()
+                        ->route('admin.patron')
+                        ->with('error', 'Demasiados intentos. Espere un momento antes de continuar.');
+                });
+        });
     }
 }

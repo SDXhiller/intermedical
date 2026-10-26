@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnsureAdminPatternVerified;
 use App\Http\Requests\Auth\AdminLoginRequest;
+use App\Models\UserAdmin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +30,16 @@ class AdminAuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        $admin = $request->user('admin');
+
+        if ($admin instanceof UserAdmin && filled($admin->patron)) {
+            $request->session()->forget(EnsureAdminPatternVerified::SESSION_KEY);
+
+            return redirect()->route('admin.patron');
+        }
+
+        $request->session()->put(EnsureAdminPatternVerified::SESSION_KEY, true);
 
         return redirect()->intended(route('admin.dashboard', absolute: false));
     }

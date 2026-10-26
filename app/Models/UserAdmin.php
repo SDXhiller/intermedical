@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * @property int $id
@@ -22,6 +23,8 @@ use Illuminate\Support\Carbon;
  * @property int|null $rol_usuario_id
  * @property bool $activo
  * @property string $password
+ * @property string|null $patron
+ * @property int|null $patron_longitud
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -30,10 +33,20 @@ use Illuminate\Support\Carbon;
  * @property-read list<string> $permisos
  * @property-read bool $es_super_usuario
  */
-#[Fillable(['name', 'apellidos', 'username', 'email', 'cargo_id', 'rol_usuario_id', 'activo', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable(['name', 'apellidos', 'username', 'email', 'cargo_id', 'rol_usuario_id', 'activo', 'password', 'patron', 'patron_longitud'])]
+#[Hidden(['password', 'patron', 'patron_longitud', 'remember_token'])]
 class UserAdmin extends Authenticatable
 {
+    /** @var list<string> */
+    public const PATRON_DIRECCIONES = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+
+    /**
+     * Five up arrows. This is the seeded pattern of the super usuario.
+     *
+     * @var list<string>
+     */
+    public const PATRON_ADMINISTRADOR = ['ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp', 'ArrowUp'];
+
     /** @use HasFactory<UserAdminFactory> */
     use HasFactory, Notifiable;
 
@@ -53,7 +66,41 @@ class UserAdmin extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'patron' => 'hashed',
+            'patron_longitud' => 'integer',
             'activo' => 'boolean',
+        ];
+    }
+
+    /**
+     * @param  list<string>  $direcciones
+     */
+    public function patronCoincide(array $direcciones): bool
+    {
+        if (blank($this->patron)) {
+            return false;
+        }
+
+        return Hash::check(self::patronNormalizado($direcciones), $this->patron);
+    }
+
+    /**
+     * @param  list<string>  $direcciones
+     */
+    public static function patronNormalizado(array $direcciones): string
+    {
+        return json_encode(array_values($direcciones), JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * @param  list<string>  $direcciones
+     * @return array{patron: string, patron_longitud: int}
+     */
+    public static function atributosPatron(array $direcciones): array
+    {
+        return [
+            'patron' => self::patronNormalizado($direcciones),
+            'patron_longitud' => count($direcciones),
         ];
     }
 

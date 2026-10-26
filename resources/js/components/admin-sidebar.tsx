@@ -2,7 +2,6 @@ import { Form, Link, usePage } from '@inertiajs/react';
 import {
     Activity,
     Box,
-    Contact,
     Factory,
     FileText,
     Headphones,
@@ -11,7 +10,6 @@ import {
     LifeBuoy,
     LogOut,
     Package,
-    Phone,
     Settings,
     UserPen,
     UserPlus,
@@ -37,14 +35,14 @@ import {
     modelosEquipos as adminModelosEquipos,
     monitoreo as adminMonitoreo,
 } from '@/routes/admin';
-import { index as adminDatosContacto } from '@/routes/admin/datos-contacto';
+// import { index as adminDatosContacto } from '@/routes/admin/datos-contacto';
 import { create as adminEquipos } from '@/routes/admin/equipos';
 import { index as adminCotizaciones } from '@/routes/admin/cotizaciones';
 import { index as adminCotizacionesRefacciones } from '@/routes/admin/cotizaciones-refacciones';
 import { index as adminSoporte } from '@/routes/admin/soporte';
 import { index as adminFabricantes } from '@/routes/admin/fabricantes';
 import { create as adminRefacciones } from '@/routes/admin/refacciones';
-import { index as adminServicios } from '@/routes/admin/servicios';
+// import { index as adminServicios } from '@/routes/admin/servicios';
 import {
     create as adminUsuariosCreate,
     edit as adminUsuariosEdit,
@@ -84,18 +82,18 @@ const contentItems: NavItem[] = [
         icon: Factory,
         area: 'fabricantes',
     },
-    {
-        title: 'Datos de contacto',
-        href: adminDatosContacto(),
-        icon: Phone,
-        area: 'datos-contacto',
-    },
-    {
-        title: 'Servicios',
-        href: adminServicios(),
-        icon: Contact,
-        area: 'servicios',
-    },
+    // {
+    //     title: 'Datos de contacto',
+    //     href: adminDatosContacto(),
+    //     icon: Phone,
+    //     area: 'datos-contacto',
+    // },
+    // {
+    //     title: 'Servicios',
+    //     href: adminServicios(),
+    //     icon: Contact,
+    //     area: 'servicios',
+    // },
 ];
 
 const userItems: NavItem[] = [
@@ -124,13 +122,13 @@ const supportItems: NavItem[] = [
         title: 'Cotizaciones de refacciones',
         href: adminCotizacionesRefacciones(),
         icon: FileText,
-        area: 'cotizaciones',
+        area: 'cotizaciones-refacciones',
     },
     {
         title: 'Soporte',
         href: adminSoporte(),
         icon: LifeBuoy,
-        area: 'cotizaciones',
+        area: 'soporte',
     },
     {
         title: 'Configuración',

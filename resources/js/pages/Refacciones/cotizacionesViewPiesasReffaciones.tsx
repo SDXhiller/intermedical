@@ -133,10 +133,9 @@ export default function CotizacionesViewPiesasReffaciones({
 }: Props) {
     const modalidadSeleccionada =
         refaccion?.modalidad ?? modalidad;
-    const { flash, whatsappNumber } = usePage<{
-        flash?: { success?: string | null };
-        whatsappNumber?: string | null;
-    }>().props;
+        const { whatsappNumber } = usePage<{
+            whatsappNumber?: string | null;
+        }>().props;
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const photosRef = useRef<PhotoItem[]>([]);
@@ -144,6 +143,20 @@ export default function CotizacionesViewPiesasReffaciones({
     const [photos, setPhotos] = useState<PhotoItem[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const [photoError, setPhotoError] = useState('');
+    const [modalExitoAbierto, setModalExitoAbierto] = useState(false);
+    useEffect(() => {
+        if (!modalExitoAbierto) {
+            return;
+        }
+    
+        const overflowAnterior = document.body.style.overflow;
+    
+        document.body.style.overflow = 'hidden';
+    
+        return () => {
+            document.body.style.overflow = overflowAnterior;
+        };
+    }, [modalExitoAbierto]);
 
     const form = useForm<FormValues & { imagenes?: File[] }>({
         cliente: '',
@@ -304,15 +317,18 @@ export default function CotizacionesViewPiesasReffaciones({
         form.post(action, {
             forceFormData: true,
             preserveScroll: true,
+        
             onSuccess: () => {
                 setPhotos((current) => {
                     current.forEach((photo) => {
                         URL.revokeObjectURL(photo.preview);
                     });
-
+        
                     return [];
                 });
+        
                 setPhotoError('');
+        
                 form.reset(
                     'cliente',
                     'direccion',
@@ -323,6 +339,9 @@ export default function CotizacionesViewPiesasReffaciones({
                     'equipo',
                     'descripcion',
                 );
+        
+                // Mostrar modal de confirmación.
+                setModalExitoAbierto(true);
             },
         });
     };
@@ -924,14 +943,6 @@ export default function CotizacionesViewPiesasReffaciones({
                             </button>
                         </div>
 
-                        {flash?.success && (
-                            <div
-                                role="status"
-                                className="rounded-xl border border-[#006635]/40 bg-[#006635]/15 p-4 text-sm text-[#b7ebc9]"
-                            >
-                                {flash.success}
-                            </div>
-                        )}
                     </form>
                     {/* FIN DE LA COLUMNA IZQUIERDA */}
 
@@ -954,10 +965,11 @@ export default function CotizacionesViewPiesasReffaciones({
                                     </h2>
 
                                     <p className="mt-2 text-sm leading-relaxed text-white/55">
-                                        Comunícate directamente con nuestro equipo.
-                                        Prepararemos un mensaje con los datos que
-                                        hayas ingresado en el formulario para
-                                        facilitar la atención de tu solicitud.
+                                    Completa el formulario de cotización y observa
+                                    cómo se genera automáticamente tu mensaje de
+                                    WhatsApp con la información que ingreses.
+                                    Podrás revisarlo antes de iniciar la
+                                    conversación con nuestro equipo.
                                     </p>
                                 </div>
                             </div>
@@ -1046,6 +1058,77 @@ export default function CotizacionesViewPiesasReffaciones({
 
                 </div>
             </main>
+            
+            {/* =====================================
+                MODAL DE COTIZACIÓN ENVIADA
+            ===================================== */}
+
+{modalExitoAbierto && (
+                <div
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm"
+                    role="presentation"
+                >
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="titulo-modal-exito"
+                        aria-describedby="descripcion-modal-exito"
+                        className="relative w-full max-w-lg rounded-2xl border border-[#006635]/60 bg-[#071710] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.6)] sm:p-8"
+                    >
+                        {/* Icono de confirmación */}
+
+                        <div className="flex justify-center">
+                            <div className="flex size-16 items-center justify-center rounded-full bg-[#006635] shadow-[0_0_30px_rgba(0,102,53,0.25)]">
+                                <CheckCircle2 className="size-9 text-white" />
+                            </div>
+                        </div>
+
+                        {/* Título y descripción */}
+
+                        <div className="mt-6 text-center">
+                            <h2
+                                id="titulo-modal-exito"
+                                className="text-xl font-bold tracking-tight text-white sm:text-2xl"
+                            >
+                                ¡Solicitud enviada correctamente!
+                            </h2>
+
+                            <p
+                                id="descripcion-modal-exito"
+                                className="mt-4 text-sm leading-7 text-white/65"
+                            >
+                                Hemos recibido tu solicitud de cotización
+                                de refacciones. Nuestro equipo revisará
+                                la información y se pondrá en contacto
+                                contigo a través de los datos proporcionados.
+                            </p>
+                        </div>
+
+                        {/* Mensaje institucional */}
+
+                        <div className="mt-6 border-t border-[#006635]/40 pt-5">
+                            <div className="flex items-center justify-center gap-2 text-center">
+                                <CheckCircle2 className="size-4 shrink-0 text-[#4cc185]" />
+
+                                <p className="text-xs leading-relaxed text-white/50">
+                                    Gracias por confiar en MIG Medical Imaging Group.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Botón para cerrar */}
+
+                        <button
+                            type="button"
+                            onClick={() => setModalExitoAbierto(false)}
+                            className="mt-7 flex min-h-12 w-full items-center justify-center rounded-xl bg-[#006635] px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#087a43] hover:shadow-[0_8px_25px_rgba(0,102,53,0.25)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4cc185]"
+                        >
+                            Aceptar
+                        </button>
+                    </div>
+                </div>
+            )}
+
         </>
     );
 }

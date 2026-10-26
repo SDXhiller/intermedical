@@ -289,7 +289,7 @@ test('equipment managers cannot access support requests', function () {
         ->assertForbidden();
 });
 
-test('the support sidebar item is listed under cotizaciones', function () {
+test('the support sidebar item uses its own access area', function () {
     $sidebar = file_get_contents(resource_path('js/components/admin-sidebar.tsx'));
 
     expect($sidebar)->not->toBeFalse();
@@ -305,5 +305,7 @@ test('the support sidebar item is listed under cotizaciones', function () {
     expect($sidebar)
         ->toContain('href: adminSoporte()')
         ->toContain("area: 'cotizaciones'")
+        ->toContain("area: 'cotizaciones-refacciones'")
+        ->toContain("area: 'soporte'")
         ->toContain("title: 'Módulos'");
 });

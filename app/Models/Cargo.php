@@ -40,6 +40,10 @@ class Cargo extends Model
 
     public const AREA_COTIZACIONES = 'cotizaciones';
 
+    public const AREA_COTIZACIONES_REFACCIONES = 'cotizaciones-refacciones';
+
+    public const AREA_SOPORTE = 'soporte';
+
     public const AREA_USUARIOS = 'usuarios';
 
     public const AREA_CONFIGURACION = 'configuracion';
@@ -61,6 +65,8 @@ class Cargo extends Model
             self::AREA_DATOS_CONTACTO,
             self::AREA_SERVICIOS,
             self::AREA_COTIZACIONES,
+            self::AREA_COTIZACIONES_REFACCIONES,
+            self::AREA_SOPORTE,
             self::AREA_USUARIOS,
             self::AREA_CONFIGURACION,
         ];
@@ -87,7 +93,10 @@ class Cargo extends Model
     {
         return match ($this->slug) {
             self::SLUG_SUPER_USUARIO => self::allAreas(),
-            self::SLUG_GERENTE_VENTAS => [self::AREA_COTIZACIONES],
+            self::SLUG_GERENTE_VENTAS => [
+                self::AREA_COTIZACIONES,
+                self::AREA_COTIZACIONES_REFACCIONES,
+            ],
             self::SLUG_EQUIPOS => [
                 self::AREA_EQUIPOS,
                 self::AREA_MODELOS_EQUIPOS,
@@ -96,6 +105,8 @@ class Cargo extends Model
             self::SLUG_ATENCION => [
                 self::AREA_DATOS_CONTACTO,
                 self::AREA_SERVICIOS,
+                self::AREA_SOPORTE,
+                self::AREA_COTIZACIONES_REFACCIONES,
             ],
             default => [],
         };

@@ -83,7 +83,7 @@ final class AdminDashboardOverview
             ];
         }
 
-        if ($this->admin->canAccess(Cargo::AREA_COTIZACIONES)) {
+        if ($this->admin->canAccess(Cargo::AREA_SOPORTE)) {
             $soporteTotal = SolicitudSoporte::query()->count();
             $soportePendientes = SolicitudSoporte::query()->where('estatus', 'en_espera')->count();
             $soporteNuevasMes = SolicitudSoporte::query()
@@ -123,7 +123,7 @@ final class AdminDashboardOverview
         $acciones = [
             ['key' => 'equipos', 'title' => 'Nuevo módulo', 'area' => Cargo::AREA_EQUIPOS],
             ['key' => 'modelos', 'title' => 'Equipos', 'area' => Cargo::AREA_MODELOS_EQUIPOS],
-            ['key' => 'soporte', 'title' => 'Ver soporte', 'area' => Cargo::AREA_COTIZACIONES],
+            ['key' => 'soporte', 'title' => 'Ver soporte', 'area' => Cargo::AREA_SOPORTE],
             ['key' => 'cotizaciones', 'title' => 'Ver cotizaciones', 'area' => Cargo::AREA_COTIZACIONES],
         ];
 
@@ -177,7 +177,7 @@ final class AdminDashboardOverview
             );
         }
 
-        if ($this->admin->canAccess(Cargo::AREA_COTIZACIONES)) {
+        if ($this->admin->canAccess(Cargo::AREA_SOPORTE)) {
             $items = $items->concat(
                 SolicitudSoporte::query()
                     ->latest('updated_at')

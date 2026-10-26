@@ -34,6 +34,7 @@ createInertiaApp({
                 name !== 'Modulos/Crear-fabricante':
                 return SiteLayout;
             case name === 'Admins/Login':
+            case name === 'Admins/Patron':
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name === 'Modulos/Registrar-modulo':

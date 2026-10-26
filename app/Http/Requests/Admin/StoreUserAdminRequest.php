@@ -49,6 +49,8 @@ class StoreUserAdminRequest extends FormRequest
                 ),
             ],
             'password' => $this->passwordRules(),
+            'patron' => ['required', 'array', 'min:5', 'max:10'],
+            'patron.*' => ['required', 'string', Rule::in(UserAdmin::PATRON_DIRECCIONES)],
         ];
     }
 
@@ -72,6 +74,10 @@ class StoreUserAdminRequest extends FormRequest
             'rol_usuario_id.exists' => 'El rol seleccionado no es válido.',
             'password.required' => 'La contraseña es obligatoria.',
             'password.confirmed' => 'La confirmación de contraseña no coincide.',
+            'patron.required' => 'Configure el patrón de seguridad.',
+            'patron.min' => 'El patrón debe contener entre 5 y 10 movimientos.',
+            'patron.max' => 'El patrón debe contener entre 5 y 10 movimientos.',
+            'patron.*.in' => 'El patrón solo puede usar las flechas de dirección.',
         ];
     }
 
@@ -80,7 +86,7 @@ class StoreUserAdminRequest extends FormRequest
      */
     public function adminAttributes(): array
     {
-        /** @var array{nombre: string, apellidos: string, nombre_usuario: string, correo: string, cargo_id: int, rol_usuario_id: int, password: string} $validated */
+        /** @var array{nombre: string, apellidos: string, nombre_usuario: string, correo: string, cargo_id: int, rol_usuario_id: int, password: string, patron: list<string>} $validated */
         $validated = $this->safe()->except(['password_confirmation']);
 
         return [
@@ -92,6 +98,7 @@ class StoreUserAdminRequest extends FormRequest
             'rol_usuario_id' => $validated['rol_usuario_id'],
             'activo' => true,
             'password' => $validated['password'],
+            ...UserAdmin::atributosPatron($validated['patron']),
         ];
     }
 }

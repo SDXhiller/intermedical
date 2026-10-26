@@ -65,6 +65,8 @@ class UpdateUserAdminRequest extends FormRequest
             'rol_usuario_id' => ['required', 'integer', $rolRule],
             'activo' => ['required', 'boolean'],
             'password' => $this->optionalPasswordRules(),
+            'patron' => ['sometimes', 'array', 'min:5', 'max:10'],
+            'patron.*' => ['required', 'string', Rule::in(UserAdmin::PATRON_DIRECCIONES)],
         ];
     }
 
@@ -87,6 +89,10 @@ class UpdateUserAdminRequest extends FormRequest
             'rol_usuario_id.exists' => 'El rol seleccionado no es válido.',
             'activo.required' => 'Seleccione si el usuario está activo.',
             'password.confirmed' => 'La confirmación de contraseña no coincide.',
+            'patron.array' => 'Configure el patrón de seguridad.',
+            'patron.min' => 'El patrón debe contener entre 5 y 10 movimientos.',
+            'patron.max' => 'El patrón debe contener entre 5 y 10 movimientos.',
+            'patron.*.in' => 'El patrón solo puede usar las flechas de dirección.',
         ];
     }
 
@@ -95,7 +101,7 @@ class UpdateUserAdminRequest extends FormRequest
      */
     public function adminAttributes(): array
     {
-        /** @var array{nombre: string, apellidos: string|null, nombre_usuario: string, correo: string, cargo_id: int, rol_usuario_id: int, activo: bool, password?: string|null} $validated */
+        /** @var array{nombre: string, apellidos: string|null, nombre_usuario: string, correo: string, cargo_id: int, rol_usuario_id: int, activo: bool, password?: string|null, patron?: list<string>} $validated */
         $validated = $this->safe()->except(['password_confirmation']);
 
         $attributes = [
@@ -116,6 +122,13 @@ class UpdateUserAdminRequest extends FormRequest
 
         if (! empty($validated['password'])) {
             $attributes['password'] = $validated['password'];
+        }
+
+        if (isset($validated['patron'])) {
+            $attributes = [
+                ...$attributes,
+                ...UserAdmin::atributosPatron($validated['patron']),
+            ];
         }
 
         return $attributes;

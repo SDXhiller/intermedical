@@ -1,5 +1,5 @@
 
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import {
     Building2,
     CalendarDays,
@@ -18,6 +18,7 @@ import {
     Phone,
     Save,
     Search,
+    Trash2,
     UserRound,
     X,
     XCircle,
@@ -25,7 +26,10 @@ import {
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 import Heading from '@/components/heading';
-import { update as actualizarSeguimiento } from '@/routes/admin/cotizaciones-refacciones';
+import {
+    destroy as eliminarCotizacion,
+    update as actualizarSeguimiento,
+} from '@/routes/admin/cotizaciones-refacciones';
 
 /* =====================================================
    TIPOS
@@ -184,8 +188,10 @@ function DatoDetalle({
 
 export default function CotizacionListradoView({
     cotizaciones,
+    puedeEliminar = false,
 }: {
     cotizaciones: Cotizacion[];
+    puedeEliminar?: boolean;
 }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [filtroEstado, setFiltroEstado] =
@@ -194,6 +200,9 @@ export default function CotizacionListradoView({
     const [cotizacionSeleccionada, setCotizacionSeleccionada] =
         useState<Cotizacion | null>(null);
     const [seguimientoAbierto, setSeguimientoAbierto] = useState(false);
+    const [cotizacionAEliminar, setCotizacionAEliminar] =
+        useState<Cotizacion | null>(null);
+    const [eliminando, setEliminando] = useState(false);
     const seguimiento = useForm<{
         estado: EstadoSeguimiento;
         observaciones: string;
@@ -284,6 +293,30 @@ export default function CotizacionListradoView({
     const cambiarBusqueda = (value: string) => {
         setSearchTerm(value);
         setPaginaActual(1);
+    };
+
+    const confirmarEliminacion = () => {
+        if (!cotizacionAEliminar) {
+            return;
+        }
+
+        const id = cotizacionAEliminar.id;
+
+        setEliminando(true);
+
+        router.delete(eliminarCotizacion.url(id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setCotizacionSeleccionada((actual) =>
+                    actual?.id === id ? null : actual,
+                );
+                setSeguimientoAbierto(false);
+            },
+            onFinish: () => {
+                setEliminando(false);
+                setCotizacionAEliminar(null);
+            },
+        });
     };
 
     const cerrarDetalle = () => {
@@ -553,18 +586,34 @@ export default function CotizacionListradoView({
                                             </td>
 
                                             <td className="px-5 py-4 text-right">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setCotizacionSeleccionada(
-                                                            item,
-                                                        )
-                                                    }
-                                                    className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-[#252b27] px-3 py-2 text-xs font-semibold text-white transition hover:border-[#006635]/60 hover:bg-[#303b33]"
-                                                >
-                                                    <Eye className="size-4" />
-                                                    Ver solicitud
-                                                </button>
+                                                <div className="flex flex-wrap items-center justify-end gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setCotizacionSeleccionada(
+                                                                item,
+                                                            )
+                                                        }
+                                                        className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-[#252b27] px-3 py-2 text-xs font-semibold text-white transition hover:border-[#006635]/60 hover:bg-[#303b33]"
+                                                    >
+                                                        <Eye className="size-4" />
+                                                        Ver solicitud
+                                                    </button>
+                                                    {puedeEliminar && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setCotizacionAEliminar(
+                                                                    item,
+                                                                )
+                                                            }
+                                                            className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20"
+                                                        >
+                                                            <Trash2 className="size-4" />
+                                                            Eliminar
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ),
@@ -613,18 +662,34 @@ export default function CotizacionListradoView({
                                     </p>
                                 </div>
 
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setCotizacionSeleccionada(
-                                            item,
-                                        )
-                                    }
-                                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 bg-[#252b27] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#303b33]"
-                                >
-                                    <Eye className="size-4" />
-                                    Ver solicitud
-                                </button>
+                                <div className="mt-4 flex flex-col gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setCotizacionSeleccionada(
+                                                item,
+                                            )
+                                        }
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 bg-[#252b27] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#303b33]"
+                                    >
+                                        <Eye className="size-4" />
+                                        Ver solicitud
+                                    </button>
+                                    {puedeEliminar && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setCotizacionAEliminar(
+                                                    item,
+                                                )
+                                            }
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-300 transition hover:bg-red-500/20"
+                                        >
+                                            <Trash2 className="size-4" />
+                                            Eliminar
+                                        </button>
+                                    )}
+                                </div>
                             </article>
                         ))}
                     </div>
@@ -1017,6 +1082,63 @@ export default function CotizacionListradoView({
                                     : 'Guardar seguimiento'}
                             </button>
                         </form>
+                    </div>
+                )}
+
+                {cotizacionAEliminar && (
+                    <div
+                        className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6"
+                        onMouseDown={(event) => {
+                            if (
+                                event.target === event.currentTarget &&
+                                !eliminando
+                            ) {
+                                setCotizacionAEliminar(null);
+                            }
+                        }}
+                    >
+                        <div
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="titulo-eliminar-cotizacion"
+                            className="w-full max-w-md rounded-2xl border border-white/15 bg-[#111513] p-5 shadow-2xl sm:p-6"
+                        >
+                            <h2
+                                id="titulo-eliminar-cotizacion"
+                                className="text-lg font-semibold text-white"
+                            >
+                                Eliminar solicitud
+                            </h2>
+                            <p className="mt-2 text-sm leading-relaxed text-white/70">
+                                ¿Desea eliminar la solicitud de{' '}
+                                <span className="font-semibold text-white">
+                                    {cotizacionAEliminar.cliente}
+                                </span>
+                                ? Esta acción no se puede deshacer.
+                            </p>
+                            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                                <button
+                                    type="button"
+                                    disabled={eliminando}
+                                    onClick={() =>
+                                        setCotizacionAEliminar(null)
+                                    }
+                                    className="rounded-lg border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-60"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={eliminando}
+                                    onClick={confirmarEliminacion}
+                                    className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-60"
+                                >
+                                    {eliminando
+                                        ? 'Eliminando...'
+                                        : 'Eliminar'}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
 
