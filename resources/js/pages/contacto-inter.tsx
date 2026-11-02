@@ -1,4 +1,5 @@
 import { Head } from '@inertiajs/react';
+import type { LucideIcon } from 'lucide-react';
 import {
     Building2,
     Clock3,
@@ -8,7 +9,6 @@ import {
     MapPin,
     Phone,
     ShieldCheck,
-    type LucideIcon,
 } from 'lucide-react';
 import ContactoOfficeMap from '@/components/contacto-office-map';
 import { SiteBreadcrumb } from '@/components/site-breadcrumb';
@@ -71,9 +71,9 @@ export default function ContactoInter() {
 
             <section className="relative overflow-hidden bg-neutral-950">
                 <div
-                    className={`relative mx-auto grid items-center gap-8 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10 lg:py-14 ${CONTENT_WIDTH}`}
+                    className={`relative mx-auto py-10 sm:py-12 lg:py-14 ${CONTENT_WIDTH}`}
                 >
-                    <div className="relative z-10">
+                    <div className="relative z-10 max-w-xl lg:max-w-[52%]">
                         <SiteBreadcrumb
                             items={[
                                 { label: 'Inicio', href: home.url(), icon: Home },
@@ -84,13 +84,15 @@ export default function ContactoInter() {
                         <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.25rem] lg:leading-tight">
                             Contacto
                         </h1>
-                        <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
+                        <p className="mt-4 text-sm leading-relaxed text-white/80 sm:text-base">
                             Estamos listos para atender tus necesidades en
                             imagenología médica. Elige la forma de contacto que
                             prefieras y cuéntanos cómo podemos ayudarte.
                         </p>
+                    </div>
 
-                        <ul className="mt-7 grid gap-3 sm:grid-cols-3 sm:gap-4">
+                    <div className="relative mt-7 grid grid-cols-[minmax(0,1.15fr)_minmax(8.5rem,0.9fr)] items-center gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4 lg:mt-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-10">
+                        <ul className="relative z-10 grid gap-3 sm:col-span-3 sm:grid-cols-3 sm:gap-4 lg:col-span-1 lg:content-center lg:gap-3">
                             {heroHighlights.map(({ title, icon: Icon }) => (
                                 <li
                                     key={title}
@@ -113,24 +115,24 @@ export default function ContactoInter() {
                                 </li>
                             ))}
                         </ul>
-                    </div>
 
-                    <div className="relative min-h-[220px] overflow-hidden sm:min-h-[260px] lg:min-h-[320px]">
-                        <div
-                            className="pointer-events-none absolute inset-0"
-                            aria-hidden="true"
-                        >
-                            <img
-                                src={CONTACT_HERO_IMAGE}
-                                alt=""
-                                className="absolute inset-0 size-full scale-110 object-cover object-right opacity-50 blur-2xl [mask-image:linear-gradient(to_right,transparent_8%,black_42%)] [-webkit-mask-image:linear-gradient(to_right,transparent_8%,black_42%)]"
-                            />
-                            <img
-                                src={CONTACT_HERO_IMAGE}
-                                alt="Resonancia magnética cerebral"
-                                className="absolute inset-0 size-full object-cover object-right [mask-image:linear-gradient(to_right,transparent_12%,black_48%)] [-webkit-mask-image:linear-gradient(to_right,transparent_12%,black_48%)]"
-                            />
-                            <div className="absolute inset-y-0 left-0 w-[42%] bg-gradient-to-r from-neutral-950 from-20% via-neutral-950/75 via-70% to-transparent" />
+                        <div className="relative min-h-[132px] overflow-hidden sm:col-span-3 sm:min-h-[220px] lg:col-span-1 lg:min-h-[280px]">
+                            <div
+                                className="pointer-events-none absolute inset-0"
+                                aria-hidden="true"
+                            >
+                                <img
+                                    src={CONTACT_HERO_IMAGE}
+                                    alt=""
+                                    className="absolute inset-0 size-full scale-110 object-cover object-center opacity-50 blur-2xl sm:object-right lg:[mask-image:linear-gradient(to_right,transparent_8%,black_42%)] lg:[-webkit-mask-image:linear-gradient(to_right,transparent_8%,black_42%)]"
+                                />
+                                <img
+                                    src={CONTACT_HERO_IMAGE}
+                                    alt="Resonancia magnética cerebral"
+                                    className="absolute inset-0 size-full object-cover object-center sm:object-right lg:[mask-image:linear-gradient(to_right,transparent_12%,black_48%)] lg:[-webkit-mask-image:linear-gradient(to_right,transparent_12%,black_48%)]"
+                                />
+                                <div className="absolute inset-y-0 left-0 w-[28%] bg-gradient-to-r from-neutral-950 from-10% via-neutral-950/70 via-65% to-transparent sm:w-[36%] lg:w-[42%] lg:from-20% lg:via-70%" />
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import type { LucideIcon } from 'lucide-react';
 import {
     ArrowRight,
     Building2,
@@ -9,21 +10,18 @@ import {
     Target,
     Users,
     Wrench,
-    type LucideIcon,
 } from 'lucide-react';
-import { useMemo, type CSSProperties } from 'react';
-import {
-    BRAND_COLOR,
-    CONTENT_WIDTH,
-    type ManufacturerItem,
-} from '@/data/equipment';
+import type { CSSProperties } from 'react';
+import { useMemo } from 'react';
+import type { ManufacturerItem } from '@/data/equipment';
+import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { contacto, mantenimiento, sobreNosotros } from '@/routes';
 import {
     equipos as bibliotecaEquipos,
     equiposDisponibles,
 } from '@/routes/biblioteca';
 
-const HERO_BANNER = '/Imagen/Body/2149341486.jpg';
+const HERO_BANNER = `/Imagen/Body/${encodeURIComponent('Tomografo_moderno_en_sala_clínica.png')}`;
 const SERVICIOS_CARD_IMAGE = `/Imagen/Servicios/${encodeURIComponent('Imagen de ChatGPT 27 sept 2026, 04_37_57 p.m..png')}`;
 const MODALIDADES_CARD_IMAGE = `/Imagen/Servicios/${encodeURIComponent('Imagen de ChatGPT 27 sept 2026, 04_57_16 p.m..png')}`;
 const EQUIPOS_CARD_IMAGE = `/Imagen/Servicios/${encodeURIComponent('Imagen de ChatGPT 27 sept 2026, 05_07_19 p.m..png')}`;
@@ -349,29 +347,39 @@ export default function Welcome() {
         <>
             <Head title="Medical Imaging Group" />
 
-            {/* Hero */}
-            <section className="relative overflow-hidden bg-neutral-950">
-                <div
-                    className="pointer-events-none absolute inset-0 hidden lg:block"
-                    aria-hidden="true"
-                >
-                    <img
-                        src={HERO_BANNER}
-                        alt=""
-                        className="absolute inset-0 size-full scale-110 object-cover object-[center_70%] opacity-50 blur-2xl [mask-image:linear-gradient(to_right,transparent_18%,black_48%,black_82%,transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent_18%,black_48%,black_82%,transparent)]"
-                    />
-                    <img
-                        src={HERO_BANNER}
-                        alt=""
-                        className="absolute inset-0 size-full object-cover object-[center_70%] [mask-image:linear-gradient(to_right,transparent_32%,black_58%,black_86%,transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent_32%,black_58%,black_86%,transparent)]"
-                    />
-                    <div className="absolute inset-y-0 left-0 w-[46%] bg-gradient-to-r from-neutral-950 from-40% via-neutral-950/70 via-70% to-transparent" />
-                    <div className="absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-neutral-950 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-neutral-950 to-transparent" />
-                </div>
+{/* Hero */}
+<section className="relative isolate min-h-[680px] overflow-hidden bg-neutral-950 lg:min-h-[680px] xl:min-h-[740px]">
+
+{/* Imagen principal del Hero */}
+<div
+    className="pointer-events-none absolute inset-0 hidden overflow-hidden lg:block"
+    aria-hidden="true"
+>
+    {/* Imagen desplazada hacia la derecha */}
+    <div className="absolute inset-y-0 right-0 w-[78%] xl:w-[76%]">
+        <img
+            src={HERO_BANNER}
+            alt=""
+            className="h-full w-full object-cover object-[68%_center] xl:object-[65%_center]"
+        />
+    </div>
+
+    {/* Degradado izquierdo para proteger el texto */}
+    <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 from-[12%] via-neutral-950/90 via-[28%] to-transparent to-[68%]" />
+
+    {/* Oscurecimiento suave en el extremo derecho */}
+    <div className="absolute inset-y-0 right-0 w-[12%] bg-gradient-to-l from-neutral-950/50 to-transparent" />
+
+    {/* Degradado inferior */}
+    <div className="absolute inset-x-0 bottom-0 h-[28%] bg-gradient-to-t from-neutral-950 via-neutral-950/50 to-transparent" />
+
+    {/* Degradado superior */}
+    <div className="absolute inset-x-0 top-0 h-[12%] bg-gradient-to-b from-neutral-950/35 to-transparent" />
+</div>
+
 
                 <div
-                    className={`relative z-10 mx-auto grid items-center gap-6 py-6 sm:gap-8 sm:py-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)] lg:gap-6 lg:py-16 ${CONTENT_WIDTH}`}
+                    className={`relative z-10 mx-auto grid min-h-[680px] items-center gap-6 py-8 sm:gap-8 sm:py-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6 lg:py-12 xl:min-h-[740px] ${CONTENT_WIDTH}`}
                 >
                     <div className="relative z-10">
                         <div className="max-w-xl">
@@ -390,7 +398,7 @@ export default function Welcome() {
                             <img
                                 src={HERO_BANNER}
                                 alt="Equipo de imagenología médica"
-                                className="h-52 w-full object-cover object-center sm:h-72"
+                                className="aspect-video w-full object-cover object-[88%_center]"
                             />
                             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-950/40 to-transparent" />
                         </div>
@@ -437,7 +445,7 @@ export default function Welcome() {
                         </div>
                     </div>
 
-                    <div className="relative z-10 hidden min-h-[420px] items-center justify-end lg:flex">
+                    <div className="relative z-10 hidden lg:block" aria-hidden="true">
                         <img
                             src={HERO_BANNER}
                             alt="Equipo de imagenología médica"
@@ -470,12 +478,14 @@ export default function Welcome() {
                 </div>
             </section>
 
-            {/* Presentación */}
-            <section className="bg-[#05070a] text-white">
-                <div className={`mx-auto ${CONTENT_WIDTH}`}>
+            {/* Presentación + servicios */}
+            <section className="relative isolate overflow-hidden bg-neutral-950 text-white">
+                <DigitalLinesBackdrop />
+
+                <div className={`relative z-10 mx-auto ${CONTENT_WIDTH}`}>
                     <div className="h-px w-full bg-white/10" />
 
-                    <div className="grid items-center gap-8 overflow-visible py-10 sm:gap-10 sm:py-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-8 lg:overflow-hidden lg:py-16 xl:gap-10">
+                    <div className="grid items-center gap-8 overflow-hidden py-10 sm:gap-10 sm:py-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-8 lg:py-16 xl:gap-10">
                         <div className="max-w-2xl">
                             <p
                                 className="text-xs font-bold tracking-[0.14em] uppercase sm:text-sm"
@@ -627,50 +637,24 @@ export default function Welcome() {
                     </div>
 
                     <div className="h-px w-full bg-white/10" />
-                </div>
-            </section>
 
-            {/* Servicios más solicitados */}
-            <section className="relative w-full overflow-hidden bg-white py-10 dark:bg-neutral-950 sm:py-12 lg:py-16">
-                <DigitalLinesBackdrop />
-                <div className={`relative z-10 mx-auto ${CONTENT_WIDTH}`}>
-                    <p className="text-xs font-bold tracking-wider text-[#0a7c4a]">
-                        NUESTROS SERVICIOS MÁS SOLICITADOS
-                    </p>
-                    <h2 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white lg:text-3xl">
-                        Productos y soluciones diseñados para usted
-                    </h2>
-                    <div
-                        className="mt-3 h-1 w-12 rounded-full"
-                        style={{ backgroundColor: BRAND_COLOR }}
-                    />
-
-                    <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-                        {exploreCards.map((card) => (
-                            <HomeExploreCard key={card.title} {...card} />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Carrusel de fabricantes */}
-            <section className="relative w-full overflow-hidden bg-white py-10 dark:bg-neutral-950 sm:py-12 lg:py-16">
-                <DigitalLinesBackdrop />
-                <div className="relative z-10">
-                    <div className={`mx-auto ${CONTENT_WIDTH}`}>
+                    <div className="py-10 sm:py-12 lg:py-16">
                         <p className="text-xs font-bold tracking-wider text-[#0a7c4a]">
-                            ALIANZAS TECNOLÓGICAS
+                            NUESTROS SERVICIOS MÁS SOLICITADOS
                         </p>
-                        <h2 className="mt-2 text-2xl font-bold text-gray-900 dark:text-white lg:text-3xl">
-                            Fabricantes que respaldan nuestra gama de productos
+                        <h2 className="mt-2 text-2xl font-bold text-white lg:text-3xl">
+                            Productos y soluciones diseñados para usted
                         </h2>
                         <div
                             className="mt-3 h-1 w-12 rounded-full"
                             style={{ backgroundColor: BRAND_COLOR }}
                         />
-                    </div>
-                    <div className="mt-8 w-full">
-                        <ManufacturerCarousel items={manufacturerItems} />
+
+                        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+                            {exploreCards.map((card) => (
+                                <HomeExploreCard key={card.title} {...card} />
+                            ))}
+                        </div>
                     </div>
                 </div>
             </section>

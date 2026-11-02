@@ -174,12 +174,16 @@ test('a public support form stores a written equipment name', function () {
         'slug' => 'mastografia',
         'estatus_id' => $activo->id,
     ]);
+    $fabricante = Fabricante::factory()->create([
+        'nombre' => 'Hologic',
+        'activo' => true,
+    ]);
 
     $this->post(route('mantenimiento.soporte.store'), [
         'servicio' => 'mantenimiento-correctivo',
         'modalidad' => 'mastografia',
         'equipo_nombre' => 'Selenia Dimensions',
-        'marca' => 'Hologic',
+        'fabricante_id' => $fabricante->id,
         'nombre' => 'Ana Ruiz',
         'codigo_pais' => '+52',
         'telefono' => '5512345678',
@@ -193,6 +197,63 @@ test('a public support form stores a written equipment name', function () {
         ->and($solicitud->equipo_modulo_id)->toBeNull()
         ->and($solicitud->equipo_nombre)->toBe('Selenia Dimensions')
         ->and($solicitud->marca)->toBe('Hologic');
+});
+
+test('a public support form stores a custom brand with otro', function () {
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    Modulo::factory()->create([
+        'modulo' => 'Ultrasonido',
+        'slug' => 'ultrasonido',
+        'estatus_id' => $activo->id,
+    ]);
+
+    $this->post(route('mantenimiento.soporte.store'), [
+        'servicio' => 'mantenimiento-correctivo',
+        'modalidad' => 'ultrasonido',
+        'equipo_nombre' => 'Equipo especial',
+        'fabricante_id' => 'otro',
+        'marca_otra' => 'Marca Libre',
+        'nombre' => 'Ana Ruiz',
+        'codigo_pais' => '+52',
+        'telefono' => '5512345678',
+        'correo' => 'ana@ejemplo.com',
+        'descripcion' => 'No enciende.',
+    ])->assertRedirect(route('mantenimiento.soporte'));
+
+    $solicitud = SolicitudSoporte::query()->first();
+
+    expect($solicitud)->not->toBeNull()
+        ->and($solicitud->marca)->toBe('Marca Libre');
+});
+
+test('preventive maintenance does not require a failure description', function () {
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    Modulo::factory()->create([
+        'modulo' => 'Ultrasonido',
+        'slug' => 'ultrasonido',
+        'estatus_id' => $activo->id,
+    ]);
+    TipoServicioMantenimiento::query()->updateOrCreate(
+        ['slug' => 'mantenimiento-preventivo'],
+        ['nombre' => 'Mantenimiento preventivo', 'activo' => true],
+    );
+
+    $this->post(route('mantenimiento.soporte.store'), [
+        'servicio' => 'mantenimiento-preventivo',
+        'modalidad' => 'ultrasonido',
+        'equipo_nombre' => 'LOGIQ E',
+        'fabricante_id' => 'otro',
+        'marca_otra' => 'GE',
+        'nombre' => 'Ana Ruiz',
+        'codigo_pais' => '+52',
+        'telefono' => '5512345678',
+        'correo' => 'ana@ejemplo.com',
+    ])->assertRedirect(route('mantenimiento.soporte'));
+
+    $solicitud = SolicitudSoporte::query()->first();
+
+    expect($solicitud)->not->toBeNull()
+        ->and($solicitud->descripcion)->toBe('');
 });
 
 test('a public support form rejects an incomplete request', function () {

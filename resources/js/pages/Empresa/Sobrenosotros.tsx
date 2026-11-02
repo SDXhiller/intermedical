@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import type { LucideIcon } from 'lucide-react';
 import {
     ArrowRight,
     Award,
@@ -18,12 +19,52 @@ import {
     ShieldCheck,
     Target,
     Users,
-    type LucideIcon,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { SiteBreadcrumb } from '@/components/site-breadcrumb';
 import { BRAND_COLOR, CONTENT_WIDTH } from '@/data/equipment';
 import { home, mantenimiento } from '@/routes';
+
+const HERO_IMAGE = '/Imagen/Body/rayos.png';
+
+const workStepImagePool: {
+    src: string;
+    imageClassName: string;
+}[] = [
+    {
+        src: `/Imagen/empresa/${encodeURIComponent('ChatGPT Image 20 sept 2026, 01_19_34 p.m..png')}`,
+        imageClassName: 'object-cover object-right',
+    },
+    {
+        src: `/Imagen/empresa/${encodeURIComponent('sobre nosotros.jpg')}`,
+        imageClassName: 'object-cover object-[42%_center]',
+    },
+    {
+        src: `/Imagen/Servicios/${encodeURIComponent('Imagen de ChatGPT 27 sept 2026, 04_57_16 p.m..png')}`,
+        imageClassName: 'object-cover object-right',
+    },
+];
+
+/** Mezcla estable (misma asignación en cliente/servidor) de las 3 rutas a las 3 tarjetas. */
+function shuffleWorkStepImages<T>(items: T[], seed = 17): T[] {
+    const copy = [...items];
+    let state = seed;
+
+    const next = (): number => {
+        state = (state * 16807) % 2147483647;
+
+        return (state - 1) / 2147483646;
+    };
+
+    for (let index = copy.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(next() * (index + 1));
+        [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+    }
+
+    return copy;
+}
+
+const assignedWorkStepImages = shuffleWorkStepImages(workStepImagePool);
 
 const highlights: {
     title: string;
@@ -60,24 +101,32 @@ const workSteps: {
     title: string;
     description: string;
     icon: LucideIcon;
+    image: string;
+    imageClassName: string;
 }[] = [
     {
         title: 'Evaluación técnica',
         description:
             'Analizamos las necesidades de cada equipo para ofrecer la mejor solución, con diagnóstico preciso y personalizado.',
         icon: Search,
+        image: assignedWorkStepImages[0].src,
+        imageClassName: assignedWorkStepImages[0].imageClassName,
     },
     {
         title: 'Comunicación clara',
         description:
             'Mantenemos una comunicación directa con el cliente en cada etapa del servicio, informando avances, hallazgos y recomendaciones.',
         icon: MessageCircle,
+        image: assignedWorkStepImages[1].src,
+        imageClassName: assignedWorkStepImages[1].imageClassName,
     },
     {
         title: 'Documentación técnica',
         description:
             'Registramos las actividades realizadas, generando reportes técnicos y evidencia del servicio para tu control y seguimiento.',
         icon: ClipboardList,
+        image: assignedWorkStepImages[2].src,
+        imageClassName: assignedWorkStepImages[2].imageClassName,
     },
 ];
 
@@ -85,12 +134,16 @@ const philosophyItems: {
     id: string;
     title: string;
     icon: LucideIcon;
+    image: string;
+    imageClassName: string;
     description: ReactNode;
 }[] = [
     {
         id: 'objetivo',
         title: 'Objetivo',
         icon: Target,
+        image: '/Imagen/empresa/objetivo.jpg',
+        imageClassName: 'object-cover object-[center_35%]',
         description: (
             <>
                 Establecer los principios, valores y lineamientos que orientan
@@ -107,6 +160,8 @@ const philosophyItems: {
         id: 'mision',
         title: 'Misión',
         icon: Compass,
+        image: '/Imagen/empresa/mision.jpg',
+        imageClassName: 'object-cover object-center',
         description:
             'Mantener la tecnología de imagen médica segura, confiable y disponible, mediante ingeniería especializada, innovación y un servicio cercano que contribuya a una atención médica eficiente y oportuna.',
     },
@@ -114,6 +169,8 @@ const philosophyItems: {
         id: 'vision',
         title: 'Visión',
         icon: Eye,
+        image: '/Imagen/empresa/vision.jpg',
+        imageClassName: 'object-cover object-[62%_center]',
         description:
             'Ser una empresa referente en México en ingeniería y soporte de tecnología de diagnóstico por imagen, reconocida por su innovación, experiencia y compromiso con una atención médica más confiable y accesible.',
     },
@@ -187,56 +244,105 @@ function WorkStepCard({
     title,
     description,
     icon: Icon,
+    image,
+    imageClassName,
 }: {
     title: string;
     description: string;
     icon: LucideIcon;
+    image: string;
+    imageClassName: string;
 }) {
     return (
-        <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-neutral-900 p-6">
-            <span
-                className="flex size-12 items-center justify-center rounded-full text-white"
-                style={{ backgroundColor: BRAND_COLOR }}
-            >
-                <Icon className="size-5" strokeWidth={1.75} />
-            </span>
-            <h3 className="mt-4 text-base font-bold text-white">{title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-white/70">
-                {description}
-            </p>
+        <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 transition-all duration-300 hover:border-white/20">
+            <div className="relative aspect-video overflow-hidden bg-neutral-950">
+                <img
+                    src={image}
+                    alt=""
+                    loading="lazy"
+                    className={`absolute inset-0 size-full ${imageClassName} transition-transform duration-500 group-hover:scale-105`}
+                />
+                <div
+                    className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-neutral-900/25 to-transparent"
+                    aria-hidden="true"
+                />
+                <span
+                    className="absolute bottom-3 left-3 flex size-11 items-center justify-center rounded-full text-white ring-2 ring-neutral-900/80"
+                    style={{ backgroundColor: BRAND_COLOR }}
+                >
+                    <Icon className="size-5" strokeWidth={1.75} />
+                </span>
+            </div>
+
+            <div className="flex flex-1 flex-col p-5 sm:p-6">
+                <h3 className="text-base font-bold text-white">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/70">
+                    {description}
+                </p>
+            </div>
         </article>
     );
 }
+
 
 function PhilosophyCard({
     id,
     title,
     icon: Icon,
+    image,
+    imageClassName,
     children,
 }: {
     id: string;
     title: string;
     icon: LucideIcon;
+    image: string;
+    imageClassName: string;
     children: ReactNode;
 }) {
     return (
         <article
             id={id}
-            className="flex h-full scroll-mt-40 flex-col rounded-2xl border border-white/10 bg-neutral-900 p-6"
+            className="group flex h-full scroll-mt-40 flex-col overflow-hidden rounded-xl border border-white/10 bg-[#171717] transition-all duration-300 hover:border-white/20 hover:shadow-xl"
         >
-            <span
-                className="flex size-11 items-center justify-center rounded-full text-white"
-                style={{ backgroundColor: BRAND_COLOR }}
-            >
-                <Icon className="size-5" strokeWidth={1.75} />
-            </span>
-            <h3 className="mt-4 text-lg font-bold text-white">{title}</h3>
-            <div className="mt-2 text-sm leading-relaxed text-white/70">
-                {children}
+            {/* Imagen panorámica */}
+            <div className="relative h-32 shrink-0 overflow-hidden bg-neutral-950 sm:h-36 lg:h-36">
+                <img
+                    src={image}
+                    alt=""
+                    loading="lazy"
+                    className={`absolute inset-0 h-full w-full ${imageClassName} transition-transform duration-500 group-hover:scale-105`}
+                />
+
+                {/* Degradado inferior */}
+                <div
+                    className="absolute inset-0 bg-gradient-to-t from-[#171717] via-[#171717]/10 to-transparent"
+                    aria-hidden="true"
+                />
+
+                {/* Icono */}
+                <span
+                    className="absolute bottom-3 left-5 flex size-10 items-center justify-center rounded-full text-white shadow-lg ring-2 ring-[#171717]"
+                    style={{ backgroundColor: BRAND_COLOR }}
+                >
+                    <Icon className="size-5" strokeWidth={1.75} />
+                </span>
+            </div>
+
+            {/* Contenido */}
+            <div className="flex flex-1 flex-col px-5 pb-5 pt-3">
+                <h3 className="text-lg font-bold tracking-tight text-white">
+                    {title}
+                </h3>
+
+                <div className="mt-2 text-sm leading-relaxed text-white/70">
+                    {children}
+                </div>
             </div>
         </article>
     );
 }
+
 
 function ValueCard({
     title,
@@ -308,6 +414,25 @@ export default function Sobrenosotros() {
                             <ArrowRight className="size-4" />
                         </Link>
                     </div>
+
+                    <div className="relative min-h-[220px] overflow-hidden sm:min-h-[260px] lg:min-h-[320px]">
+                        <div
+                            className="pointer-events-none absolute inset-0"
+                            aria-hidden="true"
+                        >
+                            <img
+                                src={HERO_IMAGE}
+                                alt=""
+                                className="absolute inset-0 size-full scale-110 object-cover object-right opacity-50 blur-2xl [mask-image:linear-gradient(to_right,transparent_8%,black_42%)] [-webkit-mask-image:linear-gradient(to_right,transparent_8%,black_42%)]"
+                            />
+                            <img
+                                src={HERO_IMAGE}
+                                alt="Radiografía de tórax"
+                                className="absolute inset-0 size-full object-cover object-right [mask-image:linear-gradient(to_right,transparent_12%,black_48%)] [-webkit-mask-image:linear-gradient(to_right,transparent_12%,black_48%)]"
+                            />
+                            <div className="absolute inset-y-0 left-0 w-[42%] bg-gradient-to-r from-neutral-950 from-20% via-neutral-950/75 via-70% to-transparent" />
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -329,7 +454,7 @@ export default function Sobrenosotros() {
                         </h2>
                     </div>
 
-                    <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+                    <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3 lg:gap-5">
                         {workSteps.map((step) => (
                             <WorkStepCard key={step.title} {...step} />
                         ))}
@@ -352,6 +477,8 @@ export default function Sobrenosotros() {
                                 id={item.id}
                                 title={item.title}
                                 icon={item.icon}
+                                image={item.image}
+                                imageClassName={item.imageClassName}
                             >
                                 {item.description}
                             </PhilosophyCard>

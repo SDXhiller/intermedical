@@ -26,7 +26,32 @@ class TipoServicioMantenimiento extends Model
     /** @use HasFactory<TipoServicioMantenimientoFactory> */
     use HasFactory;
 
+    /**
+     * Public support services that require a failure description.
+     *
+     * @var list<string>
+     */
+    public const SERVICIOS_CON_DESCRIPCION_FALLA = [
+        'mantenimiento-correctivo',
+        'diagnostico',
+        'diagnostico-tecnico',
+        'servicio-a-inyectores',
+        'control-de-calidad-de-imagen',
+    ];
+
     protected $table = 'tipo_servicio_mantenimiento';
+
+    /**
+     * Whether the public support form should ask for a failure description.
+     */
+    public static function requiereDescripcionFalla(?string $slug): bool
+    {
+        if ($slug === null || $slug === '') {
+            return false;
+        }
+
+        return in_array($slug, self::SERVICIOS_CON_DESCRIPCION_FALLA, true);
+    }
 
     /**
      * @var array<string, mixed>

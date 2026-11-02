@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Models\EquipoModulo;
+use App\Models\Fabricante;
 use App\Models\Modulo;
+use App\Models\TipoServicioMantenimiento;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -24,11 +26,22 @@ class StoreSolicitudSoporteRequest extends FormRequest
     {
         $equipo = $this->blankToNull($this->input('equipo'));
         $equipoNombre = $this->blankToNull($this->input('equipo_nombre'));
+        $fabricanteId = $this->blankToNull($this->input('fabricante_id'));
+        $marcaOtra = $this->blankToNull($this->input('marca_otra'));
         $marca = $this->blankToNull($this->input('marca'));
 
         if (is_string($equipoNombre)) {
             $equipoNombre = Str::squish($equipoNombre);
             $equipoNombre = $equipoNombre === '' ? null : $equipoNombre;
+        }
+
+        if ($fabricanteId === 'otro') {
+            $fabricanteId = null;
+        }
+
+        if (is_string($marcaOtra)) {
+            $marcaOtra = Str::squish($marcaOtra);
+            $marcaOtra = $marcaOtra === '' ? null : $marcaOtra;
         }
 
         if (is_string($marca)) {
@@ -38,19 +51,44 @@ class StoreSolicitudSoporteRequest extends FormRequest
 
         if ($equipo !== null) {
             $equipoNombre = null;
+            $fabricanteId = null;
+            $marcaOtra = null;
             $marca = null;
+        } elseif (is_numeric($fabricanteId)) {
+            $marca = Fabricante::query()
+                ->whereKey((int) $fabricanteId)
+                ->where('activo', true)
+                ->value('nombre');
+            $marcaOtra = null;
+        } elseif ($marcaOtra !== null) {
+            $marca = $marcaOtra;
+            $fabricanteId = null;
+        }
+
+        $descripcion = is_string($this->input('descripcion'))
+            ? trim($this->input('descripcion'))
+            : $this->input('descripcion');
+
+        if (! TipoServicioMantenimiento::requiereDescripcionFalla(
+            is_string($this->input('servicio')) ? $this->input('servicio') : null,
+        )) {
+            $descripcion = is_string($descripcion) && $descripcion !== ''
+                ? $descripcion
+                : '';
         }
 
         $this->merge([
             'equipo' => $equipo,
             'equipo_nombre' => $equipoNombre,
+            'fabricante_id' => $fabricanteId,
+            'marca_otra' => $marcaOtra,
             'marca' => $marca,
             'empresa' => $this->blankToNull($this->input('empresa')),
             'estado' => $this->blankToNull($this->input('estado')),
             'latitud' => $this->blankToNull($this->input('latitud')),
             'longitud' => $this->blankToNull($this->input('longitud')),
             'nombre' => is_string($this->input('nombre')) ? Str::squish($this->input('nombre')) : $this->input('nombre'),
-            'descripcion' => is_string($this->input('descripcion')) ? trim($this->input('descripcion')) : $this->input('descripcion'),
+            'descripcion' => $descripcion,
             'codigo_pais' => is_string($this->input('codigo_pais')) ? trim($this->input('codigo_pais')) : $this->input('codigo_pais'),
         ]);
     }
@@ -97,7 +135,18 @@ class StoreSolicitudSoporteRequest extends FormRequest
                 },
             ],
             'equipo_nombre' => ['nullable', 'string', 'max:120', 'required_without:equipo'],
-            'marca' => ['nullable', 'string', 'max:80', 'required_with:equipo_nombre'],
+            'fabricante_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('fabricantes', 'id')->where('activo', true),
+            ],
+            'marca_otra' => ['nullable', 'string', 'max:80'],
+            'marca' => [
+                'nullable',
+                'string',
+                'max:80',
+                Rule::requiredIf(fn (): bool => filled($this->input('equipo_nombre'))),
+            ],
             'nombre' => ['required', 'string', 'max:80'],
             'empresa' => ['nullable', 'string', 'max:120'],
             'codigo_pais' => ['required', 'string', 'regex:/^\+\d{1,4}$/'],
@@ -118,7 +167,14 @@ class StoreSolicitudSoporteRequest extends FormRequest
             'estado' => ['nullable', 'string', 'max:80'],
             'latitud' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitud'],
             'longitud' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitud'],
-            'descripcion' => ['required', 'string', 'max:500'],
+            'descripcion' => [
+                Rule::requiredIf(fn (): bool => TipoServicioMantenimiento::requiereDescripcionFalla(
+                    is_string($this->input('servicio')) ? $this->input('servicio') : null,
+                )),
+                'nullable',
+                'string',
+                'max:500',
+            ],
             'imagenes' => ['nullable', 'array', 'max:5'],
             'imagenes.*' => ['image', 'max:5120'],
         ];
@@ -135,8 +191,10 @@ class StoreSolicitudSoporteRequest extends FormRequest
             'modalidad.required' => 'Elige la modalidad para continuar.',
             'equipo_nombre.required_without' => 'Elige un equipo o escribe su nombre.',
             'equipo_nombre.max' => 'El nombre del equipo no puede superar los 120 caracteres.',
-            'marca.required_with' => 'Escribe la marca del equipo para continuar.',
+            'marca.required' => 'Selecciona o escribe la marca del equipo para continuar.',
             'marca.max' => 'La marca no puede superar los 80 caracteres.',
+            'fabricante_id.exists' => 'La marca seleccionada no es válida.',
+            'marca_otra.max' => 'La marca no puede superar los 80 caracteres.',
             'nombre.required' => 'El nombre es obligatorio.',
             'nombre.max' => 'El nombre no puede superar los 80 caracteres.',
             'empresa.max' => 'La empresa no puede superar los 120 caracteres.',

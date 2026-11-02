@@ -27,7 +27,8 @@ class StoreCotizacionRefaccionRequest extends FormRequest
             'telefono' => $this->nullableString('telefono'),
             'correo' => $this->nullableString('correo'),
             'equipo' => $this->squished('equipo'),
-            'fabricante_id' => $this->blankToNull($this->input('fabricante_id')),
+            'fabricante_id' => $this->fabricanteId(),
+            'marca_otra' => $this->nullableString('marca_otra'),
             'refaccion' => $this->squished('refaccion'),
             'numero_parte' => $this->nullableString('numero_parte'),
             'descripcion' => $this->nullableString('descripcion'),
@@ -48,9 +49,16 @@ class StoreCotizacionRefaccionRequest extends FormRequest
             'correo' => ['required', 'string', 'email', 'max:200'],
             'equipo' => ['required', 'string', 'max:200'],
             'fabricante_id' => [
-                'required',
+                'nullable',
                 'integer',
+                'required_without:marca_otra',
                 Rule::exists('fabricantes', 'id')->where('activo', true),
+            ],
+            'marca_otra' => [
+                'nullable',
+                'string',
+                'max:150',
+                'required_without:fabricante_id',
             ],
             'refaccion' => ['required', 'string', 'max:255'],
             'numero_parte' => ['nullable', 'string', 'max:150'],
@@ -72,14 +80,27 @@ class StoreCotizacionRefaccionRequest extends FormRequest
             'correo.required' => 'El correo es obligatorio.',
             'correo.email' => 'Ingresa un correo electrónico válido.',
             'equipo.required' => 'El equipo es obligatorio.',
-            'fabricante_id.required' => 'Selecciona la marca.',
+            'fabricante_id.required_without' => 'Selecciona la marca.',
             'fabricante_id.exists' => 'La marca seleccionada no es válida.',
+            'marca_otra.required_without' => 'Escribe la marca del equipo.',
+            'marca_otra.max' => 'La marca no puede superar los 150 caracteres.',
             'refaccion.required' => 'La refacción requerida es obligatoria.',
             'imagenes.max' => 'Puedes adjuntar un máximo de 6 fotografías.',
             'imagenes.*.image' => 'Solo se permiten imágenes JPG, PNG o WEBP.',
             'imagenes.*.mimes' => 'Solo se permiten imágenes JPG, PNG o WEBP.',
             'imagenes.*.max' => 'Cada imagen debe pesar hasta 5 MB.',
         ];
+    }
+
+    private function fabricanteId(): mixed
+    {
+        $value = $this->blankToNull($this->input('fabricante_id'));
+
+        if ($value === 'otro') {
+            return null;
+        }
+
+        return $value;
     }
 
     private function squished(string $key): mixed

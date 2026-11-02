@@ -81,6 +81,8 @@ type PhotoItem = {
     preview: string;
 };
 
+const MARCA_OTRA = 'otro';
+
 type FormValues = {
     cliente: string;
     direccion: string;
@@ -90,6 +92,7 @@ type FormValues = {
     correo: string;
     equipo: string;
     fabricante_id: string;
+    marca_otra: string;
     refaccion: string;
     numero_parte: string;
     descripcion: string;
@@ -169,6 +172,7 @@ export default function CotizacionesViewPiesasReffaciones({
         fabricante_id: refaccion?.fabricante_id
             ? String(refaccion.fabricante_id)
             : '',
+        marca_otra: '',
         refaccion: refaccion?.nombre ?? '',
         numero_parte:
             refaccion?.parte ?? refaccion?.numero_parte ?? '',
@@ -181,6 +185,7 @@ export default function CotizacionesViewPiesasReffaciones({
             fabricante_id: refaccion?.fabricante_id
                 ? String(refaccion.fabricante_id)
                 : '',
+            marca_otra: '',
             refaccion: refaccion?.nombre ?? '',
             numero_parte:
                 refaccion?.parte ?? refaccion?.numero_parte ?? '',
@@ -311,6 +316,14 @@ export default function CotizacionesViewPiesasReffaciones({
 
         form.transform((data) => ({
             ...data,
+            fabricante_id:
+                data.fabricante_id === MARCA_OTRA
+                    ? ''
+                    : data.fabricante_id,
+            marca_otra:
+                data.fabricante_id === MARCA_OTRA
+                    ? data.marca_otra.trim()
+                    : '',
             imagenes: photos.map((photo) => photo.file),
         }));
 
@@ -337,6 +350,7 @@ export default function CotizacionesViewPiesasReffaciones({
                     'telefono',
                     'correo',
                     'equipo',
+                    'marca_otra',
                     'descripcion',
                 );
         
@@ -353,11 +367,13 @@ export default function CotizacionesViewPiesasReffaciones({
     const titulo =
         refaccion?.nombre ?? modalidadSeleccionada.nombre;
 
-    const marcaSeleccionada =
-        marcas.find(
-            (marca) =>
-                String(marca.id) === form.data.fabricante_id,
-        )?.nombre ?? 'Por seleccionar';
+    const marcaEsOtra = form.data.fabricante_id === MARCA_OTRA;
+    const marcaSeleccionada = marcaEsOtra
+        ? form.data.marca_otra.trim() || 'Otra marca'
+        : (marcas.find(
+              (marca) =>
+                  String(marca.id) === form.data.fabricante_id,
+          )?.nombre ?? 'Por seleccionar');
 
     const mensajeWhatsApp = [
         'Hola, me gustaría solicitar una cotización de refacciones.',
@@ -686,12 +702,22 @@ export default function CotizacionesViewPiesasReffaciones({
                                         id="fabricante_id"
                                         name="fabricante_id"
                                         value={form.data.fabricante_id}
-                                        onChange={(event) =>
-                                            updateField(
-                                                'fabricante_id',
-                                                event.target.value,
-                                            )
-                                        }
+                                        onChange={(event) => {
+                                            const value =
+                                                event.target.value;
+                                            form.setData(
+                                                (previous) => ({
+                                                    ...previous,
+                                                    fabricante_id:
+                                                        value,
+                                                    marca_otra:
+                                                        value ===
+                                                        MARCA_OTRA
+                                                            ? previous.marca_otra
+                                                            : '',
+                                                }),
+                                            );
+                                        }}
                                         required
                                         className={selectClass}
                                     >
@@ -706,13 +732,48 @@ export default function CotizacionesViewPiesasReffaciones({
                                                 {marca.nombre}
                                             </option>
                                         ))}
+                                        <option value={MARCA_OTRA}>
+                                            Otro
+                                        </option>
                                     </select>
-                                    {form.errors.fabricante_id && (
+                                    {(form.errors.fabricante_id ||
+                                        form.errors.marca_otra) && (
                                         <p className="mt-1 text-sm text-red-400">
-                                            {form.errors.fabricante_id}
+                                            {form.errors.fabricante_id ||
+                                                form.errors.marca_otra}
                                         </p>
                                     )}
                                 </div>
+
+                                {marcaEsOtra ? (
+                                    <div className="min-w-0">
+                                        <label
+                                            htmlFor="marca_otra"
+                                            className={labelClass}
+                                        >
+                                            Escribe la marca
+                                            <span className="ml-1 text-[#4cc185]">
+                                                *
+                                            </span>
+                                        </label>
+                                        <input
+                                            id="marca_otra"
+                                            name="marca_otra"
+                                            type="text"
+                                            value={form.data.marca_otra}
+                                            onChange={(event) =>
+                                                updateField(
+                                                    'marca_otra',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            placeholder="Marca del equipo"
+                                            required
+                                            maxLength={150}
+                                            className={inputClass}
+                                        />
+                                    </div>
+                                ) : null}
 
                                 {renderInput(
                                     'Refacción requerida',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSolicitudSoporteRequest;
 use App\Models\EquipoModulo;
+use App\Models\Fabricante;
 use App\Models\Modulo;
 use App\Models\SolicitudSoporte;
 use App\Models\TipoServicioMantenimiento;
@@ -83,6 +84,8 @@ class SoporteController extends Controller
             'equipos' => $equipos,
             'equipo' => $equipoSeleccionado,
             'equipoNombre' => $equipoNombre,
+            'marcas' => $this->marcas(),
+            'serviciosConDescripcionFalla' => TipoServicioMantenimiento::SERVICIOS_CON_DESCRIPCION_FALLA,
         ]);
     }
 
@@ -124,7 +127,7 @@ class SoporteController extends Controller
             'estado' => $validated['estado'] ?? null,
             'latitud' => $validated['latitud'] ?? null,
             'longitud' => $validated['longitud'] ?? null,
-            'descripcion' => $validated['descripcion'],
+            'descripcion' => $validated['descripcion'] ?? '',
             'imagenes' => $imagenes,
         ]);
 
@@ -188,6 +191,24 @@ class SoporteController extends Controller
                 'title' => $item['title'],
             ])
             ->values()
+            ->all();
+    }
+
+    /**
+     * Active brands for the manual equipment brand selector.
+     *
+     * @return list<array{id: int, nombre: string}>
+     */
+    private function marcas(): array
+    {
+        return Fabricante::query()
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre'])
+            ->map(fn (Fabricante $fabricante): array => [
+                'id' => $fabricante->id,
+                'nombre' => $fabricante->nombre,
+            ])
             ->all();
     }
 }

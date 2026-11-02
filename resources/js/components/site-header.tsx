@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import type { LucideIcon } from 'lucide-react';
 import {
     Home,
     Layers,
@@ -9,9 +10,8 @@ import {
     Settings,
     Users,
     X,
-    type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { GlobalSearchBar } from '@/components/global-search-bar';
 import { CONTENT_WIDTH } from '@/data/equipment';
 import { contacto, home, mantenimiento, sobreNosotros } from '@/routes';
@@ -55,6 +55,26 @@ export default function SiteHeader() {
     const [searchOpen, setSearchOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const menuToggleRef = useRef<HTMLButtonElement>(null);
+    const mobileNavRef = useRef<HTMLElement>(null);
+
+    const closeMenu = useCallback((returnFocus = false) => {
+        const activeElement = document.activeElement;
+
+        if (
+            activeElement instanceof HTMLElement &&
+            mobileNavRef.current?.contains(activeElement)
+        ) {
+            activeElement.blur();
+
+            if (returnFocus) {
+                menuToggleRef.current?.focus();
+            }
+        }
+
+        setMenuOpen(false);
+    }, []);
+
     useEffect(() => {
         if (!searchOpen) {
             return;
@@ -70,7 +90,7 @@ export default function SiteHeader() {
     useEffect(() => {
         const closeMobileOverlays = () => {
             setSearchOpen(false);
-            setMenuOpen(false);
+            closeMenu(true);
         };
 
         const onKeyDown = (event: KeyboardEvent) => {
@@ -92,7 +112,7 @@ export default function SiteHeader() {
             window.removeEventListener('keydown', onKeyDown);
             window.removeEventListener('resize', onResize);
         };
-    }, []);
+    }, [closeMenu]);
 
     return (
         <div className="sticky top-0 z-[100] isolate overflow-visible">
@@ -192,7 +212,7 @@ export default function SiteHeader() {
                                     className={iconButtonClassName}
                                     aria-label="Abrir búsqueda"
                                     onClick={() => {
-                                        setMenuOpen(false);
+                                        closeMenu();
                                         setSearchOpen(true);
                                     }}
                                 >
@@ -202,6 +222,7 @@ export default function SiteHeader() {
                                     />
                                 </button>
                                 <button
+                                    ref={menuToggleRef}
                                     type="button"
                                     className={iconButtonClassName}
                                     aria-label={
@@ -209,9 +230,15 @@ export default function SiteHeader() {
                                     }
                                     aria-expanded={menuOpen}
                                     aria-controls="mobile-primary-nav"
-                                    onClick={() =>
-                                        setMenuOpen((open) => !open)
-                                    }
+                                    onClick={() => {
+                                        if (menuOpen) {
+                                            closeMenu(true);
+
+                                            return;
+                                        }
+
+                                        setMenuOpen(true);
+                                    }}
                                 >
                                     <span className="relative size-5">
                                         <Menu
@@ -238,13 +265,13 @@ export default function SiteHeader() {
                 </div>
 
                 <nav
+                    ref={mobileNavRef}
                     id="mobile-primary-nav"
                     className={`grid overflow-hidden bg-neutral-950 transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none lg:hidden ${
                         menuOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                     }`}
                     aria-label="Menú principal"
-                    aria-hidden={!menuOpen}
-                    inert={!menuOpen}
+                    {...(!menuOpen ? { inert: true } : {})}
                 >
                     <div className="min-h-0 overflow-hidden">
                         <div
@@ -256,7 +283,7 @@ export default function SiteHeader() {
                                 const Icon = item.icon;
                                 const className =
                                     'inline-flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium text-white/90 transition hover:bg-white/5 hover:text-[#0a7c4a]';
-                                const onClick = () => setMenuOpen(false);
+                                const onClick = () => closeMenu();
                                 const label = (
                                     <>
                                         <Icon

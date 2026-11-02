@@ -102,6 +102,34 @@ test('a spare part quote keeps the part linked to its modality', function () {
         ->and($cotizacion?->marca)->toBe('GE');
 });
 
+test('a modality quote accepts a custom brand when otro is selected', function () {
+    $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
+    $modulo = Modulo::factory()->create([
+        'modulo' => 'Ultrasonido',
+        'slug' => 'ultrasonido',
+        'estatus_id' => $activo->id,
+    ]);
+
+    $this->post(route('refacciones.cotizar.store', 'ultrasonido'), [
+        'cliente' => 'Hospital Central',
+        'contacto' => 'Ing. Ana López',
+        'telefono' => '771 123 4567',
+        'correo' => 'ana.lopez@hospital.mx',
+        'equipo' => 'Equipo especial',
+        'fabricante_id' => 'otro',
+        'marca_otra' => 'Marca Personalizada',
+        'refaccion' => 'Pieza especial',
+    ])->assertRedirect(route('refacciones.cotizar', 'ultrasonido'))
+        ->assertSessionHas('success');
+
+    $cotizacion = CotizacionRefaccion::query()->first();
+
+    expect($cotizacion)->not->toBeNull()
+        ->and($cotizacion->fabricante_id)->toBeNull()
+        ->and($cotizacion->marca)->toBe('Marca Personalizada')
+        ->and($cotizacion->modulo_id)->toBe($modulo->id);
+});
+
 test('a spare part quote rejects an inactive brand and a part from another modality', function () {
     $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
     $modulo = Modulo::factory()->create([

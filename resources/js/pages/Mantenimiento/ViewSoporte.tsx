@@ -68,6 +68,11 @@ type EquipoItem = {
     imagen: string;
 };
 
+type MarcaOption = {
+    id: number;
+    nombre: string;
+};
+
 type ViewSoporteProps = {
     servicio: ServicioItem | null;
     servicios: ServicioItem[];
@@ -76,11 +81,14 @@ type ViewSoporteProps = {
     equipos: EquipoItem[];
     equipo: EquipoItem | null;
     equipoNombre: string | null;
+    marcas: MarcaOption[];
+    serviciosConDescripcionFalla: string[];
 };
 
 const FALLBACK_HERO_IMAGE = '/Imagen/Body/Body.png';
 const MIG_HORIZONTAL_WHITE = '/Imagen/Logos/MIG-horizontal-blanco.png';
 const CONTACT_EMAIL = 'contacto@medicalimaging.com.mx';
+const MARCA_OTRA = 'otro';
 
 const MAX_SUPPORT_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_SUPPORT_IMAGES = 5;
@@ -419,6 +427,8 @@ export default function ViewSoporte({
     equipos,
     equipo,
     equipoNombre,
+    marcas,
+    serviciosConDescripcionFalla,
 }: ViewSoporteProps) {
     const [copiedEmail, copyEmail] = useClipboard();
     const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
@@ -428,6 +438,7 @@ export default function ViewSoporte({
         'disponibles',
     );
     const [equipoNombreBorrador, setEquipoNombreBorrador] = useState('');
+    const [fabricanteId, setFabricanteId] = useState('');
     const [marcaManual, setMarcaManual] = useState('');
     const [descripcion, setDescripcion] = useState('');
     const [nombre, setNombre] = useState('');
@@ -490,6 +501,19 @@ export default function ViewSoporte({
         : null;
     const heroImage =
         equipo?.imagen || modalidad?.imagen || FALLBACK_HERO_IMAGE;
+    const equipoEscrito = equipo === null ? equipoNombre : null;
+    const equipoLleno = equipo !== null || equipoEscrito !== null;
+    const marcaEsOtra = fabricanteId === MARCA_OTRA;
+    const marcaResuelta = equipo
+        ? equipo.marca
+        : marcaEsOtra
+          ? marcaManual.trim()
+          : (marcas.find((marca) => String(marca.id) === fabricanteId)?.nombre ??
+            '');
+    const requiereDescripcionFalla = Boolean(
+        servicio &&
+            serviciosConDescripcionFalla.includes(servicio.slug),
+    );
 
     const whatsappPreview = useMemo(() => {
         return [
@@ -501,10 +525,14 @@ export default function ViewSoporte({
                 equipo
                     ? `${equipo.nombre} (${equipo.marca})`
                     : equipoNombre
-                      ? `${equipoNombre}${marcaManual.trim() !== '' ? ` (${marcaManual.trim()})` : ''}`
+                      ? `${equipoNombre}${marcaResuelta !== '' ? ` (${marcaResuelta})` : ''}`
                       : 'Por seleccionar'
             }`,
-            `Descripción: ${descripcion.trim() !== '' ? descripcion.trim() : '[Puedes agregar más detalles]'}`,
+            ...(requiereDescripcionFalla
+                ? [
+                      `Descripción: ${descripcion.trim() !== '' ? descripcion.trim() : '[Puedes agregar más detalles]'}`,
+                  ]
+                : []),
             '',
             '¿Podrían brindarme más información?',
         ].join('\n');
@@ -512,29 +540,36 @@ export default function ViewSoporte({
         descripcion,
         equipo,
         equipoNombre,
-        marcaManual,
+        marcaResuelta,
         modalidad?.nombre,
+        requiereDescripcionFalla,
         servicio?.title,
     ]);
-    const equipoEscrito = equipo === null ? equipoNombre : null;
-    const equipoLleno = equipo !== null || equipoEscrito !== null;
     const equipoNombreBorradorError = overLimitMessage(
         equipoNombreBorrador,
         EQUIPO_NOMBRE_MAX_LENGTH,
         'El nombre del equipo',
     );
     const marcaManualError =
-        equipoEscrito === null
+        equipoEscrito === null || !marcaEsOtra
             ? null
             : overLimitMessage(marcaManual, MARCA_MAX_LENGTH, 'La marca');
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (descripcion.trim() === '' || descripcionError !== null || archivoError !== null) {
+        if (archivoError !== null) {
+            setPasoError(archivoError);
+
+            return;
+        }
+
+        if (
+            requiereDescripcionFalla &&
+            (descripcion.trim() === '' || descripcionError !== null)
+        ) {
             setPasoError(
                 descripcionError ??
-                    archivoError ??
                     'Describe la falla para enviar la solicitud.',
             );
 
@@ -551,7 +586,13 @@ export default function ViewSoporte({
                 modalidad: modalidad?.slug ?? '',
                 equipo: equipo?.slug ?? '',
                 equipo_nombre: equipo ? '' : (equipoNombre ?? ''),
-                marca: equipo ? '' : marcaManual.trim(),
+                fabricante_id: equipo
+                    ? ''
+                    : marcaEsOtra
+                      ? MARCA_OTRA
+                      : fabricanteId,
+                marca_otra: equipo || !marcaEsOtra ? '' : marcaManual.trim(),
+                marca: equipo ? '' : marcaResuelta,
                 nombre: nombre.trim(),
                 empresa: empresa.trim(),
                 codigo_pais: paisSeleccionado.dial,
@@ -560,7 +601,9 @@ export default function ViewSoporte({
                 estado,
                 latitud: coordenadas?.latitud ?? '',
                 longitud: coordenadas?.longitud ?? '',
-                descripcion: descripcion.trim(),
+                descripcion: requiereDescripcionFalla
+                    ? descripcion.trim()
+                    : '',
                 ...(imagenes.some((file) => file !== null)
                     ? {
                           imagenes: imagenes.filter(
@@ -584,6 +627,7 @@ export default function ViewSoporte({
                     setDescripcion('');
                     setImagenes(emptySupportImages());
                     setArchivoError(null);
+                    setFabricanteId('');
                     setMarcaManual('');
                     setPasoError(null);
                     setConfirmacionAbierta(true);
@@ -617,7 +661,16 @@ export default function ViewSoporte({
         }
 
         if (paso === 1 && equipoEscrito !== null) {
-            if (marcaManual.trim() === '' || marcaManualError !== null) {
+            if (fabricanteId === '') {
+                setPasoError('Selecciona la marca del equipo para continuar.');
+
+                return;
+            }
+
+            if (
+                marcaEsOtra &&
+                (marcaManual.trim() === '' || marcaManualError !== null)
+            ) {
                 setPasoError(
                     marcaManualError ??
                         'Escribe la marca del equipo para continuar.',
@@ -629,6 +682,7 @@ export default function ViewSoporte({
 
         if (
             paso === 1 &&
+            requiereDescripcionFalla &&
             (descripcion.trim() === '' || descripcionError !== null)
         ) {
             setPasoError(
@@ -918,28 +972,53 @@ export default function ViewSoporte({
                             <div className="mt-5 grid gap-4 sm:grid-cols-2">
                                     <div className="grid gap-2">
                                         <Label htmlFor="marca">Marca *</Label>
-                                        <Input
-                                            id="marca"
-                                            name="marca"
-                                            value={
-                                                equipo?.marca ?? marcaManual
-                                            }
-                                            onChange={(event) =>
-                                                setMarcaManual(
-                                                    event.target.value,
-                                                )
-                                            }
-                                            placeholder={
-                                                equipoEscrito
-                                                    ? 'Marca del equipo'
-                                                    : 'Se completa al elegir el sub equipo'
-                                            }
-                                            readOnly={equipoEscrito === null}
-                                            disabled={equipoEscrito === null}
-                                            aria-invalid={Boolean(
-                                                marcaManualError,
-                                            )}
-                                        />
+                                        {equipoEscrito === null ? (
+                                            <Input
+                                                id="marca"
+                                                name="marca"
+                                                value={equipo?.marca ?? ''}
+                                                placeholder="Se completa al elegir el sub equipo"
+                                                readOnly
+                                                disabled
+                                            />
+                                        ) : (
+                                            <Select
+                                                value={fabricanteId}
+                                                onValueChange={(value) => {
+                                                    setFabricanteId(value);
+                                                    if (value !== MARCA_OTRA) {
+                                                        setMarcaManual('');
+                                                    }
+                                                }}
+                                            >
+                                                <SelectTrigger
+                                                    id="marca"
+                                                    aria-invalid={Boolean(
+                                                        marcaManualError,
+                                                    )}
+                                                    className="w-full"
+                                                >
+                                                    <SelectValue placeholder="Selecciona la marca" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {marcas.map((marca) => (
+                                                        <SelectItem
+                                                            key={marca.id}
+                                                            value={String(
+                                                                marca.id,
+                                                            )}
+                                                        >
+                                                            {marca.nombre}
+                                                        </SelectItem>
+                                                    ))}
+                                                    <SelectItem
+                                                        value={MARCA_OTRA}
+                                                    >
+                                                        Otro
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        )}
                                         <FieldError
                                             message={marcaManualError}
                                         />
@@ -963,34 +1042,60 @@ export default function ViewSoporte({
                                             disabled
                                         />
                                     </div>
+                                    {equipoEscrito !== null && marcaEsOtra ? (
+                                        <div className="grid gap-2 sm:col-span-2">
+                                            <Label htmlFor="marca_otra">
+                                                Escribe la marca *
+                                            </Label>
+                                            <Input
+                                                id="marca_otra"
+                                                name="marca_otra"
+                                                value={marcaManual}
+                                                onChange={(event) =>
+                                                    setMarcaManual(
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                placeholder="Marca del equipo"
+                                                maxLength={MARCA_MAX_LENGTH}
+                                                aria-invalid={Boolean(
+                                                    marcaManualError,
+                                                )}
+                                            />
+                                        </div>
+                                    ) : null}
                             </div>
 
-                            <div className="mt-5 grid gap-2">
-                                <Label htmlFor="descripcion">
-                                    Descripción de la falla *
-                                </Label>
-                                <textarea
-                                    id="descripcion"
-                                    name="descripcion"
-                                    rows={4}
-                                    value={descripcion}
-                                    onChange={(event) =>
-                                        setDescripcion(event.target.value)
-                                    }
-                                    placeholder="Describe el problema que presenta el equipo..."
-                                    aria-invalid={Boolean(descripcionError)}
-                                    className={`min-h-24 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] ${descripcionError ? 'border-red-600 focus-visible:border-red-600 focus-visible:ring-red-600/20 dark:border-red-400' : 'border-input focus-visible:border-ring focus-visible:ring-ring/50'}`}
-                                />
-                                <div className="flex items-start justify-between gap-3">
-                                    <FieldError message={descripcionError} />
-                                    <p
-                                        className={`ml-auto text-xs ${descripcionError ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}
-                                    >
-                                        {descripcion.length}/
-                                        {DESCRIPCION_MAX_LENGTH}
-                                    </p>
+                            {requiereDescripcionFalla ? (
+                                <div className="mt-5 grid gap-2">
+                                    <Label htmlFor="descripcion">
+                                        Descripción de la falla *
+                                    </Label>
+                                    <textarea
+                                        id="descripcion"
+                                        name="descripcion"
+                                        rows={4}
+                                        value={descripcion}
+                                        onChange={(event) =>
+                                            setDescripcion(event.target.value)
+                                        }
+                                        placeholder="Describe el problema que presenta el equipo..."
+                                        aria-invalid={Boolean(descripcionError)}
+                                        className={`min-h-24 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] ${descripcionError ? 'border-red-600 focus-visible:border-red-600 focus-visible:ring-red-600/20 dark:border-red-400' : 'border-input focus-visible:border-ring focus-visible:ring-ring/50'}`}
+                                    />
+                                    <div className="flex items-start justify-between gap-3">
+                                        <FieldError
+                                            message={descripcionError}
+                                        />
+                                        <p
+                                            className={`ml-auto text-xs ${descripcionError ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}
+                                        >
+                                            {descripcion.length}/
+                                            {DESCRIPCION_MAX_LENGTH}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : null}
 
                             {pasoError ? (
                                 <div className="mt-4">

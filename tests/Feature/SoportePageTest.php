@@ -51,6 +51,8 @@ test('guests can view the support page with registered equipment for a modality'
             ->where('equipos.0.nombre', 'LOGIQ E')
             ->where('equipos.0.marca', 'GE')
             ->where('equipo.slug', $equipo->slug)
+            ->has('marcas')
+            ->has('serviciosConDescripcionFalla')
         );
 });
 

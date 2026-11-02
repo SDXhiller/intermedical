@@ -85,9 +85,12 @@ class RefaccionController extends Controller
         $modulo = $this->moduloPublicado($modalidad);
         $refaccion = $this->refaccionDeLaRuta($request, $modulo);
         $validated = $request->validated();
-        $fabricante = Fabricante::query()->findOrFail($validated['fabricante_id']);
+        $fabricante = isset($validated['fabricante_id'])
+            ? Fabricante::query()->findOrFail($validated['fabricante_id'])
+            : null;
+        $marca = $fabricante?->nombre ?? $validated['marca_otra'];
 
-        DB::transaction(function () use ($request, $validated, $modulo, $refaccion, $fabricante): void {
+        DB::transaction(function () use ($request, $validated, $modulo, $refaccion, $fabricante, $marca): void {
             $cotizacion = CotizacionRefaccion::query()->create([
                 'refaccion_id' => $refaccion?->id,
                 'modulo_id' => $modulo->id,
@@ -98,8 +101,8 @@ class RefaccionController extends Controller
                 'telefono' => $validated['telefono'],
                 'correo' => $validated['correo'],
                 'equipo' => $validated['equipo'],
-                'fabricante_id' => $fabricante->id,
-                'marca' => $fabricante->nombre,
+                'fabricante_id' => $fabricante?->id,
+                'marca' => $marca,
                 'refaccion' => $validated['refaccion'],
                 'numero_parte' => $validated['numero_parte'] ?? null,
                 'descripcion' => $validated['descripcion'] ?? null,
