@@ -8,6 +8,7 @@ use App\Models\EquipoModulo;
 use App\Models\Modulo;
 use App\Models\Servicio;
 use App\Models\Telefono;
+use App\Models\TipoServicioMantenimiento;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -48,7 +49,7 @@ class SearchController extends Controller
                 ->take(self::SUGGESTION_LIMIT)
                 ->values()
                 ->all(),
-        ]);
+        ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
     }
 
     /**
@@ -66,12 +67,25 @@ class SearchController extends Controller
     {
         $term = $this->likeTerm($query);
 
-        return collect()
-            ->merge($this->searchModulos($term))
-            ->merge($this->searchEquipos($term))
-            ->merge($this->searchServicios($term))
-            ->merge($this->searchTelefonos($term))
-            ->merge($this->searchCorreos($term))
+        return collect([
+            fn (): Collection => $this->searchModalidades($term),
+            fn (): Collection => $this->searchEquipos($term),
+            fn (): Collection => $this->searchServiciosMantenimiento($term),
+            fn (): Collection => $this->searchTelefonos($term),
+            fn (): Collection => $this->searchCorreos($term),
+        ])
+            ->reduce(
+                function (Collection $results, callable $search): Collection {
+                    try {
+                        return $results->merge($search());
+                    } catch (\Throwable $exception) {
+                        report($exception);
+
+                        return $results;
+                    }
+                },
+                collect(),
+            )
             ->sortBy([
                 ['tipo_label', 'asc'],
                 ['nombre', 'asc'],
@@ -87,7 +101,7 @@ class SearchController extends Controller
     /**
      * @return Collection<int, array{id: string, tipo: string, tipo_label: string, nombre: string, detalle: string|null, imagen: string|null, url: string}>
      */
-    private function searchModulos(string $term): Collection
+    private function searchModalidades(string $term): Collection
     {
         return Modulo::query()
             ->activos()
@@ -100,18 +114,18 @@ class SearchController extends Controller
             ->orderBy('modulo')
             ->get(['id', 'modulo', 'slug', 'descripcion', 'imagen'])
             ->map(fn (Modulo $modulo): array => [
-                'id' => "equipo-{$modulo->id}",
-                'tipo' => 'equipo',
-                'tipo_label' => 'Equipo',
+                'id' => "modalidad-{$modulo->id}",
+                'tipo' => 'modalidad',
+                'tipo_label' => 'Modalidad',
                 'nombre' => $modulo->modulo,
                 'detalle' => $modulo->descripcion,
                 'imagen' => $modulo->imageUrl(),
-                'url' => route('equipos.index', $modulo->slug),
+                'url' => route('mantenimiento.soporte', ['modalidad' => $modulo->slug]),
             ]);
     }
 
     /**
-     * @return Collection<int, array{id: string, tipo: string, tipo_label: string, nombre: string, detalle: string|null, url: string}>
+     * @return Collection<int, array{id: string, tipo: string, tipo_label: string, nombre: string, detalle: string|null, imagen: string|null, url: string}>
      */
     private function searchEquipos(string $term): Collection
     {
@@ -142,9 +156,9 @@ class SearchController extends Controller
                     ->implode(' · ');
 
                 return [
-                    'id' => "sub-equipo-{$equipo->id}",
-                    'tipo' => 'sub_equipo',
-                    'tipo_label' => 'Sub-equipo',
+                    'id' => "equipo-{$equipo->id}",
+                    'tipo' => 'equipo',
+                    'tipo_label' => 'Equipo',
                     'nombre' => $equipo->modelo,
                     'detalle' => $detalle !== '' ? $detalle : $equipo->descripcion_corta,
                     'imagen' => $equipo->imageUrl(),
@@ -156,34 +170,36 @@ class SearchController extends Controller
     /**
      * @return Collection<int, array{id: string, tipo: string, tipo_label: string, nombre: string, detalle: string|null, imagen: string|null, url: string}>
      */
-    private function searchServicios(string $term): Collection
+    private function searchServiciosMantenimiento(string $term): Collection
     {
-        return Servicio::query()
+        return TipoServicioMantenimiento::query()
             ->where('activo', true)
-            ->with('tipoServicioMantenimiento:id,nombre,slug')
             ->where(function (Builder $builder) use ($term): void {
                 $builder
                     ->where('nombre', 'like', $term)
-                    ->orWhere('descripcion', 'like', $term);
+                    ->orWhere('descripcion', 'like', $term)
+                    ->orWhere('slug', 'like', $term);
             })
             ->orderBy('nombre')
-            ->get()
-            ->map(function (Servicio $servicio): array {
-                $tipoSlug = $servicio->tipoServicioMantenimiento?->slug;
+            ->get(['id', 'nombre', 'slug', 'descripcion'])
+            ->map(fn (TipoServicioMantenimiento $tipo): array => [
+                'id' => "servicio-{$tipo->id}",
+                'tipo' => 'servicio',
+                'tipo_label' => 'Servicio',
+                'nombre' => $tipo->nombre,
+                'detalle' => filled($tipo->descripcion) ? $tipo->descripcion : null,
+                'imagen' => null,
+                'url' => $this->urlForServicioMantenimiento($tipo->slug),
+            ]);
+    }
 
-                return [
-                    'id' => "servicio-{$servicio->id}",
-                    'tipo' => 'servicio',
-                    'tipo_label' => 'Servicio',
-                    'nombre' => $servicio->nombre,
-                    'detalle' => $servicio->descripcion
-                        ?? $servicio->tipoServicioMantenimiento?->nombre,
-                    'imagen' => null,
-                    'url' => $tipoSlug !== null && $tipoSlug !== ''
-                        ? route('contacto', ['tipo' => $tipoSlug])
-                        : route('contacto'),
-                ];
-            });
+    private function urlForServicioMantenimiento(string $slug): string
+    {
+        if ($slug === 'suministro-y-venta-de-refacciones') {
+            return route('refacciones');
+        }
+
+        return route('mantenimiento.soporte', ['servicio' => $slug]);
     }
 
     /**
@@ -304,37 +320,38 @@ class SearchController extends Controller
 
     private function contactUrlForTelefono(Telefono $telefono): ?string
     {
-        $servicio = Servicio::query()
+        $tipoId = Servicio::query()
             ->where('telefono_id', $telefono->id)
             ->tap(fn (Builder $builder) => $this->applyVisibleTelefonoServicioConstraints($builder))
-            ->with('tipoServicioMantenimiento:id,slug')
             ->orderBy('nombre')
-            ->first();
+            ->value('tipo_servicio_mantenimiento_id');
 
-        return $this->contactUrlForServicio($servicio);
+        return $this->contactUrlForTipoId($tipoId);
     }
 
     private function contactUrlForCorreo(Correo $correo): ?string
     {
-        $servicio = Servicio::query()
+        $tipoId = Servicio::query()
             ->where('correo_id', $correo->id)
             ->tap(fn (Builder $builder) => $this->applyVisibleCorreoServicioConstraints($builder))
-            ->with('tipoServicioMantenimiento:id,slug')
             ->orderBy('nombre')
-            ->first();
+            ->value('tipo_servicio_mantenimiento_id');
 
-        return $this->contactUrlForServicio($servicio);
+        return $this->contactUrlForTipoId($tipoId);
     }
 
-    private function contactUrlForServicio(?Servicio $servicio): ?string
+    private function contactUrlForTipoId(mixed $tipoId): ?string
     {
-        if ($servicio === null) {
+        if (! is_numeric($tipoId)) {
             return null;
         }
 
-        $tipoSlug = $servicio->tipoServicioMantenimiento?->slug;
+        $tipoSlug = TipoServicioMantenimiento::query()
+            ->whereKey((int) $tipoId)
+            ->where('activo', true)
+            ->value('slug');
 
-        if ($tipoSlug === null || $tipoSlug === '') {
+        if (! is_string($tipoSlug) || $tipoSlug === '') {
             return null;
         }
 

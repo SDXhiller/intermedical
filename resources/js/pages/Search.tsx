@@ -24,8 +24,8 @@ type SearchResultItem = {
 };
 
 const tipoBadgeClass: Record<string, string> = {
-    equipo: 'border-0 bg-blue-600 text-white shadow-sm',
-    sub_equipo: 'border-0 bg-[#0a7c4a] text-white shadow-sm',
+    modalidad: 'border-0 bg-blue-600 text-white shadow-sm',
+    equipo: 'border-0 bg-[#0a7c4a] text-white shadow-sm',
     servicio: 'border-0 bg-orange-600 text-white shadow-sm',
     telefono: 'border-0 bg-purple-600 text-white shadow-sm',
     correo: 'border-0 bg-indigo-600 text-white shadow-sm',

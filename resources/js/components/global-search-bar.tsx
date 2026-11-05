@@ -44,8 +44,8 @@ const HEADER_SEARCH_DROPDOWN_Z_INDEX = 110;
 const HERO_SEARCH_DROPDOWN_Z_INDEX = 60;
 
 const tipoBadgeClass: Record<string, string> = {
-    equipo: 'border-0 bg-blue-600 text-white',
-    sub_equipo: 'border-0 bg-[#0a7c4a] text-white',
+    modalidad: 'border-0 bg-blue-600 text-white',
+    equipo: 'border-0 bg-[#0a7c4a] text-white',
     servicio: 'border-0 bg-orange-600 text-white',
     telefono: 'border-0 bg-purple-600 text-white',
     correo: 'border-0 bg-indigo-600 text-white',
@@ -278,6 +278,7 @@ export function GlobalSearchBar({
         }
 
         const controller = new AbortController();
+        let cancelled = false;
 
         const timer = window.setTimeout(async () => {
             setIsLoadingSuggestions(true);
@@ -290,12 +291,19 @@ export function GlobalSearchBar({
                             Accept: 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
                         },
+                        credentials: 'same-origin',
+                        cache: 'no-store',
                         signal: controller.signal,
                     },
                 );
 
+                if (cancelled) {
+                    return;
+                }
+
                 if (!response.ok) {
                     setSuggestions([]);
+                    setShowSuggestions(false);
 
                     return;
                 }
@@ -303,21 +311,29 @@ export function GlobalSearchBar({
                 const data = (await response.json()) as {
                     suggestions?: SearchSuggestion[];
                 };
+                const nextSuggestions = data.suggestions ?? [];
 
-                setSuggestions(data.suggestions ?? []);
-                setShowSuggestions(true);
+                setSuggestions(nextSuggestions);
+                setShowSuggestions(nextSuggestions.length > 0);
             } catch (error) {
                 if (
-                    !(error instanceof DOMException && error.name === 'AbortError')
+                    cancelled ||
+                    (error instanceof DOMException && error.name === 'AbortError')
                 ) {
-                    setSuggestions([]);
+                    return;
                 }
+
+                setSuggestions([]);
+                setShowSuggestions(false);
             } finally {
-                setIsLoadingSuggestions(false);
+                if (!cancelled) {
+                    setIsLoadingSuggestions(false);
+                }
             }
         }, 300);
 
         return () => {
+            cancelled = true;
             window.clearTimeout(timer);
             controller.abort();
         };

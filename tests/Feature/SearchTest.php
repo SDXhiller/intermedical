@@ -10,10 +10,11 @@ use App\Models\Servicio;
 use App\Models\Status;
 use App\Models\Telefono;
 use App\Models\TipoServicioMantenimiento;
+use Database\Seeders\StatusSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
-    $this->seed(\Database\Seeders\StatusSeeder::class);
+    $this->seed(StatusSeeder::class);
 });
 
 test('search page is accessible', function () {
@@ -26,7 +27,7 @@ test('search page is accessible', function () {
         );
 });
 
-test('search finds equipment categories models services and contacts', function () {
+test('search finds modalities equipment maintenance services and contacts', function () {
     $activo = Status::query()->where('nombre', 'Activo')->firstOrFail();
     $modulo = Modulo::factory()->create([
         'modulo' => 'Ultrasonido',
@@ -47,18 +48,22 @@ test('search finds equipment categories models services and contacts', function 
         'activo' => true,
     ]);
 
-    $tipoServicio = TipoServicioMantenimiento::factory()->create([
-        'nombre' => 'Mantenimiento',
-        'slug' => 'mantenimiento',
+    $tipoServicio = TipoServicioMantenimiento::query()
+        ->where('slug', 'mantenimiento-preventivo')
+        ->firstOrFail();
+
+    $tipoServicio->update([
+        'nombre' => 'Mantenimiento preventivo',
+        'descripcion' => 'Revisiones programadas para conservar el equipo.',
         'activo' => true,
     ]);
 
-    Servicio::factory()->create([
-        'tipo_servicio_mantenimiento_id' => $tipoServicio->id,
-        'nombre' => 'Calibración anual',
-        'slug' => 'calibracion-anual',
-        'activo' => true,
-    ]);
+    TipoServicioMantenimiento::query()
+        ->where('slug', 'suministro-y-venta-de-refacciones')
+        ->update([
+            'nombre' => 'Servicio de suministro y venta de refacciones',
+            'activo' => true,
+        ]);
 
     $telefono = Telefono::factory()->create([
         'nombre' => 'Ventas corporativas',
@@ -91,19 +96,39 @@ test('search finds equipment categories models services and contacts', function 
         'activo' => true,
     ]);
 
+    $this->get(route('search.index', ['q' => 'Ultrasonido']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('query', 'Ultrasonido')
+            ->where('results.0.tipo', 'modalidad')
+            ->where('results.0.tipo_label', 'Modalidad')
+            ->where('results.0.nombre', 'Ultrasonido')
+            ->where('results.0.url', route('mantenimiento.soporte', ['modalidad' => 'ultrasonido']))
+        );
+
     $this->get(route('search.index', ['q' => 'Logiq']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('query', 'Logiq')
-            ->where('results.0.tipo', 'sub_equipo')
+            ->where('results.0.tipo', 'equipo')
+            ->where('results.0.tipo_label', 'Equipo')
             ->where('results.0.nombre', 'Logiq E Portátil')
+            ->where('results.0.url', route('modulos.show', 'logiq-e-portatil'))
         );
 
-    $this->get(route('search.index', ['q' => 'Calibración']))
+    $this->get(route('search.index', ['q' => 'preventivo']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('results.0.tipo', 'servicio')
-            ->where('results.0.nombre', 'Calibración anual')
+            ->where('results.0.nombre', 'Mantenimiento preventivo')
+            ->where('results.0.url', route('mantenimiento.soporte', ['servicio' => 'mantenimiento-preventivo']))
+        );
+
+    $this->get(route('search.index', ['q' => 'refacciones']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('results.0.tipo', 'servicio')
+            ->where('results.0.url', route('refacciones'))
         );
 
     $this->get(route('search.index', ['q' => 'Ventas corporativas']))
@@ -111,7 +136,7 @@ test('search finds equipment categories models services and contacts', function 
         ->assertInertia(fn (Assert $page) => $page
             ->where('results.0.tipo', 'telefono')
             ->where('results.0.tipo_label', 'Teléfono')
-            ->where('results.0.url', route('contacto', ['tipo' => 'mantenimiento']))
+            ->where('results.0.url', route('contacto', ['tipo' => 'mantenimiento-preventivo']))
         );
 
     $this->get(route('search.index', ['q' => 'soporte@medical']))
@@ -120,16 +145,16 @@ test('search finds equipment categories models services and contacts', function 
             ->where('results.0.tipo', 'correo')
             ->where('results.0.tipo_label', 'Correo')
             ->where('results.0.detalle', 'soporte@medical.test')
-            ->where('results.0.url', route('contacto', ['tipo' => 'mantenimiento']))
+            ->where('results.0.url', route('contacto', ['tipo' => 'mantenimiento-preventivo']))
         );
 });
 
 test('search excludes horarios and unlinked contact records', function () {
-    $tipoServicio = TipoServicioMantenimiento::factory()->create([
-        'nombre' => 'Instalación',
-        'slug' => 'instalacion',
-        'activo' => true,
-    ]);
+    $tipoServicio = TipoServicioMantenimiento::query()
+        ->where('slug', 'instalacion')
+        ->firstOrFail();
+
+    $tipoServicio->update(['activo' => true]);
 
     Horario::factory()->create([
         'dias' => 'Lunes a viernes',
@@ -197,7 +222,7 @@ test('search suggestions endpoint returns limited json results', function () {
     $this->getJson(route('search.suggest', ['q' => 'Logiq']))
         ->assertOk()
         ->assertJsonCount(8, 'suggestions')
-        ->assertJsonPath('suggestions.0.tipo', 'sub_equipo');
+        ->assertJsonPath('suggestions.0.tipo', 'equipo');
 
     $this->getJson(route('search.suggest', ['q' => 'a']))
         ->assertOk()
